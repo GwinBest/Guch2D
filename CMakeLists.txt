@@ -1,44 +1,50 @@
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.19)
 
-project(Guch2D VERSION 1.0)
+project("Guch2D") 
 
-set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(IMGUI_SRC_PATH "${CMAKE_SOURCE_DIR}/thirdParty/imgui")
+set(imgui_src_path "${CMAKE_SOURCE_DIR}/ThirdParty/imgui")
 
-set(GLFW_SRC_PATH "${CMAKE_SOURCE_DIR}/thirdParty/glfw")
+set(glfw_src_path "${CMAKE_SOURCE_DIR}/ThirdParty/glfw")
 
+set(mathfu_src_path "${CMAKE_SOURCE_DIR}/ThirdParty/mathfu")
+
+# glfw
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "Build the GLFW example programs")
 set(GLFW_BUILD_TESTS OFF CACHE BOOL "Build the GLFW test programs")
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "Build the GLFW documentation")
 set(GLFW_INSTALL OFF CACHE BOOL "Generate installation target") 
-add_subdirectory(${GLFW_SRC_PATH} glfw_binary)
+add_subdirectory(${glfw_src_path} glfw_binary)
 
-add_library(glad STATIC ${GLFW_SRC_PATH}/deps/glad_gl.c)
-target_include_directories(glad PUBLIC ${GLFW_SRC_PATH}/deps/)
+# glad
+add_library(glad STATIC ${glfw_src_path}/deps/glad_gl.c)
+target_include_directories(glad PUBLIC ${glfw_src_path}/deps/)
 
+# imgui with glfw + opengl3 backend
 add_library(imgui STATIC
-   ${IMGUI_SRC_PATH}/imgui.cpp
-   ${IMGUI_SRC_PATH}/imgui_demo.cpp
-   ${IMGUI_SRC_PATH}/imgui_draw.cpp
-   ${IMGUI_SRC_PATH}/imgui_tables.cpp
-   ${IMGUI_SRC_PATH}/imgui_widgets.cpp
-   ${IMGUI_SRC_PATH}/backends/imgui_impl_glfw.cpp
-   ${IMGUI_SRC_PATH}/backends/imgui_impl_opengl3.cpp
+   ${imgui_src_path}/imgui.cpp
+   ${imgui_src_path}/imgui_demo.cpp
+   ${imgui_src_path}/imgui_draw.cpp
+   ${imgui_src_path}/imgui_tables.cpp
+   ${imgui_src_path}/imgui_widgets.cpp
+   ${imgui_src_path}/backends/imgui_impl_glfw.cpp
+   ${imgui_src_path}/backends/imgui_impl_opengl3.cpp
 )
 
 target_include_directories(imgui PUBLIC 
-   ${IMGUI_SRC_PATH}
-   ${IMGUI_SRC_PATH}/backends
+   ${imgui_src_path}
+   ${imgui_src_path}/backends
 )
 
+#target_compile_definitions(imgui PUBLIC IM_VEC2_CLASS_EXTRA)
 target_link_libraries(imgui glfw glad)
 
-file(GLOB SRCS
-   "src/*.cpp"
-   "src/gameObjects/*.cpp" 
-   "src/scenes/*.cpp"
+# arkanoid
+file(GLOB srcs
+   "Src/*.cpp"
+   "Src/Physics/*.cpp" 
 )
 
 include_directories(
@@ -47,6 +53,11 @@ include_directories(
 
 find_package(OpenGL REQUIRED)
 
-add_executable(${CMAKE_PROJECT_NAME} ${SRCS})
+add_executable(${CMAKE_PROJECT_NAME} ${srcs})
 
+set_property(TARGET ${CMAKE_PROJECT_NAME} PROPERTY CXX_STANDARD 17)
+set_directory_properties(PROPERTIES VS_STARTUP_PROJECT ${CMAKE_PROJECT_NAME})
+
+target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE MATHFU_COMPILE_WITHOUT_SIMD_SUPPORT)
+target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE ${mathfu_src_path}/include/)
 target_link_libraries(${CMAKE_PROJECT_NAME} glad imgui ${OPENGL_LIBRARIES})
