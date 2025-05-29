@@ -7,3 +7,6 @@
 [submodule "ThirdParty/mathfu"]
 	path = ThirdParty/mathfu
 	url = https://github.com/google/mathfu.git
+[submodule "thirdParty/mathfu"]
+	path = thirdParty/mathfu
+	url = https://github.com/google/mathfu.git
