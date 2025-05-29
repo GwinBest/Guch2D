@@ -4,6 +4,3 @@
 [submodule "thirdParty/glfw"]
 	path = thirdParty/glfw
 	url = https://github.com/glfw/glfw.git
-[submodule "ThirdParty/mathfu"]
-	path = ThirdParty/mathfu
-	url = https://github.com/google/mathfu.git
