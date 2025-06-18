@@ -14,7 +14,11 @@ namespace Guch2D
         Object& operator=(Object&&) = default;
         virtual ~Object() = default;
 
-    public:
-        Vect Position = {0.0F, 0.0F};
+        void SetPosition(const Vect& position) noexcept { _position = position; }
+
+        const Vect& GetPosition() const noexcept { return _position; }
+
+    protected:
+        Vect _position = {0.0F, 0.0F};
     };
 }   // namespace Guch2D

@@ -34,7 +34,7 @@
 #include "../libs/emscripten/emscripten_mainloop_stub.h"
 #endif
 
-#include "Objects/DynamicRigidBody.hpp"
+#include "Objects/RigidBody.hpp"
 #include "Physics/PhysicsWorld.hpp"
 
 static void glfw_error_callback(int error, const char* description)
@@ -45,9 +45,10 @@ static void glfw_error_callback(int error, const char* description)
 // Main code
 int main(int, char**)
 {
-    auto Object = std::make_shared<Guch2D::DynamicRigidBody>();
-    Object->Position = {100.0F, 20.0F};
-    Object->Mass = 20.0F;
+    auto Object = std::make_shared<Guch2D::RigidBody>();
+    Object->SetPosition({100.0F, 20.0F});
+    Object->SetMass(20.0F);
+    Object->SetType(Guch2D::RigidBodyType::Dynamic);
 
     Guch2D::PhysicsWorld world;
     world.AddObject(Object);
@@ -156,7 +157,6 @@ int main(int, char**)
     {
         double currentTime = glfwGetTime();
 
-        // Разница между текущим и предыдущим кадром
         deltaTime = currentTime - lastTime;
         lastTime = currentTime;
         // Poll and handle events (inputs, window resize, etc.)
@@ -179,20 +179,14 @@ int main(int, char**)
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
-
-        // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You
-        // can browse its code to learn more about Dear ImGui!).
-        if (!show_demo_window) world.Step(1.0F / 60.0F);
+        // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()!
+        // You can browse its code to learn more about Dear ImGui!).
+        if (!show_demo_window) world.Step(1.0F / 50.0F);
 
         ImDrawList* bg_drawlist = ImGui::GetBackgroundDrawList();
-        bg_drawlist->AddCircleFilled({Object->Position.x, Object->Position.y},
+        bg_drawlist->AddCircleFilled({Object->GetPosition().x, Object->GetPosition().y},
                                      10,
                                      ImColor(100, 255, 100));
-
-        ImGui::Text("Velocity %.3f, %.3f", Object->Velocity.x, Object->Velocity.y);
-        ImGui::Text("Acceleration %.3f, %.3f", Object->Acceleration.x, Object->Acceleration.y);
-        ImGui::Text("Force %.3f, %.3f", Object->Force.x, Object->Force.y);
-        ImGui::Text("Mass %.3f", Object->Mass);
 
         // 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a
         // named window.

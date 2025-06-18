@@ -1,23 +1,43 @@
 #include "PhysicsWorld.hpp"
 
-#include "Objects/DynamicRigidBody.hpp"
+#include "Objects/RigidBody.hpp"
 
 namespace Guch2D
 {
-    void PhysicsWorld::Step(const float DeltaTime)
+    void PhysicsWorld::Step(const float deltaTime) noexcept
     {
-        for (auto& Object : _Objects)
-        {
-            if (auto* DynamicBody = dynamic_cast<DynamicRigidBody*>(Object.get()))
-            {
-                DynamicBody->Acceleration = _Gravity;
-                DynamicBody->Velocity += DynamicBody->Acceleration * DeltaTime;
-                DynamicBody->Position += DynamicBody->Velocity * DeltaTime
-                                       + ((DynamicBody->Acceleration * (DeltaTime * DeltaTime))
-                                          / 2.0F);
+        ApplyGravity();
+        UpdatePositions(deltaTime);
+    }
 
-                // reset force at the end
-                DynamicBody->Force = {0.0F, 0.0F};
+    void PhysicsWorld::ApplyGravity() noexcept
+    {
+        for (auto& object : _objects)
+        {
+            auto rigidBody = std::dynamic_pointer_cast<RigidBody>(object);
+            if (rigidBody->GetType() != RigidBodyType::Static)
+            {
+                rigidBody->AddForce(_gravity * rigidBody->GetMass());
+            }
+        }
+    }
+
+    void PhysicsWorld::UpdatePositions(const float deltaTime) noexcept
+    {
+        for (auto& object : _objects)
+        {
+            auto rigidBody = std::dynamic_pointer_cast<RigidBody>(object);
+            if (rigidBody->GetType() != RigidBodyType::Static)
+            {
+                rigidBody->SetAcceleration(rigidBody->GetForce() / rigidBody->GetMass());
+                rigidBody->SetVelocity(rigidBody->GetVelocity()
+                                       + rigidBody->GetAcceleration() * deltaTime);
+
+                rigidBody->SetPosition(rigidBody->GetPosition()
+                                       + rigidBody->GetVelocity() * deltaTime);
+
+                // Reset force for the next step
+                rigidBody->ResetForce();
             }
         }
     }
