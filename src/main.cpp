@@ -181,7 +181,7 @@ int main(int, char**)
         ImGui::NewFrame();
         // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()!
         // You can browse its code to learn more about Dear ImGui!).
-        if (!show_demo_window) world.Step(1.0F / 50.0F);
+        if (!show_demo_window) world.Step();
 
         ImDrawList* bg_drawlist = ImGui::GetBackgroundDrawList();
         bg_drawlist->AddCircleFilled({Object->GetPosition().x, Object->GetPosition().y},

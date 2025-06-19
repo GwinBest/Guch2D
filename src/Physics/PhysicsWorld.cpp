@@ -4,10 +4,10 @@
 
 namespace Guch2D
 {
-    void PhysicsWorld::Step(const float deltaTime) noexcept
+    void PhysicsWorld::Step() noexcept
     {
         ApplyGravity();
-        UpdatePositions(deltaTime);
+        UpdatePositions();
     }
 
     void PhysicsWorld::ApplyGravity() noexcept
@@ -22,7 +22,7 @@ namespace Guch2D
         }
     }
 
-    void PhysicsWorld::UpdatePositions(const float deltaTime) noexcept
+    void PhysicsWorld::UpdatePositions() noexcept
     {
         for (auto& object : _objects)
         {
@@ -31,10 +31,10 @@ namespace Guch2D
             {
                 rigidBody->SetAcceleration(rigidBody->GetForce() / rigidBody->GetMass());
                 rigidBody->SetVelocity(rigidBody->GetVelocity()
-                                       + rigidBody->GetAcceleration() * deltaTime);
+                                       + rigidBody->GetAcceleration() * _timeStep);
 
                 rigidBody->SetPosition(rigidBody->GetPosition()
-                                       + rigidBody->GetVelocity() * deltaTime);
+                                       + rigidBody->GetVelocity() * _timeStep);
 
                 // Reset force for the next step
                 rigidBody->ResetForce();
