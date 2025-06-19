@@ -27,21 +27,21 @@ namespace Guch2D
         for (auto& object : _objects)
         {
             auto rigidBody = std::dynamic_pointer_cast<RigidBody>(object);
-            if (rigidBody->GetType() != RigidBodyType::Static)
-            {
-                rigidBody->SetAcceleration(rigidBody->GetForce() / rigidBody->GetMass());
 
-                // Apply half-step for velocity
-                rigidBody->AddVelocity(rigidBody->GetAcceleration() * _timeStep * 0.5F);
+            if (rigidBody->GetType() == RigidBodyType::Static) continue;
 
-                rigidBody->UpdatePosition(rigidBody->GetVelocity() * _timeStep);
+            rigidBody->SetAcceleration(rigidBody->GetForce() / rigidBody->GetMass());
 
-                // Apply another half-step for velocity
-                rigidBody->AddVelocity(rigidBody->GetAcceleration() * _timeStep * 0.5F);
+            // Apply half-step for velocity
+            rigidBody->AddVelocity(rigidBody->GetAcceleration() * _timeStep * 0.5F);
 
-                // Reset force for the next step
-                rigidBody->ResetForce();
-            }
+            rigidBody->UpdatePosition(rigidBody->GetVelocity() * _timeStep);
+
+            // Apply another half-step for velocity
+            rigidBody->AddVelocity(rigidBody->GetAcceleration() * _timeStep * 0.5F);
+
+            // Reset force for the next step
+            rigidBody->ResetForce();
         }
     }
 }   // namespace Guch2D
