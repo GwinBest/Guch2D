@@ -32,6 +32,7 @@ namespace Guch2D
 
         Vect _gravity = {0.0F, 9.81F};
 
+        // Default value for time step is 1/50 seconds
         float _timeStep = 1.0F / 50.0F;
     };
 }   // namespace Guch2D
