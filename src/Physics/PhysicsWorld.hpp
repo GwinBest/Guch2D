@@ -46,5 +46,5 @@ namespace Guch2D
 
         // Default value for time step is 1/60 seconds
         float _timeStep = 1.0F / 60.0F;
-    }
+    };
 }   // namespace Guch2D
