@@ -17,7 +17,7 @@ namespace Guch2D
 
         void SetTimeStep(const float timeStep) noexcept
         {
-            assert(timeStep <= 0.0F);
+            assert(timeStep > 0.0F);
             _timeStep = timeStep;
         }
 
