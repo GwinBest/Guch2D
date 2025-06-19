@@ -15,9 +15,15 @@ namespace Guch2D
 
         void Step() noexcept;
 
+        // If timestep is less than or equal to zero, it will default to 1/60 seconds
         void SetTimeStep(const float timeStep) noexcept
         {
-            assert(timeStep > 0.0F);
+            if (timeStep <= 0.0F)
+            {
+                _timeStep = 1.0F / 60.0F;
+                return;
+            }
+
             _timeStep = timeStep;
         }
 
