@@ -27,6 +27,10 @@ namespace Guch2D
             _timeStep = timeStep;
         }
 
+        void SetGravity(const Vect& gravity) noexcept { _gravity = gravity; }
+
+        [[nodiscard]] const Vect& GetGravity() const noexcept { return _gravity; }
+
         [[nodiscard]] float GetTimeStep() const noexcept { return _timeStep; }
 
     private:
@@ -42,5 +46,5 @@ namespace Guch2D
 
         // Default value for time step is 1/60 seconds
         float _timeStep = 1.0F / 60.0F;
-    };
+    }
 }   // namespace Guch2D
