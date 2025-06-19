@@ -17,7 +17,7 @@ namespace Guch2D
             auto rigidBody = std::dynamic_pointer_cast<RigidBody>(object);
             if (rigidBody->GetType() != RigidBodyType::Static)
             {
-                rigidBody->AddForce(_gravity * rigidBody->GetMass());
+                rigidBody->AddForce(rigidBody->GetGravityScale() * _gravity * rigidBody->GetMass());
             }
         }
     }

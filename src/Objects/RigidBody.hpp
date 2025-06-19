@@ -47,9 +47,9 @@ namespace Guch2D
 
         void ResetForce() noexcept { _force = {0.0F, 0.0F}; }
 
-        void SetGravity(const Vect& gravity) noexcept { _gravity = gravity; }
+        void SetGravityScale(const Vect& gravityScale) noexcept { _gravityScale = gravityScale; }
 
-        const Vect& GetGravity() const noexcept { return _gravity; }
+        const Vect& GetGravityScale() const noexcept { return _gravityScale; }
 
     private:
         RigidBodyType _type = RigidBodyType::Static;
@@ -59,6 +59,8 @@ namespace Guch2D
         Vect _velocity;
         Vect _acceleration;
         Vect _force;
-        Vect _gravity;
+
+        // Default gravity scale is 1.0F for both x and y axes
+        Vect _gravityScale = {1.0F, 1.0F};
     };
 }   // namespace Guch2D
