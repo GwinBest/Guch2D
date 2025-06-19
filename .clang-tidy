@@ -30,6 +30,7 @@ Checks: >
   -google-readability-todo,
   hicpp-*,
   -hicpp-no-assembler,
+  -hicpp-braces-around-statements,
   linuxkernel-*,
   llvm-*
   -llvm-header-guard,
