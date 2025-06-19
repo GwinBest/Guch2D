@@ -7,7 +7,7 @@ namespace Guch2D
     void PhysicsWorld::Step() noexcept
     {
         ApplyGravity();
-        UpdatePositions();
+        MoveBodies();
     }
 
     void PhysicsWorld::ApplyGravity() noexcept
@@ -22,7 +22,7 @@ namespace Guch2D
         }
     }
 
-    void PhysicsWorld::UpdatePositions() noexcept
+    void PhysicsWorld::MoveBodies() noexcept
     {
         for (auto& object : _objects)
         {
@@ -30,11 +30,14 @@ namespace Guch2D
             if (rigidBody->GetType() != RigidBodyType::Static)
             {
                 rigidBody->SetAcceleration(rigidBody->GetForce() / rigidBody->GetMass());
-                rigidBody->SetVelocity(rigidBody->GetVelocity()
-                                       + rigidBody->GetAcceleration() * _timeStep);
 
-                rigidBody->SetPosition(rigidBody->GetPosition()
-                                       + rigidBody->GetVelocity() * _timeStep);
+                // Apply half-step for velocity
+                rigidBody->AddVelocity(rigidBody->GetAcceleration() * _timeStep * 0.5F);
+
+                rigidBody->UpdatePosition(rigidBody->GetVelocity() * _timeStep);
+
+                // Apply another half-step for velocity
+                rigidBody->AddVelocity(rigidBody->GetAcceleration() * _timeStep * 0.5F);
 
                 // Reset force for the next step
                 rigidBody->ResetForce();

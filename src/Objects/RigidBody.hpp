@@ -25,23 +25,25 @@ namespace Guch2D
 
         void SetType(const RigidBodyType type) noexcept { _type = type; }
 
-        RigidBodyType GetType() const noexcept { return _type; }
+        [[nodiscard]] RigidBodyType GetType() const noexcept { return _type; }
 
         void SetMass(const float mass) noexcept { _mass = mass; }
 
-        float GetMass() const noexcept { return _mass; }
+        [[nodiscard]] float GetMass() const noexcept { return _mass; }
 
         void SetVelocity(const Vect& velocity) noexcept { _velocity = velocity; }
 
-        const Vect& GetVelocity() const noexcept { return _velocity; }
+        [[nodiscard]] const Vect& GetVelocity() const noexcept { return _velocity; }
+
+        void AddVelocity(const Vect& velocity) noexcept { _velocity += velocity; }
 
         void SetAcceleration(const Vect& acceleration) noexcept { _acceleration = acceleration; }
 
-        const Vect& GetAcceleration() const noexcept { return _acceleration; }
+        [[nodiscard]] const Vect& GetAcceleration() const noexcept { return _acceleration; }
 
         void SetForce(const Vect& force) noexcept { _force = force; }
 
-        const Vect& GetForce() const noexcept { return _force; }
+        [[nodiscard]] const Vect& GetForce() const noexcept { return _force; }
 
         void AddForce(const Vect& force) noexcept { _force += force; }
 
@@ -49,18 +51,26 @@ namespace Guch2D
 
         void SetGravityScale(const Vect& gravityScale) noexcept { _gravityScale = gravityScale; }
 
-        const Vect& GetGravityScale() const noexcept { return _gravityScale; }
+        [[nodiscard]] const Vect& GetGravityScale() const noexcept { return _gravityScale; }
 
     private:
         RigidBodyType _type = RigidBodyType::Static;
 
+        // Mass of the rigid body, in kilograms (kg)
         float _mass = 0.0F;
 
+        // Velocity vector, in meters per second (m/s)
         Vect _velocity;
+
+        // Acceleration vector, in meters per second squared (m/s²)
         Vect _acceleration;
+
+        // Force vector, in newtons (N)
         Vect _force;
 
         // Default gravity scale is 1.0F for both x and y axes
         Vect _gravityScale = {1.0F, 1.0F};
+
+        Vect _linearDamping;
     };
 }   // namespace Guch2D

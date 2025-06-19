@@ -46,7 +46,7 @@ static void glfw_error_callback(int error, const char* description)
 int main(int, char**)
 {
     auto Object = std::make_shared<Guch2D::RigidBody>();
-    Object->SetPosition({100.0F, 20.0F});
+    Object->SetPosition({1.0F, 0.2F});
     Object->SetMass(20.0F);
     Object->SetType(Guch2D::RigidBodyType::Dynamic);
 
@@ -94,7 +94,7 @@ int main(int, char**)
                                           nullptr);
     if (window == nullptr) return 1;
     glfwMakeContextCurrent(window);
-    glfwSwapInterval(0);   // Enable vsync
+    glfwSwapInterval(1);   // Enable vsync
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -184,7 +184,7 @@ int main(int, char**)
         if (!show_demo_window) world.Step();
 
         ImDrawList* bg_drawlist = ImGui::GetBackgroundDrawList();
-        bg_drawlist->AddCircleFilled({Object->GetPosition().x, Object->GetPosition().y},
+        bg_drawlist->AddCircleFilled({Object->GetPosition().x * 100.0f, Object->GetPosition().y * 100.0f},
                                      10,
                                      ImColor(100, 255, 100));
 

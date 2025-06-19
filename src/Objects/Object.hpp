@@ -16,9 +16,12 @@ namespace Guch2D
 
         void SetPosition(const Vect& position) noexcept { _position = position; }
 
-        const Vect& GetPosition() const noexcept { return _position; }
+        [[nodiscard]] const Vect& GetPosition() const noexcept { return _position; }
+
+        void UpdatePosition(const Vect& delta) noexcept { _position += delta; }
 
     protected:
+        // Position of the object in the 2D space, in pixels
         Vect _position = {0.0F, 0.0F};
     };
 }   // namespace Guch2D
