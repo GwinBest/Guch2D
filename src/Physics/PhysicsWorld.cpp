@@ -1,6 +1,6 @@
 #include "PhysicsWorld.hpp"
 
-#include "Objects/RigidBody.hpp"
+#include "Objects/DynamicRigidBody.hpp"
 
 namespace Guch2D
 {
@@ -14,11 +14,10 @@ namespace Guch2D
     {
         for (auto& object : _objects)
         {
-            auto rigidBody = std::dynamic_pointer_cast<RigidBody>(object);
-
-            if (rigidBody->GetType() == RigidBodyType::Static) continue;
-
-            rigidBody->AddForce(rigidBody->GetGravityScale() * _gravity * rigidBody->GetMass());
+            if (auto dynamicRigidBody = std::dynamic_pointer_cast<DynamicRigidBody>(object))
+            {
+                dynamicRigidBody->AddForce(dynamicRigidBody->GetGravityScale() * _gravity * dynamicRigidBody->GetMass());
+            }
         }
     }
 
@@ -26,22 +25,21 @@ namespace Guch2D
     {
         for (auto& object : _objects)
         {
-            auto rigidBody = std::dynamic_pointer_cast<RigidBody>(object);
+            if (auto dynamicRigidBody = std::dynamic_pointer_cast<DynamicRigidBody>(object))
+            {
+                dynamicRigidBody->SetAcceleration(dynamicRigidBody->GetForce() / dynamicRigidBody->GetMass());
 
-            if (rigidBody->GetType() == RigidBodyType::Static) continue;
+                // Apply half-step for velocity
+                dynamicRigidBody->AddVelocity(dynamicRigidBody->GetAcceleration() * _timeStep * 0.5F);
 
-            rigidBody->SetAcceleration(rigidBody->GetForce() / rigidBody->GetMass());
+                dynamicRigidBody->UpdatePosition(dynamicRigidBody->GetVelocity() * _timeStep);
 
-            // Apply half-step for velocity
-            rigidBody->AddVelocity(rigidBody->GetAcceleration() * _timeStep * 0.5F);
+                // Apply another half-step for velocity
+                dynamicRigidBody->AddVelocity(dynamicRigidBody->GetAcceleration() * _timeStep * 0.5F);
 
-            rigidBody->UpdatePosition(rigidBody->GetVelocity() * _timeStep);
-
-            // Apply another half-step for velocity
-            rigidBody->AddVelocity(rigidBody->GetAcceleration() * _timeStep * 0.5F);
-
-            // Reset force for the next step
-            rigidBody->ResetForce();
+                // Reset force for the next step
+                dynamicRigidBody->ResetForce();
+            }
         }
     }
 }   // namespace Guch2D

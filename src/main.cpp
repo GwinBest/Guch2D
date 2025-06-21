@@ -34,7 +34,7 @@
 #include "../libs/emscripten/emscripten_mainloop_stub.h"
 #endif
 
-#include "Objects/RigidBody.hpp"
+#include "Objects/DynamicRigidBody.hpp"
 #include "Physics/PhysicsWorld.hpp"
 
 static void glfw_error_callback(int error, const char* description)
@@ -45,10 +45,9 @@ static void glfw_error_callback(int error, const char* description)
 // Main code
 int main(int, char**)
 {
-    auto Object = std::make_shared<Guch2D::RigidBody>();
+    auto Object = std::make_shared<Guch2D::DynamicRigidBody>();
     Object->SetPosition({1.0F, 0.2F});
     Object->SetMass(20.0F);
-    Object->SetType(Guch2D::RigidBodyType::Dynamic);
 
     Guch2D::PhysicsWorld world;
     world.AddObject(Object);
@@ -184,9 +183,10 @@ int main(int, char**)
         if (!show_demo_window) world.Step();
 
         ImDrawList* bg_drawlist = ImGui::GetBackgroundDrawList();
-        bg_drawlist->AddCircleFilled({Object->GetPosition().x * 100.0f, Object->GetPosition().y * 100.0f},
-                                     10,
-                                     ImColor(100, 255, 100));
+        bg_drawlist->AddCircleFilled(
+            {Object->GetPosition().x * 100.0f, Object->GetPosition().y * 100.0f},
+            10,
+            ImColor(100, 255, 100));
 
         // 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a
         // named window.
