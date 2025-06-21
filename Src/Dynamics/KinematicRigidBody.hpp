@@ -14,17 +14,26 @@ namespace Guch2D
         KinematicRigidBody& operator=(KinematicRigidBody&&) = default;
         ~KinematicRigidBody() override = default;
 
-        void SetVelocity(const Vect& velocity) noexcept { _velocity = velocity; }
+        constexpr auto SetVelocity(const Vect& velocity) noexcept -> void { _velocity = velocity; }
 
-        [[nodiscard]] const Vect& GetVelocity() const noexcept { return _velocity; }
+        [[nodiscard]] constexpr auto GetVelocity() const noexcept -> const Vect&
+        {
+            return _velocity;
+        }
 
-        void AddVelocity(const Vect& velocity) noexcept { _velocity += velocity; }
+        constexpr auto AddVelocity(const Vect& velocity) noexcept -> void { _velocity += velocity; }
 
-        void SetAcceleration(const Vect& acceleration) noexcept { _acceleration = acceleration; }
+        constexpr auto SetAcceleration(const Vect& acceleration) noexcept -> void
+        {
+            _acceleration = acceleration;
+        }
 
-        [[nodiscard]] const Vect& GetAcceleration() const noexcept { return _acceleration; }
+        [[nodiscard]] constexpr auto GetAcceleration() const noexcept -> const Vect&
+        {
+            return _acceleration;
+        }
 
-        private:
+    private:
         // Velocity vector, in meters per second (m/s)
         Vect _velocity;
 

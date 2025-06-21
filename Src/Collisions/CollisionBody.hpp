@@ -1,5 +1,8 @@
 #pragma once
 
+#include <memory>
+
+#include "Collisions/Collider.hpp"
 #include "Math/Vector.hpp"
 
 namespace Guch2D
@@ -14,14 +17,25 @@ namespace Guch2D
         CollisionBody& operator=(CollisionBody&&) = default;
         virtual ~CollisionBody() = default;
 
-        void SetPosition(const Vect& position) noexcept { _position = position; }
+        constexpr auto SetPosition(const Vect& position) noexcept -> void { _position = position; }
 
-        [[nodiscard]] const Vect& GetPosition() const noexcept { return _position; }
+        [[nodiscard]] constexpr auto GetPosition() const noexcept -> const Vect&
+        {
+            return _position;
+        }
 
-        void UpdatePosition(const Vect& delta) noexcept { _position += delta; }
+        constexpr auto UpdatePosition(const Vect& delta) noexcept -> void { _position += delta; }
+
+        constexpr auto SetCollider(std::shared_ptr<Collider>& collider) noexcept -> void
+        {
+            _collider = collider;
+        }
 
     protected:
         // Position of the object in the 2D space, in meters (m)
         Vect _position = {0.0F, 0.0F};
+
+        // Collider associated with this collision body
+        std::shared_ptr<Collider> _collider;
     };
 }   // namespace Guch2D

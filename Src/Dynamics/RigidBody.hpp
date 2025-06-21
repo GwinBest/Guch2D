@@ -16,9 +16,9 @@ namespace Guch2D
         RigidBody& operator=(RigidBody&&) = default;
         ~RigidBody() override = default;
 
-        void SetMass(const float mass) noexcept { _mass = mass; }
+        constexpr auto SetMass(const float mass) noexcept -> void { _mass = mass; }
 
-        [[nodiscard]] float GetMass() const noexcept { return _mass; }
+        [[nodiscard]] constexpr auto GetMass() const noexcept -> float { return _mass; }
 
     protected:
         // Mass of the rigid body, in kilograms (kg)

@@ -14,12 +14,15 @@ namespace Guch2D
     class DynamicWorld final
     {
     public:
-        void AddObject(const std::shared_ptr<CollisionBody>& object) { _objects.push_back(object); }
+        constexpr auto AddObject(const std::shared_ptr<CollisionBody>& object)
+        {
+            _objects.push_back(object);
+        }
 
-        void Step() noexcept;
+        auto Step() noexcept -> void;
 
         // If timestep is less than or equal to zero, it will default to 1/60 seconds
-        void SetTimeStep(const float timeStep) noexcept
+        constexpr auto SetTimeStep(const float timeStep) noexcept
         {
             if (timeStep <= 0.0F)
             {
@@ -30,17 +33,19 @@ namespace Guch2D
             _timeStep = timeStep;
         }
 
-        void SetGravity(const Vect& gravity) noexcept { _gravity = gravity; }
+        constexpr auto SetGravity(const Vect& gravity) noexcept { _gravity = gravity; }
 
-        [[nodiscard]] const Vect& GetGravity() const noexcept { return _gravity; }
+        [[nodiscard]] constexpr auto GetGravity() const noexcept -> const Vect& { return _gravity; }
 
-        [[nodiscard]] float GetTimeStep() const noexcept { return _timeStep; }
+        [[nodiscard]] constexpr auto GetTimeStep() const noexcept -> float { return _timeStep; }
 
     private:
-        void ApplyGravity() noexcept;
-        void MoveBodies() noexcept;
+        auto ApplyGravity() noexcept -> void;
+        auto MoveBodies() noexcept -> void;
 
-        void ApplyLinearDamping(std::shared_ptr<DynamicRigidBody>& dynamicRigidBody) const noexcept;
+        constexpr auto
+            ApplyLinearDamping(std::shared_ptr<DynamicRigidBody>& dynamicRigidBody) const noexcept
+            -> void;
 
     private:
         std::vector<std::shared_ptr<CollisionBody>> _objects;
