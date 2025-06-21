@@ -34,8 +34,10 @@
 #include "../libs/emscripten/emscripten_mainloop_stub.h"
 #endif
 
+#include "Collisions/CircleCollider.hpp"
 #include "Dynamics/DynamicRigidBody.hpp"
 #include "Dynamics/DynamicWorld.hpp"
+#include "Dynamics/StaticRigidBody.hpp"
 
 static void glfw_error_callback(int error, const char* description)
 {
@@ -48,10 +50,12 @@ int main(int, char**)
     auto Object = std::make_shared<Guch2D::DynamicRigidBody>();
     Object->SetPosition({1.0F, 0.2F});
     Object->SetMass(20000000.0F);
+    Object->SetCollider(std::make_shared<Guch2D::CircleCollider>(Guch2D::Vect(0.0F, 0.0F), 0.1F));
 
     auto Object1 = std::make_shared<Guch2D::DynamicRigidBody>();
     Object1->SetPosition({2.0F, 0.2F});
     Object1->SetMass(2.0F);
+    Object1->SetCollider(std::make_shared<Guch2D::CircleCollider>(Guch2D::Vect(0.0F, 0.0F), 0.1F));
 
     Guch2D::DynamicWorld world;
     world.AddObject(Object);
@@ -192,11 +196,23 @@ int main(int, char**)
             {Object->GetPosition().x * 100.0f, Object->GetPosition().y * 100.0f},
             10,
             ImColor(100, 255, 100));
+        bg_drawlist->AddCircle(
+            {Object->GetColliderCenterWorld().x * 100.0f,
+             Object->GetColliderCenterWorld().y * 100.0f},
+            std::dynamic_pointer_cast<Guch2D::CircleCollider>(Object->GetCollider())->GetRadius()
+                * 100.0F,
+            ImColor(0, 0, 0));
 
         bg_drawlist->AddCircleFilled(
             {Object1->GetPosition().x * 100.0f, Object1->GetPosition().y * 100.0f},
             10,
             ImColor(100, 255, 100));
+        bg_drawlist->AddCircle(
+            {Object1->GetColliderCenterWorld().x * 100.0f,
+             Object1->GetColliderCenterWorld().y * 100.0f},
+            std::dynamic_pointer_cast<Guch2D::CircleCollider>(Object1->GetCollider())->GetRadius()
+                * 100.0F,
+            ImColor(0, 0, 0));
 
         // 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a
         // named window.

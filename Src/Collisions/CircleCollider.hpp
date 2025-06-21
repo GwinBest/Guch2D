@@ -9,7 +9,7 @@ namespace Guch2D
     public:
         CircleCollider() = default;
 
-        explicit CircleCollider(const Vect& center, const float radius) noexcept
+        CircleCollider(const Vect& center, const float radius) noexcept
             : Collider(center)
             , _radius(radius)
         {}

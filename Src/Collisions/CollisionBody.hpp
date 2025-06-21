@@ -26,9 +26,24 @@ namespace Guch2D
 
         constexpr auto UpdatePosition(const Vect& delta) noexcept -> void { _position += delta; }
 
-        constexpr auto SetCollider(std::shared_ptr<Collider>& collider) noexcept -> void
+        constexpr auto SetCollider(const std::shared_ptr<Collider>& collider) noexcept -> void
         {
             _collider = collider;
+        }
+
+        constexpr auto GetCollider() const noexcept -> const std::shared_ptr<Collider>&
+        {
+            return _collider;
+        }
+
+        auto GetColliderCenterWorld() const noexcept -> Vect
+        {
+            if (_collider)
+            {
+                return _collider->GetCenterLocal() + _position;
+            }
+
+            return _position;
         }
 
     protected:

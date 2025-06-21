@@ -19,12 +19,16 @@ namespace Guch2D
         Collider& operator=(Collider&&) = default;
         virtual ~Collider() = default;
 
-        constexpr auto SetCenter(const Vect& center) noexcept -> void { _center = center; }
+        constexpr auto SetCenterLocal(const Vect& center) noexcept -> void { _center = center; }
 
-        [[nodiscard]] constexpr auto GetCenter() const noexcept -> const Vect& { return _center; }
+        [[nodiscard]] constexpr auto GetCenterLocal() const noexcept -> const Vect&
+        {
+            return _center;
+        }
 
     protected:
-        // Center of the collider in the 2D space, in meters (m)
+        // Center of the collider, in meters (m)
+        // In local space
         Vect _center;
     };
 }   // namespace Guch2D
