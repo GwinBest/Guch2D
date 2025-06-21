@@ -1,16 +1,16 @@
-#include "PhysicsWorld.hpp"
+#include "DynamicWorld.hpp"
 
-#include "Objects/DynamicRigidBody.hpp"
+#include "Dynamics/DynamicRigidBody.hpp"
 
 namespace Guch2D
 {
-    void PhysicsWorld::Step() noexcept
+    void DynamicWorld::Step() noexcept
     {
         ApplyGravity();
         MoveBodies();
     }
 
-    void PhysicsWorld::ApplyGravity() noexcept
+    void DynamicWorld::ApplyGravity() noexcept
     {
         for (auto& object : _objects)
         {
@@ -22,7 +22,7 @@ namespace Guch2D
         }
     }
 
-    void PhysicsWorld::MoveBodies() noexcept
+    void DynamicWorld::MoveBodies() noexcept
     {
         for (auto& object : _objects)
         {
@@ -49,7 +49,7 @@ namespace Guch2D
         }
     }
 
-    void PhysicsWorld::ApplyLinearDamping(
+    void DynamicWorld::ApplyLinearDamping(
         std::shared_ptr<DynamicRigidBody>& dynamicRigidBody) const noexcept
     {
         const auto dampingFactorX = std::clamp(

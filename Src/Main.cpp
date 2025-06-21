@@ -34,8 +34,8 @@
 #include "../libs/emscripten/emscripten_mainloop_stub.h"
 #endif
 
-#include "Objects/DynamicRigidBody.hpp"
-#include "Physics/PhysicsWorld.hpp"
+#include "Dynamics/DynamicRigidBody.hpp"
+#include "Dynamics/DynamicWorld.hpp"
 
 static void glfw_error_callback(int error, const char* description)
 {
@@ -53,7 +53,7 @@ int main(int, char**)
     Object1->SetPosition({2.0F, 0.2F});
     Object1->SetMass(2.0F);
 
-    Guch2D::PhysicsWorld world;
+    Guch2D::DynamicWorld world;
     world.AddObject(Object);
     world.AddObject(Object1);
     glfwSetErrorCallback(glfw_error_callback);

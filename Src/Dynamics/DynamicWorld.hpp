@@ -3,14 +3,14 @@
 #include <memory>
 #include <vector>
 
+#include "Collisions/CollisionObject.hpp"
 #include "Math/Vector.hpp"
-#include "Objects/Object.hpp"
 
 namespace Guch2D
 {
     class DynamicRigidBody;
 
-    class PhysicsWorld final
+    class DynamicWorld final
     {
     public:
         void AddObject(const std::shared_ptr<CollisionObject>& object)

@@ -44,7 +44,7 @@ target_link_libraries(imgui glfw glad)
 # arkanoid
 file(GLOB srcs
    "Src/*.cpp"
-   "Src/Physics/*.cpp" 
+   "Src/Dynamics/*.cpp" 
 )
 
 include_directories(

@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-#include "Objects/Object.hpp"
+#include "Collisions/CollisionObject.hpp"
 
 namespace Guch2D
 {

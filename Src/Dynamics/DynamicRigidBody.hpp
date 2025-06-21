@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Objects/RigidBody.hpp"
+#include "Dynamics/RigidBody.hpp"
 
 namespace Guch2D
 {
