@@ -21,7 +21,7 @@ namespace Guch2D
         void UpdatePosition(const Vect& delta) noexcept { _position += delta; }
 
     protected:
-        // Position of the object in the 2D space, in pixels
+        // Position of the object in the 2D space, in meters (m)
         Vect _position = {0.0F, 0.0F};
     };
 }   // namespace Guch2D
