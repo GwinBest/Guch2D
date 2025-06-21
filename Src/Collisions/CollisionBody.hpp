@@ -4,15 +4,15 @@
 
 namespace Guch2D
 {
-    class CollisionObject
+    class CollisionBody
     {
     public:
-        CollisionObject() = default;
-        CollisionObject(const CollisionObject&) = default;
-        CollisionObject& operator=(const CollisionObject&) = default;
-        CollisionObject(CollisionObject&&) = default;
-        CollisionObject& operator=(CollisionObject&&) = default;
-        virtual ~CollisionObject() = default;
+        CollisionBody() = default;
+        CollisionBody(const CollisionBody&) = default;
+        CollisionBody& operator=(const CollisionBody&) = default;
+        CollisionBody(CollisionBody&&) = default;
+        CollisionBody& operator=(CollisionBody&&) = default;
+        virtual ~CollisionBody() = default;
 
         void SetPosition(const Vect& position) noexcept { _position = position; }
 

@@ -2,11 +2,11 @@
 
 #include <cstdint>
 
-#include "Collisions/CollisionObject.hpp"
+#include "Collisions/CollisionBody.hpp"
 
 namespace Guch2D
 {
-    class RigidBody : public CollisionObject
+    class RigidBody : public CollisionBody
     {
     public:
         RigidBody() = default;
