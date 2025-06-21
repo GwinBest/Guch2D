@@ -210,7 +210,7 @@ int main(int, char**)
             ImGui::Text("%0.3f %0.3f",
                         Object->GetVelocity().y,
                         Object1->GetVelocity().y);   // Display some text (you can use a
-                                                    // format strings too)
+                                                     // format strings too)
             ImGui::Checkbox("Demo Window",
                             &show_demo_window);   // Edit bools storing our window open/close state
             ImGui::Checkbox("Another Window", &show_another_window);

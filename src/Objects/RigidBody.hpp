@@ -6,7 +6,7 @@
 
 namespace Guch2D
 {
-    class RigidBody : public Object
+    class RigidBody : public CollisionObject
     {
     public:
         RigidBody() = default;

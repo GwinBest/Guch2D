@@ -13,7 +13,10 @@ namespace Guch2D
     class PhysicsWorld final
     {
     public:
-        void AddObject(const std::shared_ptr<Object>& object) { _objects.push_back(object); }
+        void AddObject(const std::shared_ptr<CollisionObject>& object)
+        {
+            _objects.push_back(object);
+        }
 
         void Step() noexcept;
 
@@ -42,7 +45,7 @@ namespace Guch2D
         void ApplyLinearDamping(std::shared_ptr<DynamicRigidBody>& dynamicRigidBody) const noexcept;
 
     private:
-        std::vector<std::shared_ptr<Object>> _objects;
+        std::vector<std::shared_ptr<CollisionObject>> _objects;
 
         // Gravity vector, typically pointing downwards in the Y direction
         // Default value is 9.81F, which is the standard gravitational acceleration in m/s²
