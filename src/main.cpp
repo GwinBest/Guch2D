@@ -47,10 +47,15 @@ int main(int, char**)
 {
     auto Object = std::make_shared<Guch2D::DynamicRigidBody>();
     Object->SetPosition({1.0F, 0.2F});
-    Object->SetMass(20.0F);
+    Object->SetMass(20000000.0F);
+
+    auto Object1 = std::make_shared<Guch2D::DynamicRigidBody>();
+    Object1->SetPosition({2.0F, 0.2F});
+    Object1->SetMass(2.0F);
 
     Guch2D::PhysicsWorld world;
     world.AddObject(Object);
+    world.AddObject(Object1);
     glfwSetErrorCallback(glfw_error_callback);
     if (!glfwInit()) return 1;
 
@@ -188,6 +193,11 @@ int main(int, char**)
             10,
             ImColor(100, 255, 100));
 
+        bg_drawlist->AddCircleFilled(
+            {Object1->GetPosition().x * 100.0f, Object1->GetPosition().y * 100.0f},
+            10,
+            ImColor(100, 255, 100));
+
         // 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a
         // named window.
         {
@@ -197,8 +207,10 @@ int main(int, char**)
             ImGui::Begin(
                 "Hello, world!");   // Create a window called "Hello, world!" and append into it.
 
-            ImGui::Text("This is some useful text.");   // Display some text (you can use a format
-                                                        // strings too)
+            ImGui::Text("%0.3f %0.3f",
+                        Object->GetVelocity().y,
+                        Object1->GetVelocity().y);   // Display some text (you can use a
+                                                    // format strings too)
             ImGui::Checkbox("Demo Window",
                             &show_demo_window);   // Edit bools storing our window open/close state
             ImGui::Checkbox("Another Window", &show_another_window);

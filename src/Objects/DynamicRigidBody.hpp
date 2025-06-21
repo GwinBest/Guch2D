@@ -58,6 +58,7 @@ namespace Guch2D
 
         // Linear damping vector, in meters per second squared (m/s²)
         // This is used to simulate air resistance
-        Vect _linearDamping;
+        // Default values are 0.0F for x and 0.1F for y
+        Vect _linearDamping = {0.0F, 0.1F};
     };
 }   // namespace Guch2D

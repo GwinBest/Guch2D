@@ -8,6 +8,8 @@
 
 namespace Guch2D
 {
+    class DynamicRigidBody;
+
     class PhysicsWorld final
     {
     public:
@@ -36,6 +38,8 @@ namespace Guch2D
     private:
         void ApplyGravity() noexcept;
         void MoveBodies() noexcept;
+
+        void ApplyLinearDamping(std::shared_ptr<DynamicRigidBody>& dynamicRigidBody) const noexcept;
 
     private:
         std::vector<std::shared_ptr<Object>> _objects;
