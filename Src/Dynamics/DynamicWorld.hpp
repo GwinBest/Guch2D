@@ -8,15 +8,13 @@
 
 namespace Guch2D
 {
+    // Forward declarations
     class DynamicRigidBody;
 
     class DynamicWorld final
     {
     public:
-        void AddObject(const std::shared_ptr<CollisionBody>& object)
-        {
-            _objects.push_back(object);
-        }
+        void AddObject(const std::shared_ptr<CollisionBody>& object) { _objects.push_back(object); }
 
         void Step() noexcept;
 
