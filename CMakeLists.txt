@@ -1,9 +1,10 @@
 cmake_minimum_required(VERSION 3.19)
 
-project("Guch2D") 
+project(Guch2D LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(imgui_src_path "${CMAKE_SOURCE_DIR}/ThirdParty/imgui")
 
@@ -55,7 +56,6 @@ find_package(OpenGL REQUIRED)
 
 add_executable(${CMAKE_PROJECT_NAME} ${srcs})
 
-set_property(TARGET ${CMAKE_PROJECT_NAME} PROPERTY CXX_STANDARD 17)
 set_directory_properties(PROPERTIES VS_STARTUP_PROJECT ${CMAKE_PROJECT_NAME})
 
 target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE MATHFU_COMPILE_WITHOUT_SIMD_SUPPORT)
