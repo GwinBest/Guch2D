@@ -24,9 +24,9 @@ namespace Guch2D
             return _position;
         }
 
-        constexpr auto UpdatePosition(const Vect& delta) noexcept -> void { _position += delta; }
+         auto UpdatePosition(const Vect& delta) noexcept -> void { _position += delta; }
 
-        constexpr auto SetCollider(const std::shared_ptr<Collider>& collider) noexcept -> void
+         auto SetCollider(const std::shared_ptr<Collider>& collider) noexcept -> void
         {
             _collider = collider;
         }

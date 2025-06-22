@@ -21,7 +21,7 @@ namespace Guch2D
             return _velocity;
         }
 
-        constexpr auto AddVelocity(const Vect& velocity) noexcept -> void { _velocity += velocity; }
+         auto AddVelocity(const Vect& velocity) noexcept -> void { _velocity += velocity; }
 
         constexpr auto SetAcceleration(const Vect& acceleration) noexcept -> void
         {
@@ -37,7 +37,7 @@ namespace Guch2D
 
         [[nodiscard]] constexpr auto GetForce() const noexcept -> const Vect& { return _force; }
 
-        constexpr auto AddForce(const Vect& force) noexcept -> void { _force += force; }
+         auto AddForce(const Vect& force) noexcept -> void { _force += force; }
 
         auto ResetForce() noexcept -> void { _force = {0.0F, 0.0F}; }
 
