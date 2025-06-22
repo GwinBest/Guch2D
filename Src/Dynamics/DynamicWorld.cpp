@@ -6,6 +6,7 @@ namespace Guch2D
 {
     auto DynamicWorld::Step() noexcept -> void
     {
+        CollisionWorld::Step();
         ApplyGravity();
         MoveBodies();
     }

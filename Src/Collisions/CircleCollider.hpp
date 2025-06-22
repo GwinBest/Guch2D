@@ -12,7 +12,9 @@ namespace Guch2D
         CircleCollider(const Vect& center, const float radius) noexcept
             : Collider(center)
             , _radius(radius)
-        {}
+        {
+            _type = ColliderType::Circle;
+        }
 
         CircleCollider(const CircleCollider&) = default;
         CircleCollider& operator=(const CircleCollider&) = default;

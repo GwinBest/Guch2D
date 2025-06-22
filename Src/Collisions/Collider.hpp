@@ -4,6 +4,13 @@
 
 namespace Guch2D
 {
+    enum ColliderType : std::uint8_t
+    {
+        None = 0,
+        Circle,
+        AABB,
+    };
+
     class Collider
     {
     public:
@@ -26,9 +33,13 @@ namespace Guch2D
             return _center;
         }
 
+        [[nodiscard]] constexpr auto GetType() const noexcept -> ColliderType { return _type; }
+
     protected:
         // Center of the collider, in meters (m)
         // In local space
         Vect _center;
+
+        ColliderType _type = ColliderType::None;
     };
 }   // namespace Guch2D
