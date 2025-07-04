@@ -1,7 +1,7 @@
 #include "CollisionWorld.hpp"
 
-#include <array>
 #include <functional>
+#include <vector>
 
 #include "Collisions/AABBCollider.hpp"
 #include "Collisions/CircleCollider.hpp"
@@ -55,22 +55,18 @@ namespace
         const Vect aabbCenter = objectB->GetColliderCenterWorld();
         const Vect halfExtents = aabb->GetExtends();
 
-        // Get difference vector between both centers
-        Vect difference = circleCenter - aabbCenter;
+        // Get box closest point to sphere center
+        const float closestX = std::max(aabbCenter.x - halfExtents.x,
+                                        std::min(circleCenter.x, aabbCenter.x + halfExtents.x));
+        const float closestY = std::max(aabbCenter.y - halfExtents.y,
+                                        std::min(circleCenter.y, aabbCenter.y + halfExtents.y));
 
-        // Clamp difference to AABB extents
-        Vect clamped = {std::max(-halfExtents.x, std::min(difference.x, halfExtents.x)),
-                        std::max(-halfExtents.y, std::min(difference.y, halfExtents.y))};
+        const float distanceSquared = (closestX - circleCenter.x) * (closestX - circleCenter.x)
+                                    + (closestY - circleCenter.y) * (closestY - circleCenter.y);
 
-        // Closest point on/in the AABB to the circle center
-        Vect closest = aabbCenter + clamped;
-
-        // Vector from circle center to closest point
-        Vect circleToBox = closest - circleCenter;
-
-        if (circleToBox.LengthSquared() < radius)
+        if (distanceSquared <= radius * radius)
         {
-            assert(false && "Collision detected between CircleCollider and AABBCollider!");
+            assert(false && "Collision detected between CircleColliders and AABB!");
         }
     }
 
@@ -78,12 +74,12 @@ namespace
 
 namespace Guch2D
 {
-    auto CollisionWorld::Step() noexcept -> void
+    auto CollisionWorld::Step() -> void
     {
         ResolveCollisions();
     }
 
-    auto CollisionWorld::ResolveCollisions() noexcept -> void
+    auto CollisionWorld::ResolveCollisions() -> void
     {
         for (auto& objectA : _objects)
         {
@@ -102,17 +98,22 @@ namespace Guch2D
     auto CollisionWorld::CheckCollision(const std::shared_ptr<CollisionBody>& objectA,
                                         const std::shared_ptr<CollisionBody>& objectB) -> void
     {
-        static const std::array<std::function<void(const std::shared_ptr<CollisionBody>&,
-                                                   const std::shared_ptr<CollisionBody>&)>,
-                                2>
-            collisionCheckFunction = {CheckCollisionCircleCircle, CheckCollisionCircleAABBCollider};
+        using CollisionFunc = std::function<void(const std::shared_ptr<CollisionBody>&,
+                                                 const std::shared_ptr<CollisionBody>&)>;
+        static const std::vector<std::vector<CollisionFunc>> collisionCheckMatrix = {
+            // None,         Circle,                      AABB
+            {nullptr, nullptr,                          nullptr                         }, // None
+            {nullptr, CheckCollisionCircleCircle,       CheckCollisionCircleAABBCollider}, // Circle
+            {nullptr, CheckCollisionCircleAABBCollider, nullptr                         }  // AABB
+        };
 
-        const auto collisionFunctionIndex = objectA->GetCollider()->GetType()
-                                          * objectB->GetCollider()->GetType();
+        const auto typeA = objectA->GetCollider()->GetType();
+        const auto typeB = objectB->GetCollider()->GetType();
 
-        // No collision function for None type
-        if (collisionFunctionIndex == 0) return;
+        // No collision function for None type or unsupported pairs
+        if (typeA == 0 || typeB == 0) return;
 
-        (collisionCheckFunction.at(collisionFunctionIndex - 1))(objectA, objectB);
+        const auto func = (collisionCheckMatrix.at(typeA)).at(typeB);
+        if (func) func(objectA, objectB);
     }
 }   // namespace Guch2D

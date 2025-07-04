@@ -22,9 +22,9 @@ namespace Guch2D
             _objects.push_back(object);
         }
 
-        virtual auto Step() noexcept -> void;
+        virtual auto Step() -> void;
 
-        auto ResolveCollisions() noexcept -> void;
+        auto ResolveCollisions() -> void;
 
         // If timestep is less than or equal to zero, it will default to 1/60 seconds
         constexpr auto SetTimeStep(const float timeStep) noexcept
@@ -48,6 +48,6 @@ namespace Guch2D
         std::vector<std::shared_ptr<CollisionBody>> _objects;
 
         // Default value for time step is 1/60 seconds
-        float _timeStep = 1.0F / 120.0F;
+        float _timeStep = 1.0F / 60.0F;
     };
 }   // namespace Guch2D

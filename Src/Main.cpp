@@ -13,9 +13,10 @@ int main()
     object1->SetCollider(std::make_shared<Guch2D::CircleCollider>(Guch2D::Vect(0.0F, 0.0F), 0.1F));
 
     auto ground = std::make_shared<Guch2D::StaticRigidBody>();
-    ground->SetPosition({1.7F, 7.0F});
+    ground->SetPosition({1.7F, 6.0F});
     ground->SetMass(std::numeric_limits<float>::infinity());
-    ground->SetCollider(std::make_shared<Guch2D::CircleCollider>(Guch2D::Vect(0.0F, 0.0F), 1.0F));
+    ground->SetCollider(
+        std::make_shared<Guch2D::AABBCollider>(Guch2D::Vect(0.0F, 0.0F), Guch2D::Vect(1.F, 1.F)));
 
     Guch2D::DynamicWorld world;
     world.AddObject(object1);
@@ -24,7 +25,7 @@ int main()
     auto window = sf::RenderWindow(sf::VideoMode({1280, 720}), "Guch2D Physics Engine");
     window.setFramerateLimit(144);
 
-    const float scale = 100.0f;
+    const float scale = 100.0F;
 
     while (window.isOpen())
     {
@@ -38,7 +39,7 @@ int main()
 
         window.clear(sf::Color::White);
 
-        float deltaTime = 1.0f / 512.0f;
+        const float deltaTime = 1.0F / 60.0F;
         world.SetTimeStep(deltaTime);
         world.Step();
         // circle
@@ -64,26 +65,27 @@ int main()
         }
 
         // AABB
-        // ground as circle
         auto pos2 = ground->GetPosition();
-        auto groundCircle = std::dynamic_pointer_cast<Guch2D::CircleCollider>(
-            ground->GetCollider());
-        if (groundCircle)
+        auto pos2Collider = ground->GetColliderCenterWorld();
+        auto aabbCollider = std::dynamic_pointer_cast<Guch2D::AABBCollider>(ground->GetCollider());
+        if (aabbCollider)
         {
-            float radius = groundCircle->GetRadius() * scale;
-            sf::CircleShape shape(radius);
-            shape.setFillColor(sf::Color::Blue);
-            shape.setOrigin({radius, radius});
-            shape.setPosition({pos2.x * scale, pos2.y * scale});
-            window.draw(shape);
+            Guch2D::Vect halfSize = aabbCollider->GetExtends();
+            float width = halfSize.x * 2 * scale;
+            float height = halfSize.y * 2 * scale;
+            sf::RectangleShape rect({width, height});
+            rect.setFillColor(sf::Color(0, 100, 200));
+            rect.setOrigin({width / 2, height / 2});
+            rect.setPosition({pos2.x * scale, pos2.y * scale});
+            window.draw(rect);
 
-            sf::CircleShape colliderShape(radius);
-            colliderShape.setFillColor(sf::Color::Transparent);
-            colliderShape.setOutlineColor(sf::Color::Red);
-            colliderShape.setOutlineThickness(2.0f);
-            colliderShape.setOrigin({radius, radius});
-            colliderShape.setPosition({pos2.x * scale, pos2.y * scale});
-            window.draw(colliderShape);
+            sf::RectangleShape colliderRect({width, height});
+            colliderRect.setFillColor(sf::Color::Transparent);
+            colliderRect.setOutlineColor(sf::Color::Blue);
+            colliderRect.setOutlineThickness(2.0f);
+            colliderRect.setOrigin({width / 2, height / 2});
+            colliderRect.setPosition({pos2Collider.x * scale, pos2Collider.y * scale});
+            window.draw(colliderRect);
         }
 
         window.display();
