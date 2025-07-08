@@ -1,6 +1,6 @@
 .DS_Store
 CMakeSettings.json
 
-/build
+/[Bb]uild
 /.vscode
 /.vs
