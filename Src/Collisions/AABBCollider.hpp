@@ -11,9 +11,9 @@ namespace Guch2D
 
         AABBCollider(const Vect& center, const Vect& extends) noexcept
             : Collider(center)
-            , _extends(extends)
+              , _extends(extends)
         {
-            _type = ColliderType::AABB;
+            _type = AABB;
         }
 
         AABBCollider(const AABBCollider&) = default;
@@ -30,4 +30,4 @@ namespace Guch2D
         // Half extent of the line collider, in meters (m)
         Vect _extends;
     };
-}   // namespace Guch2D
+} // namespace Guch2D

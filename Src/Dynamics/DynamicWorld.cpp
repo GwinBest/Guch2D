@@ -11,9 +11,9 @@ namespace Guch2D
         MoveBodies();
     }
 
-    auto DynamicWorld::ApplyGravity() noexcept -> void
+    auto DynamicWorld::ApplyGravity() const noexcept -> void
     {
-        for (auto& object : _objects)
+        for (const auto& object : _objects)
         {
             if (auto dynamicRigidBody = std::dynamic_pointer_cast<DynamicRigidBody>(object))
             {
@@ -23,9 +23,9 @@ namespace Guch2D
         }
     }
 
-    auto DynamicWorld::MoveBodies() noexcept -> void
+    auto DynamicWorld::MoveBodies() const noexcept -> void
     {
-        for (auto& object : _objects)
+        for (const auto& object : _objects)
         {
             if (auto dynamicRigidBody = std::dynamic_pointer_cast<DynamicRigidBody>(object))
             {
@@ -51,7 +51,7 @@ namespace Guch2D
     }
 
     constexpr auto DynamicWorld::ApplyLinearDamping(
-        std::shared_ptr<DynamicRigidBody>& dynamicRigidBody) const noexcept -> void
+        const std::shared_ptr<DynamicRigidBody>& dynamicRigidBody) const noexcept -> void
     {
         const float dampingFactorX = std::clamp(
             1.0F - (_timeStep * dynamicRigidBody->GetLinearDamping().x),
@@ -66,4 +66,4 @@ namespace Guch2D
                                       * Vect(dampingFactorX, dampingFactorY));
     }
 
-}   // namespace Guch2D
+} // namespace Guch2D

@@ -24,7 +24,7 @@ namespace Guch2D
 
         virtual auto Step() -> void;
 
-        auto ResolveCollisions() -> void;
+        auto ResolveCollisions() const -> void;
 
         // If timestep is less than or equal to zero, it will default to 1/60 seconds
         constexpr auto SetTimeStep(const float timeStep) noexcept

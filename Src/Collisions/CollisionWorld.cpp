@@ -55,14 +55,14 @@ namespace
         const Vect aabbCenter = objectB->GetColliderCenterWorld();
         const Vect halfExtents = aabb->GetExtends();
 
-        // Get box closest point to sphere center
+        // Get box the closest point to sphere center
         const float closestX = std::max(aabbCenter.x - halfExtents.x,
                                         std::min(circleCenter.x, aabbCenter.x + halfExtents.x));
         const float closestY = std::max(aabbCenter.y - halfExtents.y,
                                         std::min(circleCenter.y, aabbCenter.y + halfExtents.y));
 
-        const float distanceSquared = (closestX - circleCenter.x) * (closestX - circleCenter.x)
-                                    + (closestY - circleCenter.y) * (closestY - circleCenter.y);
+        const float distanceSquared = ((closestX - circleCenter.x) * (closestX - circleCenter.x))
+                                      + ((closestY - circleCenter.y) * (closestY - circleCenter.y));
 
         if (distanceSquared <= radius * radius)
         {
@@ -70,7 +70,7 @@ namespace
         }
     }
 
-}   // namespace
+} // namespace
 
 namespace Guch2D
 {
@@ -79,11 +79,11 @@ namespace Guch2D
         ResolveCollisions();
     }
 
-    auto CollisionWorld::ResolveCollisions() -> void
+    auto CollisionWorld::ResolveCollisions() const -> void
     {
-        for (auto& objectA : _objects)
+        for (const auto& objectA : _objects)
         {
-            for (auto& objectB : _objects)
+            for (const auto& objectB : _objects)
             {
                 if (objectA == objectB) continue;
 
@@ -102,9 +102,9 @@ namespace Guch2D
                                                  const std::shared_ptr<CollisionBody>&)>;
         static const std::vector<std::vector<CollisionFunc>> collisionCheckMatrix = {
             // None,         Circle,                      AABB
-            {nullptr, nullptr,                          nullptr                         }, // None
-            {nullptr, CheckCollisionCircleCircle,       CheckCollisionCircleAABBCollider}, // Circle
-            {nullptr, CheckCollisionCircleAABBCollider, nullptr                         }  // AABB
+            {nullptr, nullptr, nullptr}, // None
+            {nullptr, CheckCollisionCircleCircle, CheckCollisionCircleAABBCollider}, // Circle
+            {nullptr, CheckCollisionCircleAABBCollider, nullptr} // AABB
         };
 
         const auto typeA = objectA->GetCollider()->GetType();
@@ -116,4 +116,4 @@ namespace Guch2D
         const auto func = (collisionCheckMatrix.at(typeA)).at(typeB);
         if (func) func(objectA, objectB);
     }
-}   // namespace Guch2D
+} // namespace Guch2D

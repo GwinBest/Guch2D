@@ -31,12 +31,13 @@ namespace Guch2D
             _collider = collider;
         }
 
-        constexpr auto GetCollider() const noexcept -> const std::shared_ptr<Collider>&
+        [[nodiscard]] constexpr auto
+            GetCollider() const noexcept -> const std::shared_ptr<Collider>&
         {
             return _collider;
         }
 
-        auto GetColliderCenterWorld() const noexcept -> Vect
+        [[nodiscard]] auto GetColliderCenterWorld() const noexcept -> Vect
         {
             if (_collider)
             {
@@ -53,4 +54,4 @@ namespace Guch2D
         // Collider associated with this collision body
         std::shared_ptr<Collider> _collider;
     };
-}   // namespace Guch2D
+} // namespace Guch2D

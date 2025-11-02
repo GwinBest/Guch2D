@@ -18,7 +18,8 @@ namespace Guch2D
 
         explicit Collider(const Vect& center) noexcept
             : _center(center)
-        {}
+        {
+        }
 
         Collider(const Collider&) = default;
         Collider& operator=(const Collider&) = default;
@@ -40,6 +41,6 @@ namespace Guch2D
         // In local space
         Vect _center;
 
-        ColliderType _type = ColliderType::None;
+        ColliderType _type = None;
     };
-}   // namespace Guch2D
+} // namespace Guch2D

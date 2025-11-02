@@ -11,7 +11,7 @@ namespace Guch2D
 
         CircleCollider(const Vect& center, const float radius) noexcept
             : Collider(center)
-            , _radius(radius)
+              , _radius(radius)
         {
             _type = ColliderType::Circle;
         }
@@ -30,4 +30,4 @@ namespace Guch2D
         // Radius of the circle collider, in meters (m)
         float _radius = 0.0F;
     };
-}   // namespace Guch2D
+} // namespace Guch2D

@@ -7,10 +7,9 @@
 
 namespace Guch2D
 {
-    // Forward declarations
     class DynamicRigidBody;
 
-    class DynamicWorld : public CollisionWorld
+    class DynamicWorld final : public CollisionWorld
     {
     public:
         DynamicWorld() = default;
@@ -27,16 +26,17 @@ namespace Guch2D
         [[nodiscard]] constexpr auto GetGravity() const noexcept -> const Vect& { return _gravity; }
 
     private:
-        auto ApplyGravity() noexcept -> void;
-        auto MoveBodies() noexcept -> void;
+        auto ApplyGravity() const noexcept -> void;
+        auto MoveBodies() const noexcept -> void;
 
         constexpr auto
-            ApplyLinearDamping(std::shared_ptr<DynamicRigidBody>& dynamicRigidBody) const noexcept
-            -> void;
+            ApplyLinearDamping(
+                const std::shared_ptr<DynamicRigidBody>& dynamicRigidBody) const noexcept
+                -> void;
 
     private:
         // Gravity vector, typically pointing downwards in the Y direction
         // Default value is 9.81F, which is the standard gravitational acceleration in m/s²
         Vect _gravity = {0.0F, 9.81F};
     };
-}   // namespace Guch2D
+} // namespace Guch2D

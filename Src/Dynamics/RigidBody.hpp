@@ -1,7 +1,5 @@
 #pragma once
 
-#include <cstdint>
-
 #include "Collisions/CollisionBody.hpp"
 
 namespace Guch2D
@@ -24,4 +22,4 @@ namespace Guch2D
         // Mass of the rigid body, in kilograms (kg)
         float _mass = 0.0F;
     };
-}   // namespace Guch2D
+} // namespace Guch2D
