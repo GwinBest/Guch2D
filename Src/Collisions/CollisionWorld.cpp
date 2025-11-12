@@ -27,8 +27,7 @@ namespace
 
         const float distanceSquared = (centerA - centerB).LengthSquared();
 
-        const float radiusSum = radiusA + radiusB;
-        if (distanceSquared <= radiusSum * radiusSum)
+        if (const float radiusSum = radiusA + radiusB; distanceSquared <= radiusSum * radiusSum)
         {
             assert(false && "Collision detected between two CircleColliders!");
         }
@@ -69,7 +68,6 @@ namespace
             assert(false && "Collision detected between CircleColliders and AABB!");
         }
     }
-
 } // namespace
 
 namespace Guch2D
@@ -113,7 +111,9 @@ namespace Guch2D
         // No collision function for None type or unsupported pairs
         if (typeA == 0 || typeB == 0) return;
 
-        const auto func = (collisionCheckMatrix.at(typeA)).at(typeB);
-        if (func) func(objectA, objectB);
+        if (const auto collisionFunction = (collisionCheckMatrix.at(typeA)).at(typeB))
+        {
+            collisionFunction(objectA, objectB);
+        }
     }
 } // namespace Guch2D

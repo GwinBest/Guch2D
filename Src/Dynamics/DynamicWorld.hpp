@@ -21,7 +21,7 @@ namespace Guch2D
 
         auto Step() -> void override;
 
-        constexpr auto SetGravity(const Vect& gravity) noexcept { _gravity = gravity; }
+        constexpr auto SetGravity(const Vect& gravity) noexcept -> void { _gravity = gravity; }
 
         [[nodiscard]] constexpr auto GetGravity() const noexcept -> const Vect& { return _gravity; }
 
