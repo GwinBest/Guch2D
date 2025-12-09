@@ -1,8 +1,13 @@
-file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/Src/*.cpp")
+file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
+        "*.cpp"
+        "*.hpp"
+)
 
 add_library(${PROJECT_NAME} ${SOURCES})
 
-# Add glm
+target_include_directories(${PROJECT_NAME} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+
+# glm
 include(FetchContent)
 FetchContent_Declare(
         glm
