@@ -15,7 +15,7 @@ namespace Guch2D
         DynamicWorld& operator=(DynamicWorld&&) = default;
         ~DynamicWorld() override = default;
 
-        void Step() const noexcept;
+        void Step() const noexcept override;
 
         [[nodiscard]] constexpr const Vect& GetGravity() const noexcept { return _gravity; }
         constexpr void SetGravity(const Vect& gravity) noexcept { _gravity = gravity; }
