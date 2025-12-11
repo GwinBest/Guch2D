@@ -10,7 +10,7 @@ namespace Guch2D
         MoveBodies();
     }
 
-    void DynamicWorld::ApplyGravity() const noexcept
+    constexpr void DynamicWorld::ApplyGravity() const noexcept
     {
         for (const auto& object : _objects)
         {
@@ -22,7 +22,7 @@ namespace Guch2D
         }
     }
 
-    void DynamicWorld::MoveBodies() const noexcept
+    constexpr void DynamicWorld::MoveBodies() const noexcept
     {
         for (const auto& object : _objects)
         {

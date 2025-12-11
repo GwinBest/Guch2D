@@ -25,23 +25,38 @@ namespace Guch2D
         DynamicRigidBody& operator=(DynamicRigidBody&&) = default;
         ~DynamicRigidBody() override = default;
 
-        [[nodiscard]] const Vect& GetForce() const noexcept { return _force; }
-        void SetForce(const Vect& force) noexcept { _force = force; }
-        void AddForce(const Vect& force) noexcept { _force += force; }
-        void ResetForce() noexcept { _force = Vect(0.0F, 0.0F); }
+        [[nodiscard]] constexpr const Vect& GetForce() const noexcept { return _force; }
+        constexpr void SetForce(const Vect& force) noexcept { _force = force; }
+        constexpr void AddForce(const Vect& force) noexcept { _force += force; }
+        constexpr void ResetForce() noexcept { _force = Vect(0.0F, 0.0F); }
 
-        [[nodiscard]] const Vect& GetAcceleration() const noexcept { return _acceleration; }
-        void SetAcceleration(const Vect& acceleration) noexcept { _acceleration = acceleration; }
+        [[nodiscard]] constexpr const Vect& GetAcceleration() const noexcept
+        {
+            return _acceleration;
+        }
 
-        [[nodiscard]] const Vect& GetVelocity() const noexcept { return _velocity; }
-        void SetVelocity(const Vect& velocity) noexcept { _velocity = velocity; }
-        void AddVelocity(const Vect& velocity) noexcept { _velocity += velocity; }
+        constexpr void SetAcceleration(const Vect& acceleration) noexcept
+        {
+            _acceleration = acceleration;
+        }
 
-        [[nodiscard]] const Vect& GetGravityScale() const noexcept { return _gravityScale; }
-        void SetGravityScale(const Vect& scale) noexcept { _gravityScale = scale; }
+        [[nodiscard]] constexpr const Vect& GetVelocity() const noexcept { return _velocity; }
+        constexpr void SetVelocity(const Vect& velocity) noexcept { _velocity = velocity; }
+        constexpr void AddVelocity(const Vect& velocity) noexcept { _velocity += velocity; }
 
-        [[nodiscard]] const Vect& GetLinearDamping() const noexcept { return _linearDamping; }
-        void SetLinearDamping(const Vect& damping) noexcept { _linearDamping = damping; }
+        [[nodiscard]] constexpr const Vect& GetGravityScale() const noexcept
+        {
+            return _gravityScale;
+        }
+
+        constexpr void SetGravityScale(const Vect& scale) noexcept { _gravityScale = scale; }
+
+        [[nodiscard]] constexpr const Vect& GetLinearDamping() const noexcept
+        {
+            return _linearDamping;
+        }
+
+        constexpr void SetLinearDamping(const Vect& damping) noexcept { _linearDamping = damping; }
 
     private:
         // Force vector, in Newtons (N)
