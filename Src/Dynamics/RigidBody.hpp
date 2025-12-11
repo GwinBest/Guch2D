@@ -25,7 +25,17 @@ namespace Guch2D
         ~RigidBody() override = default;
 
         [[nodiscard]] constexpr float GetMass() const noexcept { return _mass; }
-        constexpr void SetMass(const float mass) noexcept { _mass = mass; }
+
+        constexpr void SetMass(const float mass) noexcept
+        {
+            if (mass <= 0.0F)
+            {
+                _mass = 0.0F;
+                return;
+            }
+
+            _mass = mass;
+        }
 
     protected:
         float _mass = 0.0F;
