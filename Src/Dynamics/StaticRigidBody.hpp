@@ -24,6 +24,5 @@ namespace Guch2D
         StaticRigidBody& operator=(const StaticRigidBody&) = default;
         StaticRigidBody& operator=(StaticRigidBody&&) = default;
         ~StaticRigidBody() override = default;
-
     };
 }
