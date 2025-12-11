@@ -49,7 +49,7 @@ namespace Guch2D
 
     private:
         // Default Earth gravity is set by default
-        Vect _gravity = {0.0F, 9.91F};
+        Vect _gravity = {0.0F, 9.81F};
 
         std::vector<std::shared_ptr<RigidBody>> _objects;
 
