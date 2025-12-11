@@ -2,7 +2,7 @@
 
 namespace Guch2D
 {
-    void CollisionWorld::Step() noexcept
+    void CollisionWorld::Step() const noexcept
     {
     }
 }
