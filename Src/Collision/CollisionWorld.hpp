@@ -21,20 +21,26 @@ namespace Guch2D
 
         virtual void Step() const noexcept;
 
-        constexpr void AddObject(const std::shared_ptr<CollisionBody>& object) noexcept
+        void AddObject(const std::shared_ptr<CollisionBody>& object) noexcept
         {
-            _objects.push_back(object);
+            if (!object) return;
+
+            // Avoid duplicates
+            if (std::ranges::find(_objects, object) == _objects.end())
+            {
+                _objects.push_back(object);
+            }
         }
 
-        constexpr void RemoveObject(const std::shared_ptr<CollisionBody>& object) noexcept
+        void RemoveObject(const std::shared_ptr<CollisionBody>& object) noexcept
         {
-            const auto result = std::ranges::remove(_objects, object).begin();
-            _objects.erase(result, _objects.end());
+            if (!object) return;
+            std::erase(_objects, object);
         }
 
         [[nodiscard]] constexpr float GetTimeStep() const noexcept { return _timeStep; }
 
-        constexpr void SetTimeStep(const float timeStep) noexcept
+        void SetTimeStep(const float timeStep) noexcept
         {
             if (timeStep <= 0.0F)
             {

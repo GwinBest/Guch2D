@@ -1,4 +1,4 @@
-file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/Demo/*.cpp")
+file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/Test/*.cpp")
 
 add_executable(${PROJECT_NAME}-Test ${SOURCES})
 
@@ -13,4 +13,4 @@ FetchContent_Declare(
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
-target_link_libraries(${PROJECT_NAME}-Test PRIVATE googletest)
+target_link_libraries(${PROJECT_NAME}-Test PRIVATE gtest_main ${PROJECT_NAME})

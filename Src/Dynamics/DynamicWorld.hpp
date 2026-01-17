@@ -21,9 +21,9 @@ namespace Guch2D
         constexpr void SetGravity(const Vect& gravity) noexcept { _gravity = gravity; }
 
     private:
-        constexpr void ApplyGravity() const noexcept;
+        void ApplyGravity() const noexcept;
 
-        constexpr void MoveBodies() const noexcept;
+        void MoveBodies() const noexcept;
 
     private:
         // Default Earth gravity is set by default

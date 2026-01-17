@@ -14,5 +14,3 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(SFML)
 
 target_link_libraries(${PROJECT_NAME}-Demo PRIVATE SFML::Graphics ${PROJECT_NAME})
-
-target_link_libraries(${PROJECT_NAME}-Demo PRIVATE ${PROJECT_NAME})

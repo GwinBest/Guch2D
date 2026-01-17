@@ -7,7 +7,11 @@ namespace Guch2D
     class CircleCollider final : public Collider
     {
     public:
-        CircleCollider() noexcept = default;
+        CircleCollider() noexcept
+        {
+            SetColliderType(ColliderType::Circle);
+        }
+
         CircleCollider(const CircleCollider&) = default;
         CircleCollider(CircleCollider&&) = default;
         CircleCollider& operator=(const CircleCollider&) = default;
@@ -18,7 +22,7 @@ namespace Guch2D
 
         constexpr void SetRadius(const float radius) noexcept
         {
-            if (_radius < 0.0F)
+            if (radius < 0.0F)
             {
                 _radius = 0.0F;
                 return;

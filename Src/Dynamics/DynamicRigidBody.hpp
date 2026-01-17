@@ -69,7 +69,7 @@ namespace Guch2D
         Vect _velocity = {0.0F, 0.0F};
 
         // Default gravity scale is 1.0F for both x and y axes
-        Vect _gravityScale = {0.0F, 0.0F};
+        Vect _gravityScale = {1.0F, 1.0F};
 
         // Linear damping vector, in meters per second squared (m/s²)
         // This is used to simulate air resistance
