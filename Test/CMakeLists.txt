@@ -1,7 +1,3 @@
-file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/Test/*.cpp")
-
-add_executable(${PROJECT_NAME}-Test ${SOURCES})
-
 # Add google test
 include(FetchContent)
 FetchContent_Declare(
@@ -9,8 +5,20 @@ FetchContent_Declare(
         GIT_REPOSITORY https://github.com/google/googletest
         GIT_TAG v1.17.0
 )
-# For Windows: Prevent overriding the parent project's compiler/linker settings
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
-target_link_libraries(${PROJECT_NAME}-Test PRIVATE gtest_main ${PROJECT_NAME})
+file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/Test/*.cpp")
+
+add_executable(${PROJECT_NAME}-Test ${SOURCES})
+
+target_link_libraries(${PROJECT_NAME}-Test PRIVATE gtest gtest_main ${PROJECT_NAME})
+target_include_directories(${PROJECT_NAME}-Test
+        PRIVATE
+        ${gtest_SOURCE_DIR}/include
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_SOURCE_DIR}/Src
+)
+
+include(GoogleTest)
+gtest_discover_tests(${PROJECT_NAME}-Test)
