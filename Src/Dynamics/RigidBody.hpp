@@ -1,22 +1,23 @@
 #pragma once
 
-#include "Math/Vector.hpp"
 #include "Collision/CollisionBody.hpp"
+#include "Math/Vector.hpp"
 
 namespace Guch2D
 {
     class RigidBody : public CollisionBody
     {
     public:
-        RigidBody() = default;
+        RigidBody() noexcept = default;
 
-        explicit RigidBody(const Vect& position) : CollisionBody(position)
-        {
-        }
+        explicit RigidBody(const Vect& position) noexcept
+            : CollisionBody(position)
+        {}
 
-        RigidBody(const Vect& position, const float mass) : CollisionBody(position), _mass(mass)
-        {
-        }
+        RigidBody(const Vect& position, const float mass) noexcept
+            : CollisionBody(position)
+            , _mass(mass)
+        {}
 
         RigidBody(const RigidBody&) = default;
         RigidBody(RigidBody&&) = default;
@@ -37,7 +38,7 @@ namespace Guch2D
             _mass = mass;
         }
 
-    protected:
+    private:
         float _mass = 0.0F;
     };
-}
+}   // namespace Guch2D
