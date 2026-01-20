@@ -70,6 +70,20 @@ namespace
         EXPECT_EQ(body.GetForce(), force);
     }
 
+    TEST(DymanicRigidBodyTest, SetForceNaN)
+    {
+        Guch2D::DynamicRigidBody body;
+        body.SetForce({NAN, 2.0F});
+        EXPECT_EQ(body.GetForce(), Guch2D::Vect(0.0F, 0.0F));
+    }
+
+    TEST(DynamicRigidBodyTest, SetForceInfinity)
+    {
+        Guch2D::DynamicRigidBody body;
+        body.SetForce({INFINITY, 2.0F});
+        EXPECT_EQ(body.GetForce(), Guch2D::Vect(0.0F, 0.0F));
+    }
+
     TEST(DynamicRigidBodyTest, AddForcePositive)
     {
         Guch2D::DynamicRigidBody body;
@@ -98,6 +112,15 @@ namespace
         constexpr Guch2D::Vect additionalForce(0.0F, 0.0F);
         body.AddForce(additionalForce);
         EXPECT_EQ(body.GetForce(), initialForce + additionalForce);
+    }
+
+    TEST(DynamicRigidBodyTest, AddForceNaN)
+    {
+        Guch2D::DynamicRigidBody body;
+        constexpr Guch2D::Vect initialForce(2.0F, 3.0F);
+        body.SetForce(initialForce);
+        body.AddForce({NAN, 1.0F});
+        EXPECT_EQ(body.GetForce(), initialForce);
     }
 
     TEST(DynamicRigidBodyTest, ResetForce)
@@ -133,6 +156,20 @@ namespace
         EXPECT_EQ(body.GetAcceleration(), acceleration);
     }
 
+    TEST(DynamicRigidBodyTest, SetAccelerationNaN)
+    {
+        Guch2D::DynamicRigidBody body;
+        body.SetAcceleration({NAN, 2.0F});
+        EXPECT_EQ(body.GetAcceleration(), Guch2D::Vect(0.0F, 0.0F));
+    }
+
+    TEST(DynamicRigidBodyTest, SetAccelerationInfinity)
+    {
+        Guch2D::DynamicRigidBody body;
+        body.SetAcceleration({INFINITY, 2.0F});
+        EXPECT_EQ(body.GetAcceleration(), Guch2D::Vect(0.0F, 0.0F));
+    }
+
     TEST(DynamicRigidBodyTest, SetVelocityPositive)
     {
         Guch2D::DynamicRigidBody body;
@@ -155,6 +192,20 @@ namespace
         constexpr Guch2D::Vect velocity(0.0F, 0.0F);
         body.SetVelocity(velocity);
         EXPECT_EQ(body.GetVelocity(), velocity);
+    }
+
+    TEST(DymaincRigidBodyTest, SetVelocityNaN)
+    {
+        Guch2D::DynamicRigidBody body;
+        body.SetVelocity({NAN, 2.0F});
+        EXPECT_EQ(body.GetVelocity(), Guch2D::Vect(0.0F, 0.0F));
+    }
+
+    TEST(DynamicRigidBodyTest, SetVelocityInfinity)
+    {
+        Guch2D::DynamicRigidBody body;
+        body.SetVelocity({INFINITY, 2.0F});
+        EXPECT_EQ(body.GetVelocity(), Guch2D::Vect(0.0F, 0.0F));
     }
 
     TEST(DynamicRigidBodyTest, AddVelocityPositive)
@@ -187,6 +238,24 @@ namespace
         EXPECT_EQ(body.GetVelocity(), initialVelocity + additionalVelocity);
     }
 
+    TEST(DynamicRigidBodyTest, AddVelocityNaN)
+    {
+        Guch2D::DynamicRigidBody body;
+        constexpr Guch2D::Vect initialVelocity(2.0F, 3.0F);
+        body.SetVelocity(initialVelocity);
+        body.AddVelocity({NAN, 1.0F});
+        EXPECT_EQ(body.GetVelocity(), initialVelocity);
+    }
+
+    TEST(DynamicRigidBodyTest, AddVelocityInfinity)
+    {
+        Guch2D::DynamicRigidBody body;
+        constexpr Guch2D::Vect initialVelocity(2.0F, 3.0F);
+        body.SetVelocity(initialVelocity);
+        body.AddVelocity({INFINITY, 1.0F});
+        EXPECT_EQ(body.GetVelocity(), initialVelocity);
+    }
+
     TEST(DynamicRigidBodyTest, SetGravityScalePositive)
     {
         Guch2D::DynamicRigidBody body;
@@ -211,6 +280,20 @@ namespace
         EXPECT_EQ(body.GetGravityScale(), scale);
     }
 
+    TEST(DynamicRigidBodyTest, SetGravityScaleNaN)
+    {
+        Guch2D::DynamicRigidBody body;
+        body.SetGravityScale({NAN, 1.0F});
+        EXPECT_EQ(body.GetGravityScale(), Guch2D::DynamicRigidBody::DefaultGravityScale);
+    }
+
+    TEST(DynamicRigidBodyTest, SetGravityScaleInfinity)
+    {
+        Guch2D::DynamicRigidBody body;
+        body.SetGravityScale({INFINITY, 1.0F});
+        EXPECT_EQ(body.GetGravityScale(), Guch2D::DynamicRigidBody::DefaultGravityScale);
+    }
+
     TEST(DynamicRigidBodyTest, SetLinearDampingPositive)
     {
         Guch2D::DynamicRigidBody body;
@@ -233,5 +316,19 @@ namespace
         constexpr Guch2D::Vect damping(0.0F, 0.0F);
         body.SetLinearDamping(damping);
         EXPECT_EQ(body.GetLinearDamping(), damping);
+    }
+
+    TEST(DynamicRigidBodyTest, SetLinearDampingNaN)
+    {
+        Guch2D::DynamicRigidBody body;
+        body.SetLinearDamping({NAN, 0.1F});
+        EXPECT_EQ(body.GetLinearDamping(), Guch2D::DynamicRigidBody::DefaultLinearDamping);
+    }
+
+    TEST(DynamicRigidBodyTest, SetLinearDampingInfinity)
+    {
+        Guch2D::DynamicRigidBody body;
+        body.SetLinearDamping({INFINITY, 0.1F});
+        EXPECT_EQ(body.GetLinearDamping(), Guch2D::DynamicRigidBody::DefaultLinearDamping);
     }
 }   // namespace

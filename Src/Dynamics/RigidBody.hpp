@@ -16,8 +16,9 @@ namespace Guch2D
 
         RigidBody(const Vect& position, const float mass) noexcept
             : CollisionBody(position)
-            , _mass(mass)
-        {}
+        {
+            SetMass(mass);
+        }
 
         RigidBody(const RigidBody&) = default;
         RigidBody(RigidBody&&) = default;
@@ -29,7 +30,7 @@ namespace Guch2D
 
         constexpr void SetMass(const float mass) noexcept
         {
-            if (mass <= 0.0F)
+            if (mass <= 0.0F || !IsFinite(mass))
             {
                 _mass = 0.0F;
                 return;

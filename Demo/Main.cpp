@@ -1,7 +1,8 @@
 #include <SFML/Graphics.hpp>
+#include <iostream>
 
-#include "Dynamics/DynamicWorld.hpp"
 #include "Dynamics/DynamicRigidBody.hpp"
+#include "Dynamics/DynamicWorld.hpp"
 #include "Math/Vector.hpp"
 
 void BasicDynamicsDemo()
@@ -28,8 +29,7 @@ void BasicDynamicsDemo()
                 {
                     auto body = std::make_shared<Guch2D::DynamicRigidBody>(
                         Guch2D::Vect(12.0F, 4.0F),
-                        10.0F
-                        );
+                        10.0F);
 
                     body->AddForce({-5200.0F, -1200.0F});
 

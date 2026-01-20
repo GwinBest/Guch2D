@@ -18,15 +18,28 @@ namespace Guch2D
         void Step() const noexcept override;
 
         [[nodiscard]] constexpr const Vect& GetGravity() const noexcept { return _gravity; }
-        constexpr void SetGravity(const Vect& gravity) noexcept { _gravity = gravity; }
+
+        constexpr void SetGravity(const Vect& gravity) noexcept
+        {
+            if (!IsFinite(gravity))
+            {
+                _gravity = DefaultGravity;
+                return;
+            }
+
+            _gravity = gravity;
+        }
 
     private:
         void ApplyGravity() const noexcept;
 
         void MoveBodies() const noexcept;
 
+    public:
+        static constexpr Vect DefaultGravity = {0.0F, 9.81F};
+
     private:
         // Default Earth gravity is set by default
-        Vect _gravity = {0.0F, 9.81F};
+        Vect _gravity = DefaultGravity;
     };
-}
+}   // namespace Guch2D

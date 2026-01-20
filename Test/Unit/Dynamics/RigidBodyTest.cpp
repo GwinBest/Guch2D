@@ -51,4 +51,18 @@ namespace
         body.SetMass(0.0F);
         EXPECT_EQ(body.GetMass(), 0.0F);
     }
+
+    TEST(RigidBodyTest, SetMassNaN)
+    {
+        Guch2D::RigidBody body;
+        body.SetMass(NAN);
+        EXPECT_EQ(body.GetMass(), 0.0F);
+    }
+
+    TEST(RigidBodyTest, SetMassInfinity)
+    {
+        Guch2D::RigidBody body;
+        body.SetMass(INFINITY);
+        EXPECT_EQ(body.GetMass(), 0.0F);
+    }
 }   // namespace

@@ -9,12 +9,12 @@ namespace Guch2D
     class StaticRigidBody final : public RigidBody
     {
     public:
-        StaticRigidBody() noexcept { SetMass(std::numeric_limits<float>::infinity()); }
+        StaticRigidBody() noexcept { SetMass(DefaultStaticBodyMass); }
 
         explicit StaticRigidBody(const Vect& position) noexcept
             : RigidBody(position)
         {
-            SetMass(std::numeric_limits<float>::infinity());
+            SetMass(DefaultStaticBodyMass);
         }
 
         StaticRigidBody(const StaticRigidBody&) = default;
@@ -22,5 +22,8 @@ namespace Guch2D
         StaticRigidBody& operator=(const StaticRigidBody&) = default;
         StaticRigidBody& operator=(StaticRigidBody&&) = default;
         ~StaticRigidBody() override = default;
+
+    public:
+        static constexpr float DefaultStaticBodyMass = 0.0F;
     };
 }   // namespace Guch2D

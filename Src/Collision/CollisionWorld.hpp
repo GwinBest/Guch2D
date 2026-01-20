@@ -6,7 +6,6 @@
 
 #include "CollisionBody.hpp"
 
-
 namespace Guch2D
 {
     class CollisionWorld
@@ -51,10 +50,12 @@ namespace Guch2D
             _timeStep = timeStep;
         }
 
+    public:
+        static constexpr float DefaultTimeStep = 1.0F / 60.0F;
+
     protected:
         std::vector<std::shared_ptr<CollisionBody>> _objects;
 
-        // Default time step is 1.0F / 60.0F
-        float _timeStep = 1.0F / 60.0F;
+        float _timeStep = DefaultTimeStep;
     };
-}
+}   // namespace Guch2D

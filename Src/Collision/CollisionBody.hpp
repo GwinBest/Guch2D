@@ -2,8 +2,8 @@
 
 #include <memory>
 
-#include "Math/Vector.hpp"
 #include "Collision/Collider.hpp"
+#include "Math/Vector.hpp"
 
 namespace Guch2D
 {
@@ -12,20 +12,18 @@ namespace Guch2D
     public:
         CollisionBody() noexcept = default;
 
-        explicit CollisionBody(const Vect& position) : _position(position)
-        {
-        }
+        explicit CollisionBody(const Vect& position)
+            : _position(position)
+        {}
 
-        explicit CollisionBody(const std::shared_ptr<Collider>& collider) : _collider(collider)
-        {
-        }
+        explicit CollisionBody(const std::shared_ptr<Collider>& collider)
+            : _collider(collider)
+        {}
 
-        CollisionBody(const Vect& position,
-                      const std::shared_ptr<Collider>& collider)
-            : _position(position),
-              _collider(collider)
-        {
-        }
+        CollisionBody(const Vect& position, const std::shared_ptr<Collider>& collider)
+            : _position(position)
+            , _collider(collider)
+        {}
 
         CollisionBody(const CollisionBody&) = default;
         CollisionBody(CollisionBody&&) = default;
@@ -34,7 +32,9 @@ namespace Guch2D
         virtual ~CollisionBody() = default;
 
         [[nodiscard]] constexpr const Vect& GetPosition() const noexcept { return _position; }
+
         constexpr void SetPosition(const Vect& position) noexcept { _position = position; }
+
         constexpr void UpdatePosition(const Vect& delta) noexcept { _position += delta; }
 
         [[nodiscard]] constexpr const std::shared_ptr<Collider>& GetCollider() const noexcept
@@ -61,4 +61,4 @@ namespace Guch2D
         // Collider associated with this collision body
         std::shared_ptr<Collider> _collider;
     };
-}
+}   // namespace Guch2D

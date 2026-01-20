@@ -26,9 +26,23 @@ namespace Guch2D
 
         [[nodiscard]] constexpr const Vect& GetForce() const noexcept { return _force; }
 
-        constexpr void SetForce(const Vect& force) noexcept { _force = force; }
+        constexpr void SetForce(const Vect& force) noexcept
+        {
+            if (!IsFinite(force))
+            {
+                _force = {0.0F, 0.0F};
+                return;
+            }
 
-        constexpr void AddForce(const Vect& force) noexcept { _force += force; }
+            _force = force;
+        }
+
+        constexpr void AddForce(const Vect& force) noexcept
+        {
+            if (!IsFinite(force)) return;
+
+            _force += force;
+        }
 
         constexpr void ResetForce() noexcept { _force = Vect(0.0F, 0.0F); }
 
@@ -39,28 +53,66 @@ namespace Guch2D
 
         constexpr void SetAcceleration(const Vect& acceleration) noexcept
         {
+            if (!IsFinite(acceleration))
+            {
+                _acceleration = {0.0F, 0.0F};
+                return;
+            }
+
             _acceleration = acceleration;
         }
 
         [[nodiscard]] constexpr const Vect& GetVelocity() const noexcept { return _velocity; }
 
-        constexpr void SetVelocity(const Vect& velocity) noexcept { _velocity = velocity; }
+        constexpr void SetVelocity(const Vect& velocity) noexcept
+        {
+            if (!IsFinite(velocity))
+            {
+                _velocity = {0.0F, 0.0F};
+                return;
+            }
 
-        constexpr void AddVelocity(const Vect& velocity) noexcept { _velocity += velocity; }
+            _velocity = velocity;
+        }
+
+        constexpr void AddVelocity(const Vect& velocity) noexcept
+        {
+            if (!IsFinite(velocity)) return;
+
+            _velocity += velocity;
+        }
 
         [[nodiscard]] constexpr const Vect& GetGravityScale() const noexcept
         {
             return _gravityScale;
         }
 
-        constexpr void SetGravityScale(const Vect& scale) noexcept { _gravityScale = scale; }
+        constexpr void SetGravityScale(const Vect& scale) noexcept
+        {
+            if (!IsFinite(scale))
+            {
+                _gravityScale = DefaultGravityScale;
+                return;
+            }
+
+            _gravityScale = scale;
+        }
 
         [[nodiscard]] constexpr const Vect& GetLinearDamping() const noexcept
         {
             return _linearDamping;
         }
 
-        constexpr void SetLinearDamping(const Vect& damping) noexcept { _linearDamping = damping; }
+        constexpr void SetLinearDamping(const Vect& damping) noexcept
+        {
+            if (!IsFinite(damping))
+            {
+                _linearDamping = DefaultLinearDamping;
+                return;
+            }
+
+            _linearDamping = damping;
+        }
 
     public:
         static constexpr Vect DefaultGravityScale = {1.0F, 1.0F};

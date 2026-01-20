@@ -1,7 +1,8 @@
 #include "DynamicWorld.hpp"
 
-#include "Dynamics/DynamicRigidBody.hpp"
 #include <cmath>
+
+#include "Dynamics/DynamicRigidBody.hpp"
 
 namespace Guch2D
 {
@@ -19,8 +20,8 @@ namespace Guch2D
             if (const auto dynamicRigidBody = std::dynamic_pointer_cast<DynamicRigidBody>(object))
             {
                 // Apply gravity scaled per-body
-                dynamicRigidBody->AddForce(dynamicRigidBody->GetMass() *
-                                           (dynamicRigidBody->GetGravityScale() * _gravity));
+                dynamicRigidBody->AddForce(dynamicRigidBody->GetMass()
+                                           * (dynamicRigidBody->GetGravityScale() * _gravity));
             }
         }
     }
@@ -32,15 +33,14 @@ namespace Guch2D
             if (const auto dynamicRigidBody = std::dynamic_pointer_cast<DynamicRigidBody>(object))
             {
                 const float mass = dynamicRigidBody->GetMass();
-                if (mass == 0.0F || !std::isfinite(mass))
+                if (mass == 0.0F)
                 {
-                    // Skip integration for zero or infinite mass (static bodies)
+                    // Skip integration for zero mass
                     dynamicRigidBody->ResetForce();
                     continue;
                 }
 
-                dynamicRigidBody->SetAcceleration(dynamicRigidBody->GetForce() /
-                                                  mass);
+                dynamicRigidBody->SetAcceleration(dynamicRigidBody->GetForce() / mass);
 
                 dynamicRigidBody->AddVelocity(dynamicRigidBody->GetAcceleration() * _timeStep);
 
@@ -51,4 +51,4 @@ namespace Guch2D
             }
         }
     }
-}
+}   // namespace Guch2D
