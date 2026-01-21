@@ -46,9 +46,27 @@ namespace Guch2D
 
                 dynamicRigidBody->UpdatePosition(dynamicRigidBody->GetVelocity() * _timeStep);
 
+                ApplyLinearDamping(dynamicRigidBody);
+
                 // Reset force for the next step
                 dynamicRigidBody->ResetForce();
             }
         }
+    }
+
+    constexpr void DynamicWorld::ApplyLinearDamping(
+        const std::shared_ptr<DynamicRigidBody>& dynamicRigidBody) const noexcept
+    {
+        const float dampingFactorX = std::clamp(
+            1.0F - (_timeStep * dynamicRigidBody->GetLinearDamping().x),
+            0.0F,
+            1.0F);
+        const float dampingFactorY = std::clamp(
+            1.0F - (_timeStep * dynamicRigidBody->GetLinearDamping().y),
+            0.0F,
+            1.0F);
+
+        dynamicRigidBody->SetVelocity(dynamicRigidBody->GetVelocity()
+                                      * Vect(dampingFactorX, dampingFactorY));
     }
 }   // namespace Guch2D

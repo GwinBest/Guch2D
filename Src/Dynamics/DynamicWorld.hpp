@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Collision/CollisionWorld.hpp"
+#include "DynamicRigidBody.hpp"
 #include "Math/Vector.hpp"
 
 namespace Guch2D
@@ -34,6 +35,9 @@ namespace Guch2D
         void ApplyGravity() const noexcept;
 
         void MoveBodies() const noexcept;
+
+        constexpr void ApplyLinearDamping(
+            const std::shared_ptr<DynamicRigidBody>& dynamicRigidBody) const noexcept;
 
     public:
         static constexpr Vect DefaultGravity = {0.0F, 9.81F};
