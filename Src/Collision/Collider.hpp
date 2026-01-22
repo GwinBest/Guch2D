@@ -6,7 +6,7 @@
 
 namespace Guch2D
 {
-    enum ColliderType : std::uint8_t
+    enum class ColliderType : std::uint8_t
     {
         None,
         Circle,
@@ -17,9 +17,7 @@ namespace Guch2D
     public:
         Collider() noexcept = default;
 
-        explicit Collider(const Vect& center) : _center(center)
-        {
-        }
+        explicit Collider(const Vect& center) { SetCenterLocal(center); }
 
         Collider(const Collider&) = default;
         Collider(Collider&&) = default;
@@ -28,16 +26,27 @@ namespace Guch2D
         virtual ~Collider() = default;
 
         [[nodiscard]] constexpr ColliderType GetColliderType() const noexcept { return _type; }
+
         constexpr void SetColliderType(const ColliderType type) noexcept { _type = type; }
 
         [[nodiscard]] constexpr const Vect& GetCenterLocal() const noexcept { return _center; }
-        constexpr void SetCenterLocal(const Vect& center) noexcept { _center = center; }
+
+        constexpr void SetCenterLocal(const Vect& center) noexcept
+        {
+            if (!IsFinite(center))
+            {
+                _center = {0.0F, 0.0F};
+                return;
+            }
+
+            _center = center;
+        }
 
     private:
-        ColliderType _type = None;
+        ColliderType _type = ColliderType::None;
 
         // Center of the collider, in meters (m)
         // In local space
         Vect _center = {0.0F, 0.0F};
     };
-}
+}   // namespace Guch2D
