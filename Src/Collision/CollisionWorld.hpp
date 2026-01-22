@@ -37,6 +37,8 @@ namespace Guch2D
             std::erase(_objects, object);
         }
 
+        [[nodiscard]] constexpr size_t GetObjectsCount() const noexcept { return _objects.size(); }
+
         [[nodiscard]] constexpr float GetTimeStep() const noexcept { return _timeStep; }
 
         void SetTimeStep(const float timeStep) noexcept
