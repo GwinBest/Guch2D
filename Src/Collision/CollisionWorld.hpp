@@ -18,7 +18,7 @@ namespace Guch2D
         CollisionWorld& operator=(CollisionWorld&&) = default;
         virtual ~CollisionWorld() = default;
 
-        virtual void Step() const noexcept;
+        virtual void Step() const;
 
         void AddObject(const std::shared_ptr<CollisionBody>& object) noexcept
         {
