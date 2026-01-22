@@ -12,18 +12,17 @@ namespace Guch2D
     public:
         CollisionBody() noexcept = default;
 
-        explicit CollisionBody(const Vect& position)
-            : _position(position)
-        {}
+        explicit CollisionBody(const Vect& position) { SetPosition(position); }
 
         explicit CollisionBody(const std::shared_ptr<Collider>& collider)
             : _collider(collider)
         {}
 
         CollisionBody(const Vect& position, const std::shared_ptr<Collider>& collider)
-            : _position(position)
-            , _collider(collider)
-        {}
+            : _collider(collider)
+        {
+            SetPosition(position);
+        }
 
         CollisionBody(const CollisionBody&) = default;
         CollisionBody(CollisionBody&&) = default;
@@ -33,9 +32,23 @@ namespace Guch2D
 
         [[nodiscard]] constexpr const Vect& GetPosition() const noexcept { return _position; }
 
-        constexpr void SetPosition(const Vect& position) noexcept { _position = position; }
+        constexpr void SetPosition(const Vect& position) noexcept
+        {
+            if (!IsFinite(position))
+            {
+                _position = {0.0F, 0.0F};
+                return;
+            }
 
-        constexpr void UpdatePosition(const Vect& delta) noexcept { _position += delta; }
+            _position = position;
+        }
+
+        constexpr void UpdatePosition(const Vect& delta) noexcept
+        {
+            if (!IsFinite(delta)) return;
+
+            _position += delta;
+        }
 
         [[nodiscard]] constexpr const std::shared_ptr<Collider>& GetCollider() const noexcept
         {
@@ -46,6 +59,8 @@ namespace Guch2D
         {
             _collider = collider;
         }
+
+        constexpr void RemoveCollider() noexcept { _collider.reset(); }
 
         [[nodiscard]] constexpr Vect GetColliderCenterWorld() const noexcept
         {
