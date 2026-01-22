@@ -34,6 +34,7 @@ namespace Guch2D
         void RemoveObject(const std::shared_ptr<CollisionBody>& object) noexcept
         {
             if (!object) return;
+
             std::erase(_objects, object);
         }
 
@@ -43,9 +44,9 @@ namespace Guch2D
 
         void SetTimeStep(const float timeStep) noexcept
         {
-            if (timeStep <= 0.0F)
+            if (timeStep <= 0.0F || !std::isfinite(timeStep))
             {
-                _timeStep = 1.0F / 60.0F;
+                _timeStep = DefaultTimeStep;
                 return;
             }
 
