@@ -16,4 +16,25 @@ namespace Guch2D
     {
         return IsFinite(value.x) && IsFinite(value.y);
     }
+
+    [[nodiscard]] constexpr float VectLength(const Vect& v) noexcept
+    {
+        if (!IsFinite(v))
+        {
+            return 0.0F;
+        }
+
+        return std::sqrt(v.x * v.x + v.y * v.y);
+    }
+
+    [[nodiscard]] constexpr Vect VectNormalize(const Vect& v) noexcept
+    {
+        const float length = VectLength(v);
+        if (length == 0.0f || !IsFinite(length))
+        {
+            return {0.0f, 0.0f};
+        }
+
+        return {v.x / length, v.y / length};
+    }
 }   // namespace Guch2D
