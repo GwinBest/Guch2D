@@ -53,6 +53,13 @@ namespace Guch2D
             _timeStep = timeStep;
         }
 
+    private:
+        void ResolveCollisions() const;
+
+        [[nodiscard]] static CollisionPoints
+            CheckCollisions(const std::shared_ptr<CollisionBody>& bodyA,
+                            const std::shared_ptr<CollisionBody>& bodyB);
+
     public:
         static constexpr float DefaultTimeStep = 1.0F / 60.0F;
 

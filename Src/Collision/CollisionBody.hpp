@@ -7,6 +7,24 @@
 
 namespace Guch2D
 {
+    class CollisionBody;
+
+    struct CollisionPoints final
+    {
+        Vect A = {0.0F, 0.0F};        // Furthest point of A into B
+        Vect B = {0.0F, 0.0F};        // Furthest point of B into A
+        Vect Normal = {0.0F, 0.0F};   // B – A normalized
+        float Depth = 0.0F;           // Length of B – A
+        bool HasCollision = false;
+    };
+
+    struct Collision final
+    {
+        std::weak_ptr<CollisionBody> BodyA;
+        std::weak_ptr<CollisionBody> BodyB;
+        CollisionPoints Points;
+    };
+
     class CollisionBody
     {
     public:
