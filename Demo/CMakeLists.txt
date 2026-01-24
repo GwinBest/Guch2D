@@ -1,8 +1,8 @@
-file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS "*.cpp")
+file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS "*.cpp" "*.hpp")
 
 add_executable(${PROJECT_NAME}-Demo ${SOURCES})
 
-target_include_directories(${PROJECT_NAME}-Demo PUBLIC "${CMAKE_SOURCE_DIR}/Src")
+target_include_directories(${PROJECT_NAME}-Demo PUBLIC "${CMAKE_SOURCE_DIR}/Src" "${CMAKE_SOURCE_DIR}/Demo")
 
 # SFML
 include(FetchContent)
