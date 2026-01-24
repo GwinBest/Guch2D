@@ -50,11 +50,10 @@ namespace Guch2D
             {
                 if (objectA == objectB) continue;
 
-                if (const auto collisionPoints = CheckCollisions(objectA, objectB);
-                    collisionPoints.HasCollision)
-                {
-                    collisions.emplace_back(objectA, objectB, collisionPoints);
-                }
+                const auto collisionPoints = CheckCollisions(objectA, objectB);
+                if (!collisionPoints.HasCollision) continue;
+
+                collisions.emplace_back(objectA, objectB, collisionPoints);
             }
         }
     }
