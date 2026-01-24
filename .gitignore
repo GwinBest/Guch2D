@@ -5,3 +5,4 @@ CMakeSettings.json
 /.vscode
 /.vs
 /.idea
+/cmake-build-debug-coverage/
