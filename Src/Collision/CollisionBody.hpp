@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <memory>
 
 #include "Collision/Collider.hpp"
@@ -8,6 +9,7 @@
 namespace Guch2D
 {
     class CollisionBody;
+    class CollisionWorld;
 
     struct CollisionPoints final
     {
@@ -27,6 +29,11 @@ namespace Guch2D
 
     class CollisionBody
     {
+    public:
+        using CollisionCallback = std::function<void(std::shared_ptr<Collision>)>;
+
+        friend class CollisionWorld;
+
     public:
         CollisionBody() noexcept = default;
 
@@ -87,11 +94,41 @@ namespace Guch2D
             return _position + _collider->GetCenterLocal();
         }
 
+        constexpr void BindOnBeginOverlap(const CollisionCallback& callback) noexcept
+        {
+            _onBeginOverlap = std::move(callback);
+        }
+
+        constexpr void BindOnEndOverlap(const CollisionCallback& callback) noexcept
+        {
+            _onEndOverlap = std::move(callback);
+        }
+
+    private:
+        constexpr void InvokeOnBeginOverlap(const std::shared_ptr<Collision>& collision) const
+        {
+            if (_onBeginOverlap)
+            {
+                _onBeginOverlap(collision);
+            }
+        }
+
+        constexpr void InvokeOnEndOverlap(const std::shared_ptr<Collision>& collision) const
+        {
+            if (_onEndOverlap)
+            {
+                _onEndOverlap(collision);
+            }
+        }
+
     protected:
         // Position of the object in the 2D space, in meters (m)
         Vect _position = {0.0F, 0.0F};
 
         // Collider associated with this collision body
         std::shared_ptr<Collider> _collider;
+
+        CollisionCallback _onBeginOverlap;
+        CollisionCallback _onEndOverlap;
     };
 }   // namespace Guch2D

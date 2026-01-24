@@ -42,20 +42,32 @@ namespace Guch2D
 
     void CollisionWorld::ResolveCollisions() const
     {
-        std::vector<Collision> collisions;
+        std::vector<std::shared_ptr<Collision>> currentCollisions;
+        static std::vector<std::shared_ptr<Collision>> previousCollisions;
 
         for (const auto& objectA : _objects)
         {
             for (const auto& objectB : _objects)
             {
-                if (objectA == objectB) continue;
+                if (objectA == objectB) break;
 
                 const auto collisionPoints = CheckCollisions(objectA, objectB);
                 if (!collisionPoints.HasCollision) continue;
 
-                collisions.emplace_back(objectA, objectB, collisionPoints);
+                const auto collision = std::make_shared<Collision>(objectA,
+                                                                   objectB,
+                                                                   collisionPoints);
+                currentCollisions.emplace_back(collision);
+
+                if (std::ranges::find(previousCollisions, collision) == previousCollisions.end())
+                {
+                    objectA->InvokeOnBeginOverlap(collision);
+                    objectB->InvokeOnBeginOverlap(collision);
+                }
             }
         }
+
+        previousCollisions = std::move(currentCollisions);
     }
 
     CollisionPoints CollisionWorld::CheckCollisions(const std::shared_ptr<CollisionBody>& bodyA,
