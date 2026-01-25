@@ -91,7 +91,8 @@ namespace Guch2D
 
         static const CollisionFuncMatrix collisionCheckMatrix = {
             {
-             {nullptr, nullptr},                       // None
+             //     None          Circle
+                {nullptr, nullptr},                       // None
                 {nullptr, &CheckCollisionCircleCircle},   // Circle
             }
         };
