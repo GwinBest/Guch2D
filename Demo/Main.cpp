@@ -191,6 +191,10 @@ public:
         const Guch2D::Vect center = {static_cast<float>(size.x) / _pixelsPerMeter * 0.5f,
                                      static_cast<float>(size.y) / _pixelsPerMeter * 0.5f};
         _probe = CreateCircle(center, _probeRadius);
+        _probe.body->BindOnBeginOverlap(
+            [this](const Guch2D::Collision& callback) { _probe.isOverlappingWithProbe++; });
+        _probe.body->BindOnEndOverlap(
+            [this](const Guch2D::Collision& callback) { _probe.isOverlappingWithProbe--; });
         _world.AddObject(_probe.body);
     }
 
@@ -223,10 +227,10 @@ public:
                     CircleBody {body, _spawnRadius, false});
 
                 circlePtr->body->BindOnBeginOverlap([circlePtr](const Guch2D::Collision& callback) {
-                    circlePtr->isOverlappingWithProbe = true;
+                    circlePtr->isOverlappingWithProbe++;
                 });
                 circlePtr->body->BindOnEndOverlap([circlePtr](const Guch2D::Collision& callback) {
-                    circlePtr->isOverlappingWithProbe = false;
+                    circlePtr->isOverlappingWithProbe--;
                 });
 
                 _circles.push_back(circlePtr);
@@ -267,26 +271,25 @@ public:
         for (const auto& circlePtr : _circles)
         {
             const bool overlap = circlePtr->isOverlappingWithProbe;
-            anyOverlap = anyOverlap || overlap;
 
             const sf::Color fill = overlap ? sf::Color(220, 80, 80, 140)
                                            : sf::Color(80, 140, 220, 120);
             DrawCircle(window, *circlePtr, fill, sf::Color(255, 255, 255, 80), 1.0f);
         }
 
-        const sf::Color probeColor = anyOverlap ? sf::Color(255, 80, 80, 160)
-                                                : sf::Color(80, 240, 120, 160);
+        const sf::Color probeColor = _probe.isOverlappingWithProbe ? sf::Color(255, 80, 80, 160)
+                                                                   : sf::Color(80, 240, 120, 160);
         DrawCircle(window, _probe, probeColor, sf::Color(255, 255, 255, 200), 2.0f);
     }
 
     void BuildOverlay(std::vector<std::string>& lines) const override
     {
-        lines.push_back("LEFT MOUSE: ADD CIRCLE");
-        lines.push_back("RIGHT MOUSE DRAG: MOVE PROBE");
-        lines.push_back("C: CLEAR CIRCLES");
-        lines.push_back("R: RESET DEMO");
-        lines.push_back("CIRCLES: " + std::to_string(_circles.size()));
-        lines.push_back("OVERLAPS: " + std::to_string(CountOverlaps()));
+        lines.emplace_back("LEFT MOUSE: ADD CIRCLE");
+        lines.emplace_back("RIGHT MOUSE DRAG: MOVE PROBE");
+        lines.emplace_back("C: CLEAR CIRCLES");
+        lines.emplace_back("R: RESET DEMO");
+        lines.emplace_back("CIRCLES: " + std::to_string(_circles.size()));
+        lines.emplace_back("OVERLAPS: " + std::to_string(CountOverlaps()));
     }
 
 private:
@@ -294,7 +297,7 @@ private:
     {
         std::shared_ptr<Guch2D::CollisionBody> body;
         float radius = 0.0f;
-        bool isOverlappingWithProbe = false;
+        int isOverlappingWithProbe = 0;
     };
 
     using CircleBodyPtr = std::shared_ptr<CircleBody>;
@@ -334,6 +337,9 @@ private:
                 ++count;
             }
         }
+
+        if (_probe.isOverlappingWithProbe) ++count;
+
         return count;
     }
 
