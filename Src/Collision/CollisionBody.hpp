@@ -25,12 +25,18 @@ namespace Guch2D
         std::weak_ptr<CollisionBody> BodyA;
         std::weak_ptr<CollisionBody> BodyB;
         CollisionPoints Points;
+
+        bool operator==(const Collision& other) const
+        {
+            return this->BodyA.lock() == other.BodyA.lock()
+                && this->BodyB.lock() == other.BodyB.lock();
+        }
     };
 
     class CollisionBody
     {
     public:
-        using CollisionCallback = std::function<void(std::shared_ptr<Collision>)>;
+        using CollisionCallback = std::function<void(Collision)>;
 
         friend class CollisionWorld;
 
@@ -105,7 +111,7 @@ namespace Guch2D
         }
 
     private:
-        constexpr void InvokeOnBeginOverlap(const std::shared_ptr<Collision>& collision) const
+        constexpr void InvokeOnBeginOverlap(const Collision& collision) const
         {
             if (_onBeginOverlap)
             {
@@ -113,7 +119,7 @@ namespace Guch2D
             }
         }
 
-        constexpr void InvokeOnEndOverlap(const std::shared_ptr<Collision>& collision) const
+        constexpr void InvokeOnEndOverlap(const Collision& collision) const
         {
             if (_onEndOverlap)
             {

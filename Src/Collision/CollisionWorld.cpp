@@ -42,8 +42,8 @@ namespace Guch2D
 
     void CollisionWorld::ResolveCollisions() const
     {
-        std::vector<std::shared_ptr<Collision>> currentCollisions;
-        static std::vector<std::shared_ptr<Collision>> previousCollisions;
+        std::vector<Collision> collisions;
+        static std::vector<Collision> previousCollisions;
 
         for (const auto& objectA : _objects)
         {
@@ -54,11 +54,10 @@ namespace Guch2D
                 const auto collisionPoints = CheckCollisions(objectA, objectB);
                 if (!collisionPoints.HasCollision) continue;
 
-                const auto collision = std::make_shared<Collision>(objectA,
-                                                                   objectB,
-                                                                   collisionPoints);
-                currentCollisions.emplace_back(collision);
+                const auto collision = Collision(objectA, objectB, collisionPoints);
+                collisions.emplace_back(collision);
 
+                // Invoke OnBeginOverlap if this collision was not present in the previous frame
                 if (std::ranges::find(previousCollisions, collision) == previousCollisions.end())
                 {
                     objectA->InvokeOnBeginOverlap(collision);
@@ -67,7 +66,18 @@ namespace Guch2D
             }
         }
 
-        previousCollisions = std::move(currentCollisions);
+        // Invoke OnEndOverlap if this collision was present in the previous frame
+        std::ranges::for_each(previousCollisions, [&](const Collision& collision) {
+            if (std::ranges::find(collisions, collision) != collisions.end()) return;
+
+            const auto bodyA = collision.BodyA.lock();
+            const auto bodyB = collision.BodyB.lock();
+
+            if (bodyA) bodyA->InvokeOnEndOverlap(collision);
+            if (bodyB) bodyB->InvokeOnEndOverlap(collision);
+        });
+
+        previousCollisions = std::move(collisions);
     }
 
     CollisionPoints CollisionWorld::CheckCollisions(const std::shared_ptr<CollisionBody>& bodyA,
