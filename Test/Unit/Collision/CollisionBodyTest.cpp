@@ -44,7 +44,7 @@ namespace
         EXPECT_EQ(body.GetPosition(), newPosition);
     }
 
-    TEST(CollsionBodyTest, SetPositionNegative)
+    TEST(CollisionBodyTest, SetPositionNegative)
     {
         Guch2D::CollisionBody body;
         constexpr Guch2D::Vect newPosition {-7.0F, -8.0F};
@@ -52,7 +52,7 @@ namespace
         EXPECT_EQ(body.GetPosition(), newPosition);
     }
 
-    TEST(CollsionBodyTest, SetPositionZero)
+    TEST(CollisionBodyTest, SetPositionZero)
     {
         Guch2D::CollisionBody body;
         constexpr Guch2D::Vect newPosition {0.0F, 0.0F};
@@ -60,7 +60,7 @@ namespace
         EXPECT_EQ(body.GetPosition(), newPosition);
     }
 
-    TEST(CollsionBodyTest, SetPositionNaN)
+    TEST(CollisionBodyTest, SetPositionNaN)
     {
         Guch2D::CollisionBody body;
         constexpr Guch2D::Vect newPosition {NAN, 0.0F};
@@ -68,7 +68,7 @@ namespace
         EXPECT_EQ(body.GetPosition(), Guch2D::Vect(0.0F, 0.0F));
     }
 
-    TEST(CollsionBodyTest, SetPositionInfinite)
+    TEST(CollisionBodyTest, SetPositionInfinite)
     {
         Guch2D::CollisionBody body;
         constexpr Guch2D::Vect newPosition {INFINITY, 0.0F};
@@ -124,7 +124,7 @@ namespace
         EXPECT_EQ(body.GetCollider(), collider);
     }
 
-    TEST(CollsioinBodyTest, SetColliderNullptr)
+    TEST(CollisionBodyTest, SetColliderNullptr)
     {
         Guch2D::CollisionBody body;
         const std::shared_ptr<Guch2D::Collider> collider = nullptr;
@@ -147,7 +147,7 @@ namespace
         EXPECT_EQ(body.GetColliderCenterWorld(), Guch2D::Vect(0.0F, 0.0F));
     }
 
-    TEST(CollsionBodyTest, GetColliderCenterWorldWithCollider)
+    TEST(CollisionBodyTest, GetColliderCenterWorldWithCollider)
     {
         Guch2D::CollisionBody body;
         constexpr Guch2D::Vect position {1.0F, 2.0F};

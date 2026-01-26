@@ -100,17 +100,17 @@ namespace Guch2D
             return _position + _collider->GetCenterLocal();
         }
 
-        constexpr void BindOnBeginOverlap(const CollisionCallback& callback) noexcept
+        void BindOnBeginOverlap(CollisionCallback callback) noexcept
         {
             _onBeginOverlap = std::move(callback);
         }
 
-        constexpr void BindOnEndOverlap(const CollisionCallback& callback) noexcept
+        void BindOnEndOverlap(CollisionCallback callback) noexcept
         {
             _onEndOverlap = std::move(callback);
         }
 
-    private:
+    protected:
         constexpr void InvokeOnBeginOverlap(const Collision& collision) const
         {
             if (_onBeginOverlap)
