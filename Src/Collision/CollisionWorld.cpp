@@ -2,7 +2,7 @@
 
 #include <functional>
 
-#include "CircleCollider.hpp"
+#include "Collision/CircleCollider.hpp"
 
 namespace
 {

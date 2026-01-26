@@ -4,7 +4,7 @@
 #include <memory>
 #include <vector>
 
-#include "CollisionBody.hpp"
+#include "Collision/CollisionBody.hpp"
 
 namespace Guch2D
 {

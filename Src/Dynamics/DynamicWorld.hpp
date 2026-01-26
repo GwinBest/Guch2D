@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Collision/CollisionWorld.hpp"
-#include "DynamicRigidBody.hpp"
+#include "Dynamics/DynamicRigidBody.hpp"
 #include "Math/Vector.hpp"
 
 namespace Guch2D
