@@ -8,7 +8,6 @@ namespace
     class TestableCollisionBody final : public Guch2D::CollisionBody
     {
     public:
-        using Guch2D::CollisionBody::CollisionCallback;
         using Guch2D::CollisionBody::InvokeOnBeginOverlap;
         using Guch2D::CollisionBody::InvokeOnEndOverlap;
     };
