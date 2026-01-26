@@ -40,6 +40,7 @@ namespace Guch2D
         FindCollisions();
         InvokeBeginOverlap();
         InvokeEndOverlap();
+
         _previousCollisions = std::move(_collisions);
     }
 
