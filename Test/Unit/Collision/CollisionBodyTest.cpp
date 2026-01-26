@@ -266,4 +266,26 @@ namespace
         SUCCEED();
     }
 
+    TEST(CollisionStrcutTest, EqualsOperator)
+    {
+        Guch2D::Collision collisionA;
+        Guch2D::Collision collisionB;
+
+        EXPECT_TRUE(collisionA == collisionB);
+
+        auto bodyA = std::make_shared<Guch2D::CollisionBody>();
+        collisionA.BodyA = bodyA;
+        EXPECT_FALSE(collisionA == collisionB);
+
+        collisionB.BodyA = bodyA;
+        EXPECT_TRUE(collisionA == collisionB);
+
+        auto bodyB = std::make_shared<Guch2D::CollisionBody>();
+        collisionA.BodyB = bodyB;
+        EXPECT_FALSE(collisionA == collisionB);
+
+        collisionB.BodyB = bodyB;
+        EXPECT_TRUE(collisionA == collisionB);
+    }
+
 }   // namespace
