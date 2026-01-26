@@ -29,7 +29,10 @@ namespace Guch2D
         bool operator==(const Collision& other) const
         {
             return this->BodyA.lock() == other.BodyA.lock()
-                && this->BodyB.lock() == other.BodyB.lock();
+                && this->BodyB.lock() == other.BodyB.lock() && this->Points.A == other.Points.A
+                && this->Points.B == other.Points.B && this->Points.Normal == other.Points.Normal
+                && this->Points.Depth == other.Points.Depth
+                && this->Points.HasCollision == other.Points.HasCollision;
         }
     };
 
