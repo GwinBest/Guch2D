@@ -4,6 +4,15 @@
 
 namespace
 {
+    // Test helper that exposes protected invoke methods as public for testing.
+    class TestableCollisionBody final : public Guch2D::CollisionBody
+    {
+    public:
+        using Guch2D::CollisionBody::CollisionCallback;
+        using Guch2D::CollisionBody::InvokeOnBeginOverlap;
+        using Guch2D::CollisionBody::InvokeOnEndOverlap;
+    };
+
     TEST(CollisionBodyTest, DefaultConstructor)
     {
         const Guch2D::CollisionBody body;
@@ -157,6 +166,104 @@ namespace
         collider->SetCenterLocal(colliderCenter);
         body.SetCollider(collider);
         EXPECT_EQ(body.GetColliderCenterWorld(), position + colliderCenter);
+    }
+
+    TEST(CollisionBodyTest, InvokeOnBeginOverlap)
+    {
+        TestableCollisionBody body;
+        bool callbackInvoked = false;
+        body.BindOnBeginOverlap(
+            [&callbackInvoked](const Guch2D::Collision& /*collision*/) { callbackInvoked = true; });
+
+        const Guch2D::Collision collision;
+        body.InvokeOnBeginOverlap(collision);
+        EXPECT_TRUE(callbackInvoked);
+    }
+
+    TEST(CollisionBodyTest, InvokeOnEndOverlap)
+    {
+        TestableCollisionBody body;
+        bool callbackInvoked = false;
+        body.BindOnEndOverlap(
+            [&callbackInvoked](const Guch2D::Collision& /*collision*/) { callbackInvoked = true; });
+
+        const Guch2D::Collision collision;
+        body.InvokeOnEndOverlap(collision);
+        EXPECT_TRUE(callbackInvoked);
+    }
+
+    TEST(CollisionBodyTest, InvokeOnBeginOverlapNoCallback)
+    {
+        const TestableCollisionBody body;
+        const Guch2D::Collision collision;
+        body.InvokeOnBeginOverlap(collision);
+        SUCCEED();
+    }
+
+    TEST(CollisionBodyTest, InvokeOnEndOverlapNoCallback)
+    {
+        const TestableCollisionBody body;
+        const Guch2D::Collision collision;
+        body.InvokeOnEndOverlap(collision);
+        SUCCEED();
+    }
+
+    TEST(CollisionBodyTest, BindOnBeginOverlapReplacesCallback)
+    {
+        TestableCollisionBody body;
+        bool firstCallbackInvoked = false;
+        bool secondCallbackInvoked = false;
+
+        body.BindOnBeginOverlap([&firstCallbackInvoked](const Guch2D::Collision& /*collision*/) {
+            firstCallbackInvoked = true;
+        });
+        body.BindOnBeginOverlap([&secondCallbackInvoked](const Guch2D::Collision& /*collision*/) {
+            secondCallbackInvoked = true;
+        });
+
+        const Guch2D::Collision collision;
+        body.InvokeOnBeginOverlap(collision);
+        EXPECT_FALSE(firstCallbackInvoked);
+        EXPECT_TRUE(secondCallbackInvoked);
+    }
+
+    TEST(CollsionBodyTest, BindOnEndOverlapReplacesCallback)
+    {
+        TestableCollisionBody body;
+        bool firstCallbackInvoked = false;
+        bool secondCallbackInvoked = false;
+
+        body.BindOnEndOverlap([&firstCallbackInvoked](const Guch2D::Collision& /*collision*/) {
+            firstCallbackInvoked = true;
+        });
+        body.BindOnEndOverlap([&secondCallbackInvoked](const Guch2D::Collision& /*collision*/) {
+            secondCallbackInvoked = true;
+        });
+
+        const Guch2D::Collision collision;
+        body.InvokeOnEndOverlap(collision);
+        EXPECT_FALSE(firstCallbackInvoked);
+        EXPECT_TRUE(secondCallbackInvoked);
+    }
+
+    TEST(CollisionBodyTest, BindOnBeginOVverlapNullptr)
+    {
+        TestableCollisionBody body;
+        body.BindOnBeginOverlap(nullptr);
+
+        const Guch2D::Collision collision;
+        body.InvokeOnBeginOverlap(collision);
+        SUCCEED();
+    }
+
+    TEST(CollisionBodyTest, BindOnEndOverlapNullptr)
+    {
+        TestableCollisionBody body;
+        body.BindOnEndOverlap(nullptr);
+
+        const Guch2D::Collision collision;
+        body.InvokeOnEndOverlap(collision);
+        SUCCEED();
     }
 
 }   // namespace
