@@ -20,7 +20,7 @@ namespace Guch2D
 
         virtual void Step() const;
 
-        void AddObject(const std::shared_ptr<CollisionBody>& object) noexcept
+        void AddObject(const std::shared_ptr<CollisionBody>& object)
         {
             if (!object) return;
 
@@ -31,7 +31,7 @@ namespace Guch2D
             }
         }
 
-        void RemoveObject(const std::shared_ptr<CollisionBody>& object) noexcept
+        void RemoveObject(const std::shared_ptr<CollisionBody>& object)
         {
             if (!object) return;
 
@@ -54,7 +54,10 @@ namespace Guch2D
         }
 
     private:
-        void ResolveCollisions() const;
+        void FindCollisions() const;
+
+        void InvokeBeginOverlap() const;
+        void InvokeEndOverlap() const;
 
         [[nodiscard]] static CollisionPoints
             CheckCollisions(const std::shared_ptr<CollisionBody>& bodyA,
@@ -67,5 +70,8 @@ namespace Guch2D
         std::vector<std::shared_ptr<CollisionBody>> _objects;
 
         float _timeStep = DefaultTimeStep;
+
+        mutable std::vector<Collision> _collisions;
+        mutable std::vector<Collision> _previousCollisions;
     };
 }   // namespace Guch2D

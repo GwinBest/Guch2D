@@ -37,13 +37,15 @@ namespace Guch2D
 {
     void CollisionWorld::Step() const
     {
-        ResolveCollisions();
+        FindCollisions();
+        InvokeBeginOverlap();
+        InvokeEndOverlap();
+        _previousCollisions = std::move(_collisions);
     }
 
-    void CollisionWorld::ResolveCollisions() const
+    void CollisionWorld::FindCollisions() const
     {
-        std::vector<Collision> collisions;
-        static std::vector<Collision> previousCollisions;
+        _collisions.clear();
 
         for (const auto& objectA : _objects)
         {
@@ -55,20 +57,33 @@ namespace Guch2D
                 if (!collisionPoints.HasCollision) continue;
 
                 const auto collision = Collision(objectA, objectB, collisionPoints);
-                collisions.emplace_back(collision);
-
-                // Invoke OnBeginOverlap if this collision was not present in the previous frame
-                if (std::ranges::find(previousCollisions, collision) == previousCollisions.end())
-                {
-                    objectA->InvokeOnBeginOverlap(collision);
-                    objectB->InvokeOnBeginOverlap(collision);
-                }
+                _collisions.emplace_back(collision);
             }
         }
+    }
 
+    void CollisionWorld::InvokeBeginOverlap() const
+    {
+        // Invoke OnBeginOverlap if this collision was not present in the previous frame
+        std::ranges::for_each(_collisions, [&](const Collision& collision) {
+            if (std::ranges::find(_previousCollisions, collision) != _previousCollisions.end())
+            {
+                return;
+            }
+
+            const auto bodyA = collision.BodyA.lock();
+            const auto bodyB = collision.BodyB.lock();
+
+            if (bodyA) bodyA->InvokeOnBeginOverlap(collision);
+            if (bodyB) bodyB->InvokeOnBeginOverlap(collision);
+        });
+    }
+
+    void CollisionWorld::InvokeEndOverlap() const
+    {
         // Invoke OnEndOverlap if this collision was present in the previous frame
-        std::ranges::for_each(previousCollisions, [&](const Collision& collision) {
-            if (std::ranges::find(collisions, collision) != collisions.end()) return;
+        std::ranges::for_each(_previousCollisions, [&](const Collision& collision) {
+            if (std::ranges::find(_collisions, collision) != _collisions.end()) return;
 
             const auto bodyA = collision.BodyA.lock();
             const auto bodyB = collision.BodyB.lock();
@@ -76,8 +91,6 @@ namespace Guch2D
             if (bodyA) bodyA->InvokeOnEndOverlap(collision);
             if (bodyB) bodyB->InvokeOnEndOverlap(collision);
         });
-
-        previousCollisions = std::move(collisions);
     }
 
     CollisionPoints CollisionWorld::CheckCollisions(const std::shared_ptr<CollisionBody>& bodyA,
