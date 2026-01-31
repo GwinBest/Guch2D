@@ -1,6 +1,7 @@
 #include "CollisionWorld.hpp"
 
 #include <functional>
+#include <print>
 
 #include "Collision/CircleCollider.hpp"
 
@@ -121,9 +122,16 @@ namespace Guch2D
         const auto typeA = static_cast<size_t>(bodyACollider->GetColliderType());
         const auto typeB = static_cast<size_t>(bodyBCollider->GetColliderType());
 
-        if (const auto& collisionFunc = collisionCheckMatrix.at(typeA).at(typeB); collisionFunc)
+        try
         {
-            return collisionFunc(bodyA, bodyB);
+            if (const auto& collisionFunc = collisionCheckMatrix.at(typeA).at(typeB); collisionFunc)
+            {
+                return collisionFunc(bodyA, bodyB);
+            }
+        }
+        catch (std::out_of_range&)
+        {
+            std::println("[Warning] CollisionWorld::CheckCollisions: Invalid collider type");
         }
 
         return {};
