@@ -53,7 +53,7 @@ namespace Guch2D
             _timeStep = timeStep;
         }
 
-    private:
+    protected:
         void FindCollisions() const;
 
         void InvokeBeginOverlap() const;
