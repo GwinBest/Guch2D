@@ -30,9 +30,9 @@ namespace Guch2D
     [[nodiscard]] inline Vect VectNormalize(const Vect& v) noexcept
     {
         const float length = VectLength(v);
-        if (length == 0.0f || !IsFinite(length))
+        if (length == 0.0F || !IsFinite(length))
         {
-            return {0.0f, 0.0f};
+            return {0.0F, 0.0F};
         }
 
         return {v.x / length, v.y / length};
