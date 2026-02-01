@@ -7,17 +7,17 @@ namespace Guch2D
 {
     using Vect = glm::vec2;
 
-    [[nodiscard]] constexpr bool IsFinite(const float value) noexcept
+    [[nodiscard]] inline bool IsFinite(const float value) noexcept
     {
         return std::isfinite(value);
     }
 
-    [[nodiscard]] constexpr bool IsFinite(const Vect& value) noexcept
+    [[nodiscard]] inline bool IsFinite(const Vect& value) noexcept
     {
         return IsFinite(value.x) && IsFinite(value.y);
     }
 
-    [[nodiscard]] constexpr float VectLength(const Vect& v) noexcept
+    [[nodiscard]] inline float VectLength(const Vect& v) noexcept
     {
         if (!IsFinite(v))
         {
@@ -27,7 +27,7 @@ namespace Guch2D
         return std::sqrt(v.x * v.x + v.y * v.y);
     }
 
-    [[nodiscard]] constexpr Vect VectNormalize(const Vect& v) noexcept
+    [[nodiscard]] inline Vect VectNormalize(const Vect& v) noexcept
     {
         const float length = VectLength(v);
         if (length == 0.0f || !IsFinite(length))

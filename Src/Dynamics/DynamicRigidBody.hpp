@@ -24,9 +24,9 @@ namespace Guch2D
         DynamicRigidBody& operator=(DynamicRigidBody&&) = default;
         ~DynamicRigidBody() override = default;
 
-        [[nodiscard]] constexpr const Vect& GetForce() const noexcept { return _force; }
+        [[nodiscard]] const Vect& GetForce() const noexcept { return _force; }
 
-        constexpr void SetForce(const Vect& force) noexcept
+        void SetForce(const Vect& force) noexcept
         {
             if (!IsFinite(force))
             {
@@ -37,21 +37,18 @@ namespace Guch2D
             _force = force;
         }
 
-        constexpr void AddForce(const Vect& force) noexcept
+        void AddForce(const Vect& force) noexcept
         {
             if (!IsFinite(force)) return;
 
             _force += force;
         }
 
-        constexpr void ResetForce() noexcept { _force = Vect(0.0F, 0.0F); }
+        void ResetForce() noexcept { _force = Vect(0.0F, 0.0F); }
 
-        [[nodiscard]] constexpr const Vect& GetAcceleration() const noexcept
-        {
-            return _acceleration;
-        }
+        [[nodiscard]] const Vect& GetAcceleration() const noexcept { return _acceleration; }
 
-        constexpr void SetAcceleration(const Vect& acceleration) noexcept
+        void SetAcceleration(const Vect& acceleration) noexcept
         {
             if (!IsFinite(acceleration))
             {
@@ -62,9 +59,9 @@ namespace Guch2D
             _acceleration = acceleration;
         }
 
-        [[nodiscard]] constexpr const Vect& GetVelocity() const noexcept { return _velocity; }
+        [[nodiscard]] const Vect& GetVelocity() const noexcept { return _velocity; }
 
-        constexpr void SetVelocity(const Vect& velocity) noexcept
+        void SetVelocity(const Vect& velocity) noexcept
         {
             if (!IsFinite(velocity))
             {
@@ -75,19 +72,16 @@ namespace Guch2D
             _velocity = velocity;
         }
 
-        constexpr void AddVelocity(const Vect& velocity) noexcept
+        void AddVelocity(const Vect& velocity) noexcept
         {
             if (!IsFinite(velocity)) return;
 
             _velocity += velocity;
         }
 
-        [[nodiscard]] constexpr const Vect& GetGravityScale() const noexcept
-        {
-            return _gravityScale;
-        }
+        [[nodiscard]] const Vect& GetGravityScale() const noexcept { return _gravityScale; }
 
-        constexpr void SetGravityScale(const Vect& scale) noexcept
+        void SetGravityScale(const Vect& scale) noexcept
         {
             if (!IsFinite(scale))
             {
@@ -98,12 +92,9 @@ namespace Guch2D
             _gravityScale = scale;
         }
 
-        [[nodiscard]] constexpr const Vect& GetLinearDamping() const noexcept
-        {
-            return _linearDamping;
-        }
+        [[nodiscard]] const Vect& GetLinearDamping() const noexcept { return _linearDamping; }
 
-        constexpr void SetLinearDamping(const Vect& damping) noexcept
+        void SetLinearDamping(const Vect& damping) noexcept
         {
             if (!IsFinite(damping))
             {

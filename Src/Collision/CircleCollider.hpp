@@ -21,9 +21,9 @@ namespace Guch2D
         CircleCollider& operator=(CircleCollider&&) = default;
         ~CircleCollider() override = default;
 
-        [[nodiscard]] constexpr float GetRadius() const noexcept { return _radius; }
+        [[nodiscard]] float GetRadius() const noexcept { return _radius; }
 
-        constexpr void SetRadius(const float radius) noexcept
+        void SetRadius(const float radius) noexcept
         {
             if (radius < 0.0F || !std::isfinite(radius))
             {

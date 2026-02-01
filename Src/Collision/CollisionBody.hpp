@@ -64,9 +64,9 @@ namespace Guch2D
         CollisionBody& operator=(CollisionBody&&) = default;
         virtual ~CollisionBody() = default;
 
-        [[nodiscard]] constexpr const Vect& GetPosition() const noexcept { return _position; }
+        [[nodiscard]] const Vect& GetPosition() const noexcept { return _position; }
 
-        constexpr void SetPosition(const Vect& position) noexcept
+        void SetPosition(const Vect& position) noexcept
         {
             if (!IsFinite(position))
             {
@@ -77,26 +77,26 @@ namespace Guch2D
             _position = position;
         }
 
-        constexpr void UpdatePosition(const Vect& delta) noexcept
+        void UpdatePosition(const Vect& delta) noexcept
         {
             if (!IsFinite(delta)) return;
 
             _position += delta;
         }
 
-        [[nodiscard]] constexpr const std::shared_ptr<Collider>& GetCollider() const noexcept
+        [[nodiscard]] const std::shared_ptr<Collider>& GetCollider() const noexcept
         {
             return _collider;
         }
 
-        constexpr void SetCollider(const std::shared_ptr<Collider>& collider) noexcept
+        void SetCollider(const std::shared_ptr<Collider>& collider) noexcept
         {
             _collider = collider;
         }
 
-        constexpr void RemoveCollider() noexcept { _collider.reset(); }
+        void RemoveCollider() noexcept { _collider.reset(); }
 
-        [[nodiscard]] constexpr Vect GetColliderCenterWorld() const noexcept
+        [[nodiscard]] Vect GetColliderCenterWorld() const noexcept
         {
             if (!_collider) return _position;
 
@@ -114,7 +114,7 @@ namespace Guch2D
         }
 
     protected:
-        constexpr void InvokeOnBeginOverlap(const Collision& collision) const
+        void InvokeOnBeginOverlap(const Collision& collision) const
         {
             if (_onBeginOverlap)
             {
@@ -122,7 +122,7 @@ namespace Guch2D
             }
         }
 
-        constexpr void InvokeOnEndOverlap(const Collision& collision) const
+        void InvokeOnEndOverlap(const Collision& collision) const
         {
             if (_onEndOverlap)
             {

@@ -26,13 +26,13 @@ namespace Guch2D
         Collider& operator=(Collider&&) = default;
         virtual ~Collider() = default;
 
-        [[nodiscard]] constexpr ColliderType GetColliderType() const noexcept { return _type; }
+        [[nodiscard]] ColliderType GetColliderType() const noexcept { return _type; }
 
-        constexpr void SetColliderType(const ColliderType type) noexcept { _type = type; }
+        void SetColliderType(const ColliderType type) noexcept { _type = type; }
 
-        [[nodiscard]] constexpr const Vect& GetCenterLocal() const noexcept { return _center; }
+        [[nodiscard]] const Vect& GetCenterLocal() const noexcept { return _center; }
 
-        constexpr void SetCenterLocal(const Vect& center) noexcept
+        void SetCenterLocal(const Vect& center) noexcept
         {
             if (!IsFinite(center))
             {

@@ -26,9 +26,9 @@ namespace Guch2D
         RigidBody& operator=(RigidBody&&) = default;
         ~RigidBody() override = default;
 
-        [[nodiscard]] constexpr float GetMass() const noexcept { return _mass; }
+        [[nodiscard]] float GetMass() const noexcept { return _mass; }
 
-        constexpr void SetMass(const float mass) noexcept
+        void SetMass(const float mass) noexcept
         {
             if (mass <= 0.0F || !IsFinite(mass))
             {

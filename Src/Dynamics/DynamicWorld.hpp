@@ -18,9 +18,9 @@ namespace Guch2D
 
         void Step() const override;
 
-        [[nodiscard]] constexpr const Vect& GetGravity() const noexcept { return _gravity; }
+        [[nodiscard]] const Vect& GetGravity() const noexcept { return _gravity; }
 
-        constexpr void SetGravity(const Vect& gravity) noexcept
+        void SetGravity(const Vect& gravity) noexcept
         {
             if (!IsFinite(gravity))
             {
@@ -36,7 +36,7 @@ namespace Guch2D
 
         void MoveBodies() const noexcept;
 
-        constexpr void ApplyLinearDamping(
+        void ApplyLinearDamping(
             const std::shared_ptr<DynamicRigidBody>& dynamicRigidBody) const noexcept;
 
     public:
