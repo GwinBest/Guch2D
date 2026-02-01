@@ -59,9 +59,8 @@ namespace Guch2D
         void InvokeBeginOverlap() const;
         void InvokeEndOverlap() const;
 
-        [[nodiscard]] static CollisionPoints
-            CheckCollisions(const std::shared_ptr<CollisionBody>& bodyA,
-                            const std::shared_ptr<CollisionBody>& bodyB);
+        [[nodiscard]] static CollisionPoints CheckCollisions(std::shared_ptr<CollisionBody> bodyA,
+                                                             std::shared_ptr<CollisionBody> bodyB);
 
     public:
         static constexpr float DefaultTimeStep = 1.0F / 60.0F;

@@ -96,8 +96,8 @@ namespace Guch2D
         });
     }
 
-    CollisionPoints CollisionWorld::CheckCollisions(const std::shared_ptr<CollisionBody>& bodyA,
-                                                    const std::shared_ptr<CollisionBody>& bodyB)
+    CollisionPoints CollisionWorld::CheckCollisions(std::shared_ptr<CollisionBody> bodyA,
+                                                    std::shared_ptr<CollisionBody> bodyB)
     {
         constexpr auto typeCount = static_cast<size_t>(ColliderType::Count);
 
@@ -123,11 +123,25 @@ namespace Guch2D
         const auto typeA = static_cast<size_t>(bodyACollider->GetColliderType());
         const auto typeB = static_cast<size_t>(bodyBCollider->GetColliderType());
 
+        const bool swap = typeB > typeA;
+        if (swap)
+        {
+            std::swap(bodyA, bodyB);
+        }
+
         try
         {
             if (const auto& collisionFunc = collisionCheckMatrix.at(typeA).at(typeB); collisionFunc)
             {
-                return collisionFunc(bodyA, bodyB);
+                auto collisionPoints = collisionFunc(bodyA, bodyB);
+
+                if (swap)
+                {
+                    std::swap(collisionPoints.A, collisionPoints.B);
+                    collisionPoints.Normal = -collisionPoints.Normal;
+                }
+
+                return collisionPoints;
             }
         }
         catch (std::out_of_range&)
