@@ -6,6 +6,13 @@
 
 namespace
 {
+
+    class CollisionWorldTest : public Guch2D::CollisionWorld
+    {
+    public:
+        using Guch2D::CollisionWorld::CheckCollisions;
+    };
+
     TEST(CollisionWorldTest, DefaultConstructor)
     {
         const Guch2D::CollisionWorld world;
@@ -156,6 +163,47 @@ namespace
         EXPECT_FALSE(onEndOverlapCalledA);
         EXPECT_FALSE(onBeginOverlapCalledB);
         EXPECT_FALSE(onEndOverlapCalledB);
+    }
+
+    TEST(CollisionWorldTest, StepTwoCirclesOverlapsTwoSteps)
+    {
+        Guch2D::CollisionWorld world;
+
+        const auto bodyA = std::make_shared<Guch2D::CollisionBody>();
+        bodyA->SetPosition({0.0F, 0.0F});
+        bodyA->SetCollider(std::make_shared<Guch2D::CircleCollider>());
+        std::dynamic_pointer_cast<Guch2D::CircleCollider>(bodyA->GetCollider())->SetRadius(5.0F);
+
+        const auto bodyB = std::make_shared<Guch2D::CollisionBody>();
+        bodyB->SetPosition({5.0F, 0.0F});
+        bodyB->SetCollider(std::make_shared<Guch2D::CircleCollider>());
+        std::dynamic_pointer_cast<Guch2D::CircleCollider>(bodyB->GetCollider())->SetRadius(5.0F);
+
+        std::uint8_t onBeginOverlapCalledACount = 0;
+        std::uint8_t onEndOverlapCalledACount = 0;
+        bodyA->BindOnBeginOverlap([&](const Guch2D::Collision&) { ++onBeginOverlapCalledACount; });
+        bodyA->BindOnEndOverlap([&](const Guch2D::Collision&) { ++onEndOverlapCalledACount; });
+
+        std::uint8_t onBeginOverlapCalledBCount = 0;
+        std::uint8_t onEndOverlapCalledBCount = 0;
+        bodyB->BindOnBeginOverlap([&](const Guch2D::Collision&) { ++onBeginOverlapCalledBCount; });
+        bodyB->BindOnEndOverlap([&](const Guch2D::Collision&) { ++onEndOverlapCalledBCount; });
+
+        world.AddObject(bodyA);
+        world.AddObject(bodyB);
+        world.Step();
+
+        EXPECT_EQ(onBeginOverlapCalledACount, 1);
+        EXPECT_EQ(onEndOverlapCalledACount, 0);
+        EXPECT_EQ(onBeginOverlapCalledBCount, 1);
+        EXPECT_EQ(onEndOverlapCalledBCount, 0);
+
+        world.Step();
+
+        EXPECT_EQ(onBeginOverlapCalledACount, 1);
+        EXPECT_EQ(onEndOverlapCalledACount, 0);
+        EXPECT_EQ(onBeginOverlapCalledBCount, 1);
+        EXPECT_EQ(onEndOverlapCalledBCount, 0);
     }
 
     TEST(CollisionWorld, StepTwoCirclesWithCollision)
@@ -405,6 +453,68 @@ namespace
         EXPECT_EQ(endOverlapCountB, 1);
         EXPECT_EQ(beginOverlapCountC, 0);
         EXPECT_EQ(endOverlapCountC, 0);
+    }
+
+    TEST(CollisionWorld, CheckCollisionsNullBodyA)
+    {
+        const auto bodyA = std::shared_ptr<Guch2D::CollisionBody>(nullptr);
+        const auto bodyB = std::make_shared<Guch2D::CollisionBody>();
+        const auto collisionPoints = CollisionWorldTest::CheckCollisions(bodyA, bodyB);
+        EXPECT_FALSE(collisionPoints.HasCollision);
+    }
+
+    TEST(CollisionWorld, CheckCollisionsNullBodyB)
+    {
+        const auto bodyA = std::make_shared<Guch2D::CollisionBody>();
+        const auto bodyB = std::shared_ptr<Guch2D::CollisionBody>(nullptr);
+        const auto collisionPoints = CollisionWorldTest::CheckCollisions(bodyA, bodyB);
+        EXPECT_FALSE(collisionPoints.HasCollision);
+    }
+
+    TEST(CollisionWorld, CheckCollisionsBothNullBodies)
+    {
+        const auto bodyA = std::shared_ptr<Guch2D::CollisionBody>(nullptr);
+        const auto bodyB = std::shared_ptr<Guch2D::CollisionBody>(nullptr);
+        const auto collisionPoints = CollisionWorldTest::CheckCollisions(bodyA, bodyB);
+        EXPECT_FALSE(collisionPoints.HasCollision);
+    }
+
+    TEST(CollisionWorld, CheckCollisionsNoColliderA)
+    {
+        const auto bodyA = std::make_shared<Guch2D::CollisionBody>();
+        const auto bodyB = std::make_shared<Guch2D::CollisionBody>();
+        bodyB->SetCollider(std::make_shared<Guch2D::CircleCollider>());
+        const auto collisionPoints = CollisionWorldTest::CheckCollisions(bodyA, bodyB);
+        EXPECT_FALSE(collisionPoints.HasCollision);
+    }
+
+    TEST(CollisionWorld, CheckCollisionsNoColliderB)
+    {
+        const auto bodyA = std::make_shared<Guch2D::CollisionBody>();
+        const auto bodyB = std::make_shared<Guch2D::CollisionBody>();
+        bodyA->SetCollider(std::make_shared<Guch2D::CircleCollider>());
+        const auto collisionPoints = CollisionWorldTest::CheckCollisions(bodyA, bodyB);
+        EXPECT_FALSE(collisionPoints.HasCollision);
+    }
+
+    TEST(CollisionWorld, CheckCollisionsNoColliders)
+    {
+        const auto bodyA = std::make_shared<Guch2D::CollisionBody>();
+        const auto bodyB = std::make_shared<Guch2D::CollisionBody>();
+        const auto collisionPoints = CollisionWorldTest::CheckCollisions(bodyA, bodyB);
+        EXPECT_FALSE(collisionPoints.HasCollision);
+    }
+
+    TEST(CollisionWorld, CheckCollisionsNoCollisionFunc)
+    {
+        const auto bodyA = std::make_shared<Guch2D::CollisionBody>();
+        const auto bodyB = std::make_shared<Guch2D::CollisionBody>();
+        bodyA->SetCollider(std::make_shared<Guch2D::CircleCollider>());
+        bodyB->SetCollider(std::make_shared<Guch2D::CircleCollider>());
+        bodyA->GetCollider()->SetColliderType(Guch2D::ColliderType::Count);
+        bodyB->GetCollider()->SetColliderType(Guch2D::ColliderType::Count);
+        const auto collisionPoints = CollisionWorldTest::CheckCollisions(bodyA, bodyB);
+        EXPECT_FALSE(collisionPoints.HasCollision);
     }
 
 }   // namespace
