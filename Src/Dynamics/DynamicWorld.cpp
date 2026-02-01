@@ -54,7 +54,7 @@ namespace Guch2D
         }
     }
 
-    constexpr void DynamicWorld::ApplyLinearDamping(
+    void DynamicWorld::ApplyLinearDamping(
         const std::shared_ptr<DynamicRigidBody>& dynamicRigidBody) const noexcept
     {
         const float dampingFactorX = std::clamp(
