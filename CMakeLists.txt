@@ -21,18 +21,15 @@ function(enable_asan target_name)
         target_compile_options(${target_name} PRIVATE
                 $<$<CONFIG:Debug>:-fsanitize=address -fno-omit-frame-pointer>
                 $<$<CONFIG:RelWithDebInfo>:-fsanitize=address -fno-omit-frame-pointer>
-                $<$<CONFIG:Release>:-fsanitize=address -fno-omit-frame-pointer>
         )
         target_link_options(${target_name} PRIVATE
                 $<$<CONFIG:Debug>:-fsanitize=address>
                 $<$<CONFIG:RelWithDebInfo>:-fsanitize=address>
-                $<$<CONFIG:Release>:-fsanitize=address>
         )
     elseif (MSVC)
         target_compile_options(${target_name} PRIVATE
                 $<$<CONFIG:Debug>:/fsanitize=address>
                 $<$<CONFIG:RelWithDebInfo>:/fsanitize=address>
-                $<$<CONFIG:Release>:/fsanitize=address>
         )
     endif ()
 endfunction()
