@@ -23,14 +23,20 @@ namespace
                                   ->GetRadius();
 
         Guch2D::CollisionPoints collisionPoints;
-        collisionPoints.HasCollision = Guch2D::VectLength(centerA - centerB) <= radiusA + radiusB;
+        const auto delta = centerB - centerA;
+        const float distance = Guch2D::VectLength(delta);
+        const float radiusSum = radiusA + radiusB;
+
+        collisionPoints.HasCollision = distance <= radiusSum;
 
         if (!collisionPoints.HasCollision) return collisionPoints;
 
-        collisionPoints.A = centerA + Guch2D::VectNormalize(centerB - centerA) * radiusA;
-        collisionPoints.B = centerB + Guch2D::VectNormalize(centerA - centerB) * radiusB;
-        collisionPoints.Normal = Guch2D::VectNormalize(collisionPoints.B - collisionPoints.A);
-        collisionPoints.Depth = Guch2D::VectLength(collisionPoints.B - collisionPoints.A);
+        const Guch2D::Vect directionAB = distance > 0.0F ? delta / distance : Guch2D::Vect{1.0F, 0.0F};
+
+        collisionPoints.A = centerA + directionAB * radiusA;
+        collisionPoints.B = centerB - directionAB * radiusB;
+        collisionPoints.Normal = -directionAB;
+        collisionPoints.Depth = radiusSum - distance;
 
         return collisionPoints;
     }
