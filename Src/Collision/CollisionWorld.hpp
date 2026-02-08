@@ -61,6 +61,8 @@ namespace Guch2D
 
         [[nodiscard]] size_t GetObjectsCount() const noexcept { return _objects.size(); }
 
+        [[nodiscard]] size_t GetSolversCount() const noexcept { return _solvers.size(); }
+
         [[nodiscard]] float GetTimeStep() const noexcept { return _timeStep; }
 
         void SetTimeStep(const float timeStep) noexcept
