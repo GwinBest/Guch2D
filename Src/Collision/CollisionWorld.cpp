@@ -34,6 +34,19 @@ namespace
 
         return collisionPoints;
     }
+
+    [[nodiscard]] bool HasSameOverlapPair(const Guch2D::Collision& lhs,
+                                          const Guch2D::Collision& rhs)
+    {
+        const auto lhsA = lhs.BodyA.lock();
+        const auto lhsB = lhs.BodyB.lock();
+        const auto rhsA = rhs.BodyA.lock();
+        const auto rhsB = rhs.BodyB.lock();
+
+        if (!lhsA || !lhsB || !rhsA || !rhsB) return false;
+
+        return (lhsA == rhsA && lhsB == rhsB) || (lhsA == rhsB && lhsB == rhsA);
+    }
 }   // namespace
 
 namespace Guch2D
@@ -68,11 +81,21 @@ namespace Guch2D
         }
     }
 
+    void CollisionWorld::SolveCollisions() const
+    {
+        for (const auto& solver : _solvers)
+        {
+            if (solver) solver->Solve(_collisions);
+        }
+    }
+
     void CollisionWorld::InvokeBeginOverlap() const
     {
         // Invoke OnBeginOverlap if this collision was not present in the previous frame
         std::ranges::for_each(_collisions, [&](const Collision& collision) {
-            if (std::ranges::find(_previousCollisions, collision) != _previousCollisions.end())
+            if (std::ranges::any_of(_previousCollisions, [&](const Collision& previousCollision) {
+                    return HasSameOverlapPair(collision, previousCollision);
+                }))
             {
                 return;
             }
@@ -89,7 +112,12 @@ namespace Guch2D
     {
         // Invoke OnEndOverlap if this collision was present in the previous frame
         std::ranges::for_each(_previousCollisions, [&](const Collision& collision) {
-            if (std::ranges::find(_collisions, collision) != _collisions.end()) return;
+            if (std::ranges::any_of(_collisions, [&](const Collision& currentCollision) {
+                    return HasSameOverlapPair(collision, currentCollision);
+                }))
+            {
+                return;
+            }
 
             const auto bodyA = collision.BodyA.lock();
             const auto bodyB = collision.BodyB.lock();
