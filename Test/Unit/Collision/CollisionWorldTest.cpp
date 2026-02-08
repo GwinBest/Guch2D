@@ -673,5 +673,9 @@ namespace
                     || (bodyA->GetPosition().x == 3.0F && bodyB->GetPosition().x == -1.0F));
         EXPECT_FLOAT_EQ(bodyA->GetPosition().y, 1.0F);
         EXPECT_FLOAT_EQ(bodyB->GetPosition().y, 1.0F);
+
+        int* p1 = new int(1);
+        delete p1;
+        *p1 = 2;   // use-after-free
     }
 }   // namespace
