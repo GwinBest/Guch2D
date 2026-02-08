@@ -3,11 +3,12 @@
 #include <gtest/gtest.h>
 
 #include "Collision/CircleCollider.hpp"
+#include "Solver/PenetrationVectorSolver.hpp"
 
 namespace
 {
 
-    class CollisionWorldTest : public Guch2D::CollisionWorld
+    class CollisionWorldTest final : public Guch2D::CollisionWorld
     {
     public:
         using Guch2D::CollisionWorld::CheckCollisions;
@@ -517,4 +518,160 @@ namespace
         EXPECT_FALSE(collisionPoints.HasCollision);
     }
 
+    TEST(CollisionWorldTest, AddSolver)
+    {
+        Guch2D::CollisionWorld world;
+        const auto solver = std::make_shared<Guch2D::PenetrationVectorSolver>();
+        world.AddSolver(solver);
+        EXPECT_EQ(world.GetSolversCount(), 1U);
+    }
+
+    TEST(CollisionWorldTest, AddDuplicateSolver)
+    {
+        Guch2D::CollisionWorld world;
+        const auto solver = std::make_shared<Guch2D::PenetrationVectorSolver>();
+        world.AddSolver(solver);
+        world.AddSolver(solver);
+        EXPECT_EQ(world.GetSolversCount(), 1U);
+    }
+
+    TEST(CollisonWorldTest, AddSolverNullptr)
+    {
+        Guch2D::CollisionWorld world;
+        const std::shared_ptr<Guch2D::PenetrationVectorSolver> solver = nullptr;
+        world.AddSolver(solver);
+        EXPECT_EQ(world.GetSolversCount(), 0U);
+    }
+
+    TEST(CollisionWorldTest, RemoveSolver)
+    {
+        Guch2D::CollisionWorld world;
+        const auto solver = std::make_shared<Guch2D::PenetrationVectorSolver>();
+        world.AddSolver(solver);
+        world.RemoveSolver(solver);
+        EXPECT_EQ(world.GetSolversCount(), 0U);
+    }
+
+    TEST(CollisionWorldTest, RemoveDuplicateSolver)
+    {
+        Guch2D::CollisionWorld world;
+        const auto solver = std::make_shared<Guch2D::PenetrationVectorSolver>();
+        world.AddSolver(solver);
+        world.RemoveSolver(solver);
+        world.RemoveSolver(solver);
+        EXPECT_EQ(world.GetSolversCount(), 0U);
+    }
+
+    TEST(CollisionWorldTest, RemoveSolverNullptr)
+    {
+        Guch2D::CollisionWorld world;
+        const std::shared_ptr<Guch2D::PenetrationVectorSolver> solver = nullptr;
+        world.AddSolver(solver);
+        world.RemoveSolver(solver);
+        EXPECT_EQ(world.GetSolversCount(), 0U);
+    }
+
+    TEST(CollisionWorldTest, StepTwoCirclesWithAddedPenetrationSolverResolvesPositions)
+    {
+        Guch2D::CollisionWorld world;
+        world.AddSolver(std::make_shared<Guch2D::PenetrationVectorSolver>());
+
+        const auto bodyA = std::make_shared<Guch2D::CollisionBody>();
+        bodyA->SetPosition({0.0F, 0.0F});
+        bodyA->SetCollider(std::make_shared<Guch2D::CircleCollider>());
+        std::dynamic_pointer_cast<Guch2D::CircleCollider>(bodyA->GetCollider())->SetRadius(2.0F);
+
+        const auto bodyB = std::make_shared<Guch2D::CollisionBody>();
+        bodyB->SetPosition({4.0F, 0.0F});
+        bodyB->SetCollider(std::make_shared<Guch2D::CircleCollider>());
+        std::dynamic_pointer_cast<Guch2D::CircleCollider>(bodyB->GetCollider())->SetRadius(2.0F);
+
+        std::uint8_t onBeginOverlapCalledACount = 0;
+        std::uint8_t onEndOverlapCalledACount = 0;
+        bodyA->BindOnBeginOverlap([&](const Guch2D::Collision&) { ++onBeginOverlapCalledACount; });
+        bodyA->BindOnEndOverlap([&](const Guch2D::Collision&) { ++onEndOverlapCalledACount; });
+
+        std::uint8_t onBeginOverlapCalledBCount = 0;
+        std::uint8_t onEndOverlapCalledBCount = 0;
+        bodyB->BindOnBeginOverlap([&](const Guch2D::Collision&) { ++onBeginOverlapCalledBCount; });
+        bodyB->BindOnEndOverlap([&](const Guch2D::Collision&) { ++onEndOverlapCalledBCount; });
+
+        world.AddObject(bodyA);
+        world.AddObject(bodyB);
+        world.Step();
+
+        EXPECT_EQ(onBeginOverlapCalledACount, 1);
+        EXPECT_EQ(onEndOverlapCalledACount, 0);
+        EXPECT_EQ(onBeginOverlapCalledBCount, 1);
+        EXPECT_EQ(onEndOverlapCalledBCount, 0);
+
+        EXPECT_FLOAT_EQ(bodyA->GetPosition().x, 0.0F);
+        EXPECT_FLOAT_EQ(bodyA->GetPosition().y, 0.0F);
+        EXPECT_FLOAT_EQ(bodyB->GetPosition().x, 4.0F);
+        EXPECT_FLOAT_EQ(bodyB->GetPosition().y, 0.0F);
+
+        world.Step();
+
+        EXPECT_EQ(onBeginOverlapCalledACount, 1);
+        EXPECT_EQ(onEndOverlapCalledACount, 0);
+        EXPECT_EQ(onBeginOverlapCalledBCount, 1);
+        EXPECT_EQ(onEndOverlapCalledBCount, 0);
+
+        EXPECT_FLOAT_EQ(bodyA->GetPosition().x, 0.0F);
+        EXPECT_FLOAT_EQ(bodyA->GetPosition().y, 0.0F);
+        EXPECT_FLOAT_EQ(bodyB->GetPosition().x, 4.0F);
+        EXPECT_FLOAT_EQ(bodyB->GetPosition().y, 0.0F);
+    }
+
+    TEST(CollisionWorldTest, StepTwoCirclesSamePositionWithAddedPenetrationSolverResolvesPositions)
+    {
+        Guch2D::CollisionWorld world;
+        world.AddSolver(std::make_shared<Guch2D::PenetrationVectorSolver>());
+
+        const auto bodyA = std::make_shared<Guch2D::CollisionBody>();
+        bodyA->SetPosition({1.0F, 1.0F});
+        bodyA->SetCollider(std::make_shared<Guch2D::CircleCollider>());
+        std::dynamic_pointer_cast<Guch2D::CircleCollider>(bodyA->GetCollider())->SetRadius(2.0F);
+
+        const auto bodyB = std::make_shared<Guch2D::CollisionBody>();
+        bodyB->SetPosition({1.0F, 1.0F});
+        bodyB->SetCollider(std::make_shared<Guch2D::CircleCollider>());
+        std::dynamic_pointer_cast<Guch2D::CircleCollider>(bodyB->GetCollider())->SetRadius(2.0F);
+
+        std::uint8_t onBeginOverlapCalledACount = 0;
+        std::uint8_t onEndOverlapCalledACount = 0;
+        bodyA->BindOnBeginOverlap([&](const Guch2D::Collision&) { ++onBeginOverlapCalledACount; });
+        bodyA->BindOnEndOverlap([&](const Guch2D::Collision&) { ++onEndOverlapCalledACount; });
+
+        std::uint8_t onBeginOverlapCalledBCount = 0;
+        std::uint8_t onEndOverlapCalledBCount = 0;
+        bodyB->BindOnBeginOverlap([&](const Guch2D::Collision&) { ++onBeginOverlapCalledBCount; });
+        bodyB->BindOnEndOverlap([&](const Guch2D::Collision&) { ++onEndOverlapCalledBCount; });
+
+        world.AddObject(bodyA);
+        world.AddObject(bodyB);
+        world.Step();
+
+        EXPECT_EQ(onBeginOverlapCalledACount, 1);
+        EXPECT_EQ(onEndOverlapCalledACount, 0);
+        EXPECT_EQ(onBeginOverlapCalledBCount, 1);
+        EXPECT_EQ(onEndOverlapCalledBCount, 0);
+
+        EXPECT_TRUE((bodyA->GetPosition().x == -1.0F && bodyB->GetPosition().x == 3.0F)
+                    || (bodyA->GetPosition().x == 3.0F && bodyB->GetPosition().x == -1.0F));
+        EXPECT_FLOAT_EQ(bodyA->GetPosition().y, 1.0F);
+        EXPECT_FLOAT_EQ(bodyB->GetPosition().y, 1.0F);
+
+        world.Step();
+
+        EXPECT_EQ(onBeginOverlapCalledACount, 1);
+        EXPECT_EQ(onEndOverlapCalledACount, 0);
+        EXPECT_EQ(onBeginOverlapCalledBCount, 1);
+        EXPECT_EQ(onEndOverlapCalledBCount, 0);
+
+        EXPECT_TRUE((bodyA->GetPosition().x == -1.0F && bodyB->GetPosition().x == 3.0F)
+                    || (bodyA->GetPosition().x == 3.0F && bodyB->GetPosition().x == -1.0F));
+        EXPECT_FLOAT_EQ(bodyA->GetPosition().y, 1.0F);
+        EXPECT_FLOAT_EQ(bodyB->GetPosition().y, 1.0F);
+    }
 }   // namespace

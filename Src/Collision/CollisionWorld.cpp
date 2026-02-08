@@ -5,6 +5,7 @@
 #include <print>
 
 #include "Collision/CircleCollider.hpp"
+#include "Solver/PenetrationVectorSolver.hpp"
 
 namespace
 {
@@ -22,16 +23,35 @@ namespace
                                   ->GetRadius();
 
         Guch2D::CollisionPoints collisionPoints;
-        collisionPoints.HasCollision = Guch2D::VectLength(centerA - centerB) <= radiusA + radiusB;
+        const auto delta = centerB - centerA;
+        const float distance = Guch2D::VectLength(delta);
+        const float radiusSum = radiusA + radiusB;
+
+        collisionPoints.HasCollision = distance <= radiusSum;
 
         if (!collisionPoints.HasCollision) return collisionPoints;
 
-        collisionPoints.A = centerA + Guch2D::VectNormalize(centerB - centerA) * radiusA;
-        collisionPoints.B = centerB + Guch2D::VectNormalize(centerA - centerB) * radiusB;
-        collisionPoints.Normal = Guch2D::VectNormalize(collisionPoints.B - collisionPoints.A);
-        collisionPoints.Depth = Guch2D::VectLength(collisionPoints.B - collisionPoints.A);
+        const Guch2D::Vect directionAB = distance > 0.0F ? delta / distance : Guch2D::Vect{1.0F, 0.0F};
+
+        collisionPoints.A = centerA + directionAB * radiusA;
+        collisionPoints.B = centerB - directionAB * radiusB;
+        collisionPoints.Normal = -directionAB;
+        collisionPoints.Depth = radiusSum - distance;
 
         return collisionPoints;
+    }
+
+    [[nodiscard]] bool HasSameOverlapPair(const Guch2D::Collision& lhs,
+                                          const Guch2D::Collision& rhs)
+    {
+        const auto lhsA = lhs.BodyA.lock();
+        const auto lhsB = lhs.BodyB.lock();
+        const auto rhsA = rhs.BodyA.lock();
+        const auto rhsB = rhs.BodyB.lock();
+
+        if (!lhsA || !lhsB || !rhsA || !rhsB) return false;
+
+        return (lhsA == rhsA && lhsB == rhsB) || (lhsA == rhsB && lhsB == rhsA);
     }
 }   // namespace
 
@@ -42,6 +62,8 @@ namespace Guch2D
         FindCollisions();
         InvokeBeginOverlap();
         InvokeEndOverlap();
+
+        SolveCollisions();
 
         _previousCollisions = std::move(_collisions);
     }
@@ -65,11 +87,21 @@ namespace Guch2D
         }
     }
 
+    void CollisionWorld::SolveCollisions() const
+    {
+        for (const auto& solver : _solvers)
+        {
+            if (solver) solver->Solve(_collisions);
+        }
+    }
+
     void CollisionWorld::InvokeBeginOverlap() const
     {
         // Invoke OnBeginOverlap if this collision was not present in the previous frame
         std::ranges::for_each(_collisions, [&](const Collision& collision) {
-            if (std::ranges::find(_previousCollisions, collision) != _previousCollisions.end())
+            if (std::ranges::any_of(_previousCollisions, [&](const Collision& previousCollision) {
+                    return HasSameOverlapPair(collision, previousCollision);
+                }))
             {
                 return;
             }
@@ -86,7 +118,12 @@ namespace Guch2D
     {
         // Invoke OnEndOverlap if this collision was present in the previous frame
         std::ranges::for_each(_previousCollisions, [&](const Collision& collision) {
-            if (std::ranges::find(_collisions, collision) != _collisions.end()) return;
+            if (std::ranges::any_of(_collisions, [&](const Collision& currentCollision) {
+                    return HasSameOverlapPair(collision, currentCollision);
+                }))
+            {
+                return;
+            }
 
             const auto bodyA = collision.BodyA.lock();
             const auto bodyB = collision.BodyB.lock();
