@@ -205,6 +205,7 @@ public:
             RemoveCollision(callback);
         });
         _world.AddObject(_probe.body);
+        _world.AddSolver(std::make_shared<Guch2D::PenetrationVectorSolver>());
     }
 
     void HandleEvent(const sf::Event& event, sf::RenderWindow& window) override
@@ -236,14 +237,16 @@ public:
                 auto circlePtr = std::make_shared<CircleBody>(
                     CircleBody {body, _spawnRadius, false});
 
-                circlePtr->body->BindOnBeginOverlap([this, circlePtr](const Guch2D::Collision& callback) {
-                    circlePtr->isOverlappingWithProbe++;
-                    RegisterCollision(callback);
-                });
-                circlePtr->body->BindOnEndOverlap([this, circlePtr](const Guch2D::Collision& callback) {
-                    circlePtr->isOverlappingWithProbe--;
-                    RemoveCollision(callback);
-                });
+                circlePtr->body->BindOnBeginOverlap(
+                    [this, circlePtr](const Guch2D::Collision& callback) {
+                        circlePtr->isOverlappingWithProbe++;
+                        RegisterCollision(callback);
+                    });
+                circlePtr->body->BindOnEndOverlap(
+                    [this, circlePtr](const Guch2D::Collision& callback) {
+                        circlePtr->isOverlappingWithProbe--;
+                        RemoveCollision(callback);
+                    });
 
                 _circles.push_back(circlePtr);
                 _world.AddObject(circlePtr->body);
@@ -364,10 +367,10 @@ private:
                 continue;
             }
 
-            const auto colliderA =
-                std::dynamic_pointer_cast<Guch2D::CircleCollider>(bodyA->GetCollider());
-            const auto colliderB =
-                std::dynamic_pointer_cast<Guch2D::CircleCollider>(bodyB->GetCollider());
+            const auto colliderA = std::dynamic_pointer_cast<Guch2D::CircleCollider>(
+                bodyA->GetCollider());
+            const auto colliderB = std::dynamic_pointer_cast<Guch2D::CircleCollider>(
+                bodyB->GetCollider());
             if (!colliderA || !colliderB)
             {
                 continue;
@@ -406,12 +409,10 @@ private:
 
         const Guch2D::Vect tipWorld = startWorld + normal * CollisionNormalLengthMeters;
         const Guch2D::Vect perp = {-normal.y, normal.x};
-        const Guch2D::Vect leftWorld =
-            tipWorld - normal * CollisionNormalHeadLengthMeters
-            + perp * CollisionNormalHeadWidthMeters;
-        const Guch2D::Vect rightWorld =
-            tipWorld - normal * CollisionNormalHeadLengthMeters
-            - perp * CollisionNormalHeadWidthMeters;
+        const Guch2D::Vect leftWorld = tipWorld - normal * CollisionNormalHeadLengthMeters
+                                     + perp * CollisionNormalHeadWidthMeters;
+        const Guch2D::Vect rightWorld = tipWorld - normal * CollisionNormalHeadLengthMeters
+                                      - perp * CollisionNormalHeadWidthMeters;
 
         sf::VertexArray line(sf::PrimitiveType::Lines, 2);
         line[0] = sf::Vertex(WorldToScreen(startWorld, _pixelsPerMeter), color);
@@ -433,9 +434,10 @@ private:
             return;
         }
 
-        auto it = std::find_if(_collisionPairs.begin(),
-                               _collisionPairs.end(),
-                               [&](const CollisionPair& pair) { return IsSamePair(collision, pair); });
+        auto it = std::find_if(
+            _collisionPairs.begin(),
+            _collisionPairs.end(),
+            [&](const CollisionPair& pair) { return IsSamePair(collision, pair); });
         if (it == _collisionPairs.end())
         {
             _collisionPairs.push_back({collision.BodyA, collision.BodyB});
@@ -462,10 +464,10 @@ private:
             return false;
         }
 
-        const auto colliderA =
-            std::dynamic_pointer_cast<Guch2D::CircleCollider>(bodyA->GetCollider());
-        const auto colliderB =
-            std::dynamic_pointer_cast<Guch2D::CircleCollider>(bodyB->GetCollider());
+        const auto colliderA = std::dynamic_pointer_cast<Guch2D::CircleCollider>(
+            bodyA->GetCollider());
+        const auto colliderB = std::dynamic_pointer_cast<Guch2D::CircleCollider>(
+            bodyB->GetCollider());
         if (!colliderA || !colliderB)
         {
             return false;
