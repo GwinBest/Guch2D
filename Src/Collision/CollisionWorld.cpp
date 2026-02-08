@@ -5,6 +5,7 @@
 #include <print>
 
 #include "Collision/CircleCollider.hpp"
+#include "Solver/PenetrationVectorSolver.hpp"
 
 namespace
 {
@@ -42,6 +43,8 @@ namespace Guch2D
         FindCollisions();
         InvokeBeginOverlap();
         InvokeEndOverlap();
+
+        SolveCollisions();
 
         _previousCollisions = std::move(_collisions);
     }

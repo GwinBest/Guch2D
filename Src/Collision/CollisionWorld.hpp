@@ -5,9 +5,12 @@
 #include <vector>
 
 #include "Collision/CollisionBody.hpp"
+#include "Solver/PenetrationVectorSolver.hpp"
 
 namespace Guch2D
 {
+    class Solver;
+
     class CollisionWorld
     {
     public:
@@ -38,6 +41,24 @@ namespace Guch2D
             std::erase(_objects, object);
         }
 
+        void AddSolver(const std::shared_ptr<Solver>& solver)
+        {
+            if (!solver) return;
+
+            // Avoid duplicates
+            if (std::ranges::find(_solvers, solver) == _solvers.end())
+            {
+                _solvers.push_back(solver);
+            }
+        }
+
+        void RemoveSolver(const std::shared_ptr<Solver>& solver)
+        {
+            if (!solver) return;
+
+            std::erase(_solvers, solver);
+        }
+
         [[nodiscard]] size_t GetObjectsCount() const noexcept { return _objects.size(); }
 
         [[nodiscard]] float GetTimeStep() const noexcept { return _timeStep; }
@@ -56,6 +77,8 @@ namespace Guch2D
     protected:
         void FindCollisions() const;
 
+        void SolveCollisions() const;
+
         void InvokeBeginOverlap() const;
         void InvokeEndOverlap() const;
 
@@ -67,6 +90,7 @@ namespace Guch2D
 
     protected:
         std::vector<std::shared_ptr<CollisionBody>> _objects;
+        std::vector<std::shared_ptr<Solver>> _solvers;
 
         float _timeStep = DefaultTimeStep;
 
