@@ -8,6 +8,13 @@ FetchContent_Declare(
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
+# Keep ASan annotation settings consistent across all linked test libraries.
+foreach (gtest_target IN ITEMS gtest gtest_main gmock gmock_main)
+    if (TARGET ${gtest_target})
+        enable_asan(${gtest_target})
+    endif ()
+endforeach ()
+
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/Test/*.cpp")
 
 add_executable(${PROJECT_NAME}-Test ${SOURCES})
