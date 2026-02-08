@@ -31,7 +31,8 @@ namespace
 
         if (!collisionPoints.HasCollision) return collisionPoints;
 
-        const Guch2D::Vect directionAB = distance > 0.0F ? delta / distance : Guch2D::Vect{1.0F, 0.0F};
+        const Guch2D::Vect directionAB = distance > 0.0F ? delta / distance
+                                                         : Guch2D::Vect {1.0F, 0.0F};
 
         collisionPoints.A = centerA + directionAB * radiusA;
         collisionPoints.B = centerB - directionAB * radiusB;
