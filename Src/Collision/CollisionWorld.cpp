@@ -39,9 +39,6 @@ namespace
         collisionPoints.Normal = -directionAB;
         collisionPoints.Depth = radiusSum - distance;
 
-        int* a = new int;
-        delete[] a;
-
         return collisionPoints;
     }
 
