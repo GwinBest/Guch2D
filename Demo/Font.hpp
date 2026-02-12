@@ -44,7 +44,7 @@ public:
                 {
                     const std::uint8_t mask = static_cast<std::uint8_t>(1u
                                                                         << (_charWidth - 1 - col));
-                    if ((glyph[row] & mask) == 0u)
+                    if ((glyph[static_cast<size_t>(row)] & mask) == 0u)
                     {
                         continue;
                     }
