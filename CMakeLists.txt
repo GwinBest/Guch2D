@@ -70,7 +70,7 @@ endfunction()
 
 function(enable_project_warnings target_name)
     target_compile_options(${target_name} PRIVATE
-            $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX>
+            $<$<CXX_COMPILER_ID:MSVC>:/Wall /WX>
             $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -Wconversion -Wshadow -Werror>
     )
 endfunction()
