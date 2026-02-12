@@ -5,11 +5,7 @@ file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
 
 add_library(${PROJECT_NAME} ${SOURCES})
 enable_asan(${PROJECT_NAME})
-
-target_compile_options(${PROJECT_NAME} PRIVATE
-  $<$<CXX_COMPILER_ID:MSVC>:/W4>
-  $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -Wconversion -Wshadow>
-)
+enable_project_warnings(${PROJECT_NAME})
 
 target_include_directories(${PROJECT_NAME} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 

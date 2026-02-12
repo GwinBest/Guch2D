@@ -68,6 +68,13 @@ function(enable_asan target_name)
     endif ()
 endfunction()
 
+function(enable_project_warnings target_name)
+    target_compile_options(${target_name} PRIVATE
+            $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX>
+            $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -Wconversion -Wshadow -Werror>
+    )
+endfunction()
+
 add_subdirectory(Src)
 
 if (BUILD_DEMO)

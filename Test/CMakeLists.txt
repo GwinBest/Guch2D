@@ -19,6 +19,7 @@ file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/Test/*.cpp")
 
 add_executable(${PROJECT_NAME}-Test ${SOURCES})
 enable_asan(${PROJECT_NAME}-Test)
+enable_project_warnings(${PROJECT_NAME}-Test)
 
 target_link_libraries(${PROJECT_NAME}-Test PRIVATE gtest gtest_main ${PROJECT_NAME})
 target_include_directories(${PROJECT_NAME}-Test
