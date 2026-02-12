@@ -281,8 +281,6 @@ public:
 
     void Render(sf::RenderWindow& window) override
     {
-        bool anyOverlap = false;
-
         for (const auto& circlePtr : _circles)
         {
             const bool overlap = circlePtr->isOverlappingWithProbe;
@@ -676,6 +674,9 @@ int main()
         RenderOverlay(window, font, demos.Active(), demos.ActiveIndex(), demos.Count());
         window.display();
     }
+
+    int* a = new int;
+    delete[] a;
 
     return 0;
 }
