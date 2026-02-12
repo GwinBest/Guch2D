@@ -675,8 +675,5 @@ int main()
         window.display();
     }
 
-    int* a = new int;
-    delete[] a;
-
     return 0;
 }
