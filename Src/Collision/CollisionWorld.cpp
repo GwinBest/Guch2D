@@ -143,7 +143,7 @@ namespace Guch2D
                                                             const std::shared_ptr<CollisionBody>&)>;
         using CollisionFuncMatrix = std::array<std::array<CollisionFunc, typeCount>, typeCount>;
 
-        static const CollisionFuncMatrix collisionCheckMatrix = {
+        static const CollisionFuncMatrix CollisionCheckMatrix = {
             {
              //     None          Circle
                 {nullptr, nullptr},                       // None
@@ -169,7 +169,7 @@ namespace Guch2D
 
         try
         {
-            if (const auto& collisionFunc = collisionCheckMatrix.at(typeA).at(typeB); collisionFunc)
+            if (const auto& collisionFunc = CollisionCheckMatrix.at(typeA).at(typeB); collisionFunc)
             {
                 auto collisionPoints = collisionFunc(bodyA, bodyB);
 
