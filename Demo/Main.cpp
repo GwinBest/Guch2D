@@ -281,8 +281,6 @@ public:
 
     void Render(sf::RenderWindow& window) override
     {
-        bool anyOverlap = false;
-
         for (const auto& circlePtr : _circles)
         {
             const bool overlap = circlePtr->isOverlappingWithProbe;

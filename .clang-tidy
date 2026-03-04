@@ -1,78 +1,41 @@
 ---
 Checks: >
-  *,
-  abseil-*,
-  -altera-unroll-loops,
-  android-*,
-  boost-*,
   bugprone-*,
-  -bugprone-easily-swappable-parameters,
-  cert-*,
-  -cert-dcl21-cpp,
-  -cert-err58-cpp,
   clang-analyzer-*,
   concurrency-*,
   cppcoreguidelines-*,
   -cppcoreguidelines-avoid-magic-numbers,
   -cppcoreguidelines-non-private-member-variables-in-classes,
-  darwin-*,
-  fuchsia-*,
-  -fuchsia-default-arguments-calls,
-  -fuchsia-default-arguments-declarations,
-  -fuchsia-multiple-inheritance,
-  -fuchsia-overloaded-operator,
-  -fuchsia-trailing-return,
-  -fuchsia-virtual-inheritance,
-  google-*,
-  -google-objc-avoid-throwing-exception,
-  -google-objc-function-naming,
-  -google-objc-global-variable-declaration,
-  -google-readability-todo,
-  hicpp-*,
-  -hicpp-no-assembler,
-  -hicpp-braces-around-statements,
-  linuxkernel-*,
-  llvm-*
-  -llvm-header-guard,
-  -llvm-header-guard,
-  -llvm-include-order,
-  llvmlibc-*,
-  -llvmlibc-callee-namespace,
-  -llvmlibc-implementation-in-namespace,
-  -llvmlibc-inline-function-decl,
-  -llvmlibc-restrict-system-libc-headers,
   misc-*,
-  -misc-non-private-member-variables-in-classes,
-  -misc-include-cleaner,
   modernize-*,
   -modernize-use-trailing-return-type,
-  mpi-*,
   objc-*,
-  openmp-*,
   performance-*,
-  -performance-avoid-endl,
   portability-*,
-  -portability-restrict-system-includes,
   readability-*,
-  -readability-function-cognitive-complexity,
-  -readability-avoid-const-params-in-decls,
-  -readability-identifier-length,
-  -readability-magic-numbers,
-  -readability-braces-around-statements,
-  -readability-redundant-access-specifiers,
-  zircon-*,
-  -zircon-temporary-objects,
 
 CheckOptions:
   - { key: readability-identifier-naming.NamespaceCase,          value: CamelCase }
   - { key: readability-identifier-naming.ClassCase,              value: CamelCase }
   - { key: readability-identifier-naming.StructCase,             value: CamelCase }
+  - { key: readability-identifier-naming.EnumCase,               value: CamelCase }
+  - { key: readability-identifier-naming.EnumConstantCase,       value: CamelCase }
+  - { key: readability-identifier-naming.TypeAliasCase,          value: CamelCase }
   - { key: readability-identifier-naming.TemplateParameterCase,  value: CamelCase }
   - { key: readability-identifier-naming.FunctionCase,           value: CamelCase }
   - { key: readability-identifier-naming.ClassMethodCase,        value: CamelCase }
+  - { key: readability-identifier-naming.ParameterCase,          value: camelBack }
   - { key: readability-identifier-naming.VariableCase,           value: camelBack }
+  - { key: readability-identifier-naming.LocalConstantCase,      value: camelBack }
+  - { key: readability-identifier-naming.GlobalConstantCase,     value: CamelCase }
   - { key: readability-identifier-naming.ClassMemberCase,        value: camelBack }
+  - { key: readability-identifier-naming.ClassConstantCase,      value: CamelCase }
+  - { key: readability-identifier-naming.StaticConstantCase,     value: CamelCase }
+  - { key: readability-identifier-naming.StructMemberCase,       value: CamelCase }
   - { key: readability-identifier-naming.PublicMemberCase,       value: CamelCase }
-  - { key: readability-identifier-naming.PrivateMemberPrefix,     value: _ }
-  - { key: readability-identifier-naming.ProtectedMemberPrefix,   value: _ }
+  - { key: readability-identifier-naming.PrivateMemberCase,      value: camelBack }
+  - { key: readability-identifier-naming.PrivateMemberPrefix,    value: _ }
+  - { key: readability-identifier-naming.ProtectedMemberCase,    value: camelBack }
+  - { key: readability-identifier-naming.ProtectedMemberPrefix,  value: _ }
+  - { key: readability-identifier-naming.StructuredBindingCase,  value: CamelCase }
   - { key: readability-identifier-naming.MacroDefinitionCase,     value: UPPER_CASE }
