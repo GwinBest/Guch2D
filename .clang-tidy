@@ -4,15 +4,15 @@ Checks: >
   clang-analyzer-*,
   concurrency-*,
   cppcoreguidelines-*,
-  -cppcoreguidelines-avoid-magic-numbers,
   -cppcoreguidelines-non-private-member-variables-in-classes,
   misc-*,
   modernize-*,
   -modernize-use-trailing-return-type,
-  objc-*,
   performance-*,
   portability-*,
   readability-*,
+  -readability-redundant-access-specifiers,
+  -readability-braces-around-statements,
 
 CheckOptions:
   - { key: readability-identifier-naming.NamespaceCase,          value: CamelCase }
