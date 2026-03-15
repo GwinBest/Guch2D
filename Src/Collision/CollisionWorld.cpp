@@ -161,6 +161,8 @@ namespace Guch2D
         const auto typeA = static_cast<size_t>(bodyACollider->GetColliderType());
         const auto typeB = static_cast<size_t>(bodyBCollider->GetColliderType());
 
+        // Ensure a consistent body order for collision functions: if B's type is greater,
+        // swap A/B. Collision points are swapped back below to match the original order.
         const bool swap = typeB > typeA;
         if (swap)
         {
@@ -173,6 +175,7 @@ namespace Guch2D
             {
                 auto collisionPoints = collisionFunc(bodyA, bodyB);
 
+                // Swap back collision points
                 if (swap)
                 {
                     std::swap(collisionPoints.A, collisionPoints.B);
