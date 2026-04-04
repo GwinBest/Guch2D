@@ -4,14 +4,15 @@
 #include <functional>
 #include <print>
 
+#include "Collision/AABBCollider.hpp"
 #include "Collision/CircleCollider.hpp"
 #include "Solver/PenetrationVectorSolver.hpp"
 
 namespace
 {
     [[nodiscard]] Guch2D::CollisionPoints
-        CheckCollisionCircleCircle(const std::shared_ptr<Guch2D::CollisionBody>& bodyA,
-                                   const std::shared_ptr<Guch2D::CollisionBody>& bodyB)
+        CheckCollisionCircleVsCircle(const std::shared_ptr<Guch2D::CollisionBody>& bodyA,
+                                     const std::shared_ptr<Guch2D::CollisionBody>& bodyB)
     {
         const auto& centerA = bodyA->GetColliderCenterWorld();
         const auto& centerB = bodyB->GetColliderCenterWorld();
@@ -38,6 +39,31 @@ namespace
         collisionPoints.B = centerB - directionAB * radiusB;
         collisionPoints.Normal = -directionAB;
         collisionPoints.Depth = radiusSum - distance;
+
+        return collisionPoints;
+    }
+
+    [[nodiscard]] Guch2D::CollisionPoints
+        CheckCollisionAABBVsAABB(const std::shared_ptr<Guch2D::CollisionBody>& bodyA,
+                                 const std::shared_ptr<Guch2D::CollisionBody>& bodyB)
+    {
+        const auto& centerA = bodyA->GetColliderCenterWorld();
+        const auto& centerB = bodyB->GetColliderCenterWorld();
+        const auto& extentA = std::dynamic_pointer_cast<Guch2D::AABBCollider>(bodyA->GetCollider())
+                                  ->GetExtent();
+        const auto& extentB = std::dynamic_pointer_cast<Guch2D::AABBCollider>(bodyB->GetCollider())
+                                  ->GetExtent();
+
+        Guch2D::CollisionPoints collisionPoints;
+        collisionPoints.HasCollision = std::abs(centerA.x - centerB.x) <= extentA.x + extentB.x
+                                    && std::abs(centerA.y - centerB.y) <= extentA.y + extentB.y;
+
+        if (!collisionPoints.HasCollision) return collisionPoints;
+
+        // collisionPoints.A;
+        // collisionPoints.B;
+        // collisionPoints.Normal;
+        // collisionPoints.Depth;
 
         return collisionPoints;
     }
@@ -145,9 +171,10 @@ namespace Guch2D
 
         static const CollisionFuncMatrix CollisionCheckMatrix = {
             {
-             //     None          Circle
-                {nullptr, nullptr},                       // None
-                {nullptr, &CheckCollisionCircleCircle},   // Circle
+             //     None          Circle      AABB
+                {nullptr, nullptr, nullptr},                         // None
+                {nullptr, &CheckCollisionCircleVsCircle, nullptr},   // Circle
+                {nullptr, nullptr, CheckCollisionAABBVsAABB},        // AABB
             }
         };
 
