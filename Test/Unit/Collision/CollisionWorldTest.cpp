@@ -2,6 +2,7 @@
 
 #include <gtest/gtest.h>
 
+#include "Collision/AABBCollider.hpp"
 #include "Collision/CircleCollider.hpp"
 #include "Solver/PenetrationVectorSolver.hpp"
 
@@ -454,6 +455,48 @@ namespace
         EXPECT_EQ(endOverlapCountB, 1);
         EXPECT_EQ(beginOverlapCountC, 0);
         EXPECT_EQ(endOverlapCountC, 0);
+    }
+
+    TEST(CollisionWorld, CheckCollisionsAABBVsAABBOverlapX)
+    {
+        const auto bodyA = std::make_shared<Guch2D::CollisionBody>();
+        bodyA->SetPosition({0.0F, 0.0F});
+        bodyA->SetCollider(std::make_shared<Guch2D::AABBCollider>(Guch2D::Vect {2.0F, 1.0F}));
+
+        const auto bodyB = std::make_shared<Guch2D::CollisionBody>();
+        bodyB->SetPosition({3.0F, 0.5F});
+        bodyB->SetCollider(std::make_shared<Guch2D::AABBCollider>(Guch2D::Vect {2.0F, 1.0F}));
+
+        const auto collisionPoints = CollisionWorldTest::CheckCollisions(bodyA, bodyB);
+        EXPECT_TRUE(collisionPoints.HasCollision);
+        EXPECT_FLOAT_EQ(collisionPoints.Depth, 1.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.Normal.x, -1.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.Normal.y, 0.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.A.x, 2.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.A.y, 0.25F);
+        EXPECT_FLOAT_EQ(collisionPoints.B.x, 1.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.B.y, 0.25F);
+    }
+
+    TEST(CollisionWorld, CheckCollisionsAABBVsAABBOverlapY)
+    {
+        const auto bodyA = std::make_shared<Guch2D::CollisionBody>();
+        bodyA->SetPosition({0.0F, 0.0F});
+        bodyA->SetCollider(std::make_shared<Guch2D::AABBCollider>(Guch2D::Vect {1.0F, 2.0F}));
+
+        const auto bodyB = std::make_shared<Guch2D::CollisionBody>();
+        bodyB->SetPosition({0.25F, 3.0F});
+        bodyB->SetCollider(std::make_shared<Guch2D::AABBCollider>(Guch2D::Vect {1.0F, 2.0F}));
+
+        const auto collisionPoints = CollisionWorldTest::CheckCollisions(bodyA, bodyB);
+        EXPECT_TRUE(collisionPoints.HasCollision);
+        EXPECT_FLOAT_EQ(collisionPoints.Depth, 1.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.Normal.x, 0.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.Normal.y, -1.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.A.x, 0.125F);
+        EXPECT_FLOAT_EQ(collisionPoints.A.y, 2.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.B.x, 0.125F);
+        EXPECT_FLOAT_EQ(collisionPoints.B.y, 1.0F);
     }
 
     TEST(CollisionWorld, CheckCollisionsNullBodyA)

@@ -9,8 +9,10 @@
 #include <string_view>
 #include <vector>
 
+#include "Collision/AABBCollider.hpp"
 #include "Collision/CircleCollider.hpp"
 #include "Collision/CollisionBody.hpp"
+#include "Collision/CollisionWorld.hpp"
 #include "Dynamics/DynamicRigidBody.hpp"
 #include "Dynamics/DynamicWorld.hpp"
 #include "Font.hpp"
@@ -28,6 +30,18 @@ namespace
     constexpr float CollisionNormalLengthMeters = 0.35f;
     constexpr float CollisionNormalHeadLengthMeters = 0.12f;
     constexpr float CollisionNormalHeadWidthMeters = 0.08f;
+    constexpr float CollisionPointRadiusPixels = 4.0f;
+
+    class CollisionWorldInspector final : public Guch2D::CollisionWorld
+    {
+    public:
+        [[nodiscard]] static Guch2D::CollisionPoints
+            Check(const std::shared_ptr<Guch2D::CollisionBody>& bodyA,
+                  const std::shared_ptr<Guch2D::CollisionBody>& bodyB)
+        {
+            return CheckCollisions(bodyA, bodyB);
+        }
+    };
 
 }   // namespace
 
@@ -181,31 +195,26 @@ public:
         : _pixelsPerMeter(pixelsPerMeter)
     {}
 
-    [[nodiscard]] const char* Name() const noexcept override { return "CIRCLE COLLIDERS"; }
+    [[nodiscard]] const char* Name() const noexcept override { return "COLLIDERS"; }
 
     void Reset(sf::RenderWindow& window) override
     {
         _circles.clear();
+        _aabbs.clear();
         _collisionPairs.clear();
         _draggingProbe = false;
+        _spawnAABBMode = false;
         _spawnRadius = 0.25f;
         _probeRadius = 0.35f;
+        _spawnAABBExtent = {0.3f, 0.2f};
         _world = Guch2D::CollisionWorld();
 
         const auto size = window.getSize();
         const Guch2D::Vect center = {static_cast<float>(size.x) / _pixelsPerMeter * 0.5f,
                                      static_cast<float>(size.y) / _pixelsPerMeter * 0.5f};
         _probe = CreateCircle(center, _probeRadius);
-        _probe.body->BindOnBeginOverlap([this](const Guch2D::Collision& callback) {
-            _probe.isOverlappingWithProbe++;
-            RegisterCollision(callback);
-        });
-        _probe.body->BindOnEndOverlap([this](const Guch2D::Collision& callback) {
-            _probe.isOverlappingWithProbe--;
-            RemoveCollision(callback);
-        });
-        _world.AddObject(_probe.body);
-        _world.AddSolver(std::make_shared<Guch2D::PenetrationVectorSolver>());
+        BindCollisionCallbacks(_probe.body, _probe.overlapCount);
+        ResetWorldWithProbe();
     }
 
     void HandleEvent(const sf::Event& event, sf::RenderWindow& window) override
@@ -215,13 +224,18 @@ public:
             if (keyPressed->code == sf::Keyboard::Key::C)
             {
                 _circles.clear();
+                _aabbs.clear();
                 _collisionPairs.clear();
-                _world = Guch2D::CollisionWorld();
-                _world.AddObject(_probe.body);
+                _probe.overlapCount = 0;
+                ResetWorldWithProbe();
             }
             else if (keyPressed->code == sf::Keyboard::Key::R)
             {
                 Reset(window);
+            }
+            else if (keyPressed->code == sf::Keyboard::Key::Tab)
+            {
+                _spawnAABBMode = !_spawnAABBMode;
             }
         }
 
@@ -230,26 +244,18 @@ public:
             if (mousePressed->button == sf::Mouse::Button::Left)
             {
                 const auto worldPos = ScreenToWorld(mousePressed->position, _pixelsPerMeter);
+                const bool spawnAABB = _spawnAABBMode
+                                    || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift)
+                                    || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::RShift);
 
-                auto collider = std::make_shared<Guch2D::CircleCollider>();
-                collider->SetRadius(_spawnRadius);
-                auto body = std::make_shared<Guch2D::CollisionBody>(worldPos, collider);
-                auto circlePtr = std::make_shared<CircleBody>(
-                    CircleBody {body, _spawnRadius, false});
-
-                circlePtr->body->BindOnBeginOverlap(
-                    [this, circlePtr](const Guch2D::Collision& callback) {
-                        circlePtr->isOverlappingWithProbe++;
-                        RegisterCollision(callback);
-                    });
-                circlePtr->body->BindOnEndOverlap(
-                    [this, circlePtr](const Guch2D::Collision& callback) {
-                        circlePtr->isOverlappingWithProbe--;
-                        RemoveCollision(callback);
-                    });
-
-                _circles.push_back(circlePtr);
-                _world.AddObject(circlePtr->body);
+                if (spawnAABB)
+                {
+                    SpawnAABB(worldPos);
+                }
+                else
+                {
+                    SpawnCircle(worldPos);
+                }
             }
             else if (mousePressed->button == sf::Mouse::Button::Right)
             {
@@ -277,34 +283,50 @@ public:
         }
 
         _world.Step();
+        RefreshCollisionPairs();
     }
 
     void Render(sf::RenderWindow& window) override
     {
         for (const auto& circlePtr : _circles)
         {
-            const bool overlap = circlePtr->isOverlappingWithProbe;
+            const bool overlap = circlePtr->overlapCount > 0;
 
             const sf::Color fill = overlap ? sf::Color(220, 80, 80, 140)
                                            : sf::Color(80, 140, 220, 120);
             DrawCircle(window, *circlePtr, fill, sf::Color(255, 255, 255, 80), 1.0f);
         }
 
-        const sf::Color probeColor = _probe.isOverlappingWithProbe ? sf::Color(255, 80, 80, 160)
-                                                                   : sf::Color(80, 240, 120, 160);
+        for (const auto& aabbPtr : _aabbs)
+        {
+            const bool overlap = aabbPtr->overlapCount > 0;
+
+            const sf::Color fill = overlap ? sf::Color(220, 120, 80, 140)
+                                           : sf::Color(110, 180, 255, 120);
+            DrawAABB(window, *aabbPtr, fill, sf::Color(255, 255, 255, 80), 1.0f);
+        }
+
+        const sf::Color probeColor = _probe.overlapCount > 0 ? sf::Color(255, 80, 80, 160)
+                                                              : sf::Color(80, 240, 120, 160);
         DrawCircle(window, _probe, probeColor, sf::Color(255, 255, 255, 200), 2.0f);
 
-        DrawCollisionNormals(window);
+        DrawCollisionDebug(window);
     }
 
     void BuildOverlay(std::vector<std::string>& lines) const override
     {
         lines.emplace_back("LEFT MOUSE: ADD CIRCLE");
-        lines.emplace_back("RIGHT MOUSE DRAG: MOVE PROBE");
-        lines.emplace_back("C: CLEAR CIRCLES");
+        lines.emplace_back("SHIFT + LEFT MOUSE: ADD AABB");
+        lines.emplace_back("TAB: TOGGLE SPAWN MODE");
+        lines.emplace_back("RIGHT MOUSE DRAG: MOVE CIRCLE PROBE");
+        lines.emplace_back("C: CLEAR SHAPES");
         lines.emplace_back("R: RESET DEMO");
+        lines.emplace_back(std::string("SPAWN MODE: ")
+                           + (_spawnAABBMode ? "AABB" : "CIRCLE"));
         lines.emplace_back("CIRCLES: " + std::to_string(_circles.size()));
+        lines.emplace_back("AABBS: " + std::to_string(_aabbs.size()));
         lines.emplace_back("OVERLAPS: " + std::to_string(CountOverlaps()));
+        lines.emplace_back("POINT A: YELLOW, POINT B: CYAN");
     }
 
 private:
@@ -312,16 +334,25 @@ private:
     {
         std::shared_ptr<Guch2D::CollisionBody> body;
         float radius = 0.0f;
-        int isOverlappingWithProbe = 0;
+        int overlapCount = 0;
+    };
+
+    struct AABBBody
+    {
+        std::shared_ptr<Guch2D::CollisionBody> body;
+        Guch2D::Vect extent = {0.0f, 0.0f};
+        int overlapCount = 0;
     };
 
     struct CollisionPair
     {
         std::weak_ptr<Guch2D::CollisionBody> bodyA;
         std::weak_ptr<Guch2D::CollisionBody> bodyB;
+        Guch2D::CollisionPoints points;
     };
 
     using CircleBodyPtr = std::shared_ptr<CircleBody>;
+    using AABBBodyPtr = std::shared_ptr<AABBBody>;
 
     CircleBody CreateCircle(const Guch2D::Vect& position, const float radius)
     {
@@ -330,6 +361,53 @@ private:
 
         auto body = std::make_shared<Guch2D::CollisionBody>(position, collider);
         return {body, radius};
+    }
+
+    AABBBody CreateAABB(const Guch2D::Vect& position, const Guch2D::Vect& extent)
+    {
+        auto collider = std::make_shared<Guch2D::AABBCollider>();
+        collider->SetExtent(extent);
+
+        auto body = std::make_shared<Guch2D::CollisionBody>(position, collider);
+        return {body, extent};
+    }
+
+    void SpawnCircle(const Guch2D::Vect& position)
+    {
+        auto circlePtr = std::make_shared<CircleBody>(CreateCircle(position, _spawnRadius));
+        BindCollisionCallbacks(circlePtr->body, circlePtr->overlapCount);
+
+        _circles.push_back(circlePtr);
+        _world.AddObject(circlePtr->body);
+    }
+
+    void SpawnAABB(const Guch2D::Vect& position)
+    {
+        auto aabbPtr = std::make_shared<AABBBody>(CreateAABB(position, _spawnAABBExtent));
+        BindCollisionCallbacks(aabbPtr->body, aabbPtr->overlapCount);
+
+        _aabbs.push_back(aabbPtr);
+        _world.AddObject(aabbPtr->body);
+    }
+
+    void BindCollisionCallbacks(const std::shared_ptr<Guch2D::CollisionBody>& body,
+                                int& overlapCount)
+    {
+        body->BindOnBeginOverlap([this, &overlapCount](const Guch2D::Collision& callback) {
+            ++overlapCount;
+            RegisterCollision(callback);
+        });
+        body->BindOnEndOverlap([this, &overlapCount](const Guch2D::Collision& callback) {
+            overlapCount = std::max(0, overlapCount - 1);
+            RemoveCollision(callback);
+        });
+    }
+
+    void ResetWorldWithProbe()
+    {
+        _world = Guch2D::CollisionWorld();
+        _world.AddObject(_probe.body);
+        _world.AddSolver(std::make_shared<Guch2D::PenetrationVectorSolver>());
     }
 
     void DrawCircle(sf::RenderWindow& window,
@@ -348,7 +426,27 @@ private:
         window.draw(shape);
     }
 
-    void DrawCollisionNormals(sf::RenderWindow& window) const
+    void DrawAABB(sf::RenderWindow& window,
+                  const AABBBody& aabb,
+                  const sf::Color fill,
+                  const sf::Color outline,
+                  const float outlineThickness) const
+    {
+        const sf::Vector2f halfExtentPixels = {
+            aabb.extent.x * _pixelsPerMeter,
+            aabb.extent.y * _pixelsPerMeter,
+        };
+
+        sf::RectangleShape shape(halfExtentPixels * 2.0f);
+        shape.setOrigin(halfExtentPixels);
+        shape.setPosition(WorldToScreen(aabb.body->GetColliderCenterWorld(), _pixelsPerMeter));
+        shape.setFillColor(fill);
+        shape.setOutlineColor(outline);
+        shape.setOutlineThickness(outlineThickness);
+        window.draw(shape);
+    }
+
+    void DrawCollisionDebug(sf::RenderWindow& window) const
     {
         if (_collisionPairs.empty())
         {
@@ -356,42 +454,32 @@ private:
         }
 
         const sf::Color normalColor(255, 200, 40, 220);
+        const sf::Color pointAColor(255, 240, 60, 255);
+        const sf::Color pointBColor(70, 235, 255, 255);
         for (const auto& pair : _collisionPairs)
         {
-            const auto bodyA = pair.bodyA.lock();
-            const auto bodyB = pair.bodyB.lock();
-            if (!bodyA || !bodyB)
+            if (!pair.points.HasCollision)
             {
                 continue;
             }
 
-            const auto colliderA = std::dynamic_pointer_cast<Guch2D::CircleCollider>(
-                bodyA->GetCollider());
-            const auto colliderB = std::dynamic_pointer_cast<Guch2D::CircleCollider>(
-                bodyB->GetCollider());
-            if (!colliderA || !colliderB)
-            {
-                continue;
-            }
-
-            const auto centerA = bodyA->GetColliderCenterWorld();
-            const auto centerB = bodyB->GetColliderCenterWorld();
-            const float radiusA = colliderA->GetRadius();
-            const float radiusB = colliderB->GetRadius();
-
-            const auto delta = centerB - centerA;
-            const float distance = Guch2D::VectLength(delta);
-            if (distance <= 0.0f || distance > radiusA + radiusB)
-            {
-                continue;
-            }
-
-            const auto pointA = centerA + Guch2D::VectNormalize(delta) * radiusA;
-            const auto pointB = centerB + Guch2D::VectNormalize(-delta) * radiusB;
-            const auto normal = Guch2D::VectNormalize(pointB - pointA);
-
-            DrawArrow(window, pointA, normal, normalColor);
+            DrawContactPoint(window, pair.points.A, pointAColor);
+            DrawContactPoint(window, pair.points.B, pointBColor);
+            DrawArrow(window, pair.points.A, pair.points.B - pair.points.A, normalColor);
         }
+    }
+
+    void DrawContactPoint(sf::RenderWindow& window,
+                          const Guch2D::Vect& pointWorld,
+                          const sf::Color color) const
+    {
+        sf::CircleShape point(CollisionPointRadiusPixels);
+        point.setOrigin({CollisionPointRadiusPixels, CollisionPointRadiusPixels});
+        point.setPosition(WorldToScreen(pointWorld, _pixelsPerMeter));
+        point.setFillColor(color);
+        point.setOutlineColor(sf::Color::Black);
+        point.setOutlineThickness(1.0f);
+        window.draw(point);
     }
 
     void DrawArrow(sf::RenderWindow& window,
@@ -425,6 +513,32 @@ private:
         window.draw(head);
     }
 
+    void RefreshCollisionPairs()
+    {
+        std::vector<CollisionPair> refreshedPairs;
+        refreshedPairs.reserve(_collisionPairs.size());
+
+        for (const auto& pair : _collisionPairs)
+        {
+            const auto bodyA = pair.bodyA.lock();
+            const auto bodyB = pair.bodyB.lock();
+            if (!bodyA || !bodyB)
+            {
+                continue;
+            }
+
+            auto points = CollisionWorldInspector::Check(bodyA, bodyB);
+            if (!points.HasCollision)
+            {
+                continue;
+            }
+
+            refreshedPairs.push_back({bodyA, bodyB, points});
+        }
+
+        _collisionPairs = std::move(refreshedPairs);
+    }
+
     void RegisterCollision(const Guch2D::Collision& collision)
     {
         if (!collision.Points.HasCollision)
@@ -438,8 +552,11 @@ private:
             [&](const CollisionPair& pair) { return IsSamePair(collision, pair); });
         if (it == _collisionPairs.end())
         {
-            _collisionPairs.push_back({collision.BodyA, collision.BodyB});
+            _collisionPairs.push_back({collision.BodyA, collision.BodyB, collision.Points});
+            return;
         }
+
+        it->points = collision.Points;
     }
 
     void RemoveCollision(const Guch2D::Collision& collision)
@@ -462,20 +579,7 @@ private:
             return false;
         }
 
-        const auto colliderA = std::dynamic_pointer_cast<Guch2D::CircleCollider>(
-            bodyA->GetCollider());
-        const auto colliderB = std::dynamic_pointer_cast<Guch2D::CircleCollider>(
-            bodyB->GetCollider());
-        if (!colliderA || !colliderB)
-        {
-            return false;
-        }
-
-        const auto delta = bodyB->GetColliderCenterWorld() - bodyA->GetColliderCenterWorld();
-        const float distance = Guch2D::VectLength(delta);
-        const float radiusSum = colliderA->GetRadius() + colliderB->GetRadius();
-
-        return distance <= radiusSum;
+        return CollisionWorldInspector::Check(bodyA, bodyB).HasCollision;
     }
 
     [[nodiscard]] static bool IsSamePair(const Guch2D::Collision& collision,
@@ -499,25 +603,39 @@ private:
         std::size_t count = 0;
         for (const auto& circlePtr : _circles)
         {
-            if (circlePtr->isOverlappingWithProbe)
+            if (circlePtr->overlapCount > 0)
             {
                 ++count;
             }
         }
 
-        if (_probe.isOverlappingWithProbe) ++count;
+        for (const auto& aabbPtr : _aabbs)
+        {
+            if (aabbPtr->overlapCount > 0)
+            {
+                ++count;
+            }
+        }
+
+        if (_probe.overlapCount > 0)
+        {
+            ++count;
+        }
 
         return count;
     }
 
     float _pixelsPerMeter = PixelsPerMeter;
     std::vector<CircleBodyPtr> _circles;
+    std::vector<AABBBodyPtr> _aabbs;
     std::vector<CollisionPair> _collisionPairs;
     CircleBody _probe;
     Guch2D::CollisionWorld _world;
     bool _draggingProbe = false;
+    bool _spawnAABBMode = false;
     float _spawnRadius = 0.25f;
     float _probeRadius = 0.35f;
+    Guch2D::Vect _spawnAABBExtent = {0.3f, 0.2f};
 };
 
 class DemoManager

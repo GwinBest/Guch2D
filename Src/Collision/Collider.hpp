@@ -10,6 +10,7 @@ namespace Guch2D
     {
         None,
         Circle,
+        AABB,
         Count   // To keep track of the number of collider types (keep always at the end)
     };
 

@@ -1,5 +1,6 @@
 #include "CollisionWorld.hpp"
 
+#include <algorithm>
 #include <array>
 #include <functional>
 #include <print>
@@ -30,7 +31,8 @@ namespace
 
         collisionPoints.HasCollision = distance <= radiusSum;
 
-        if (!collisionPoints.HasCollision) return collisionPoints;
+        if (!collisionPoints.HasCollision)
+            return collisionPoints;
 
         const Guch2D::Vect directionAB = distance > 0.0F ? delta / distance
                                                          : Guch2D::Vect {1.0F, 0.0F};
@@ -58,12 +60,40 @@ namespace
         collisionPoints.HasCollision = std::abs(centerA.x - centerB.x) <= extentA.x + extentB.x
                                     && std::abs(centerA.y - centerB.y) <= extentA.y + extentB.y;
 
-        if (!collisionPoints.HasCollision) return collisionPoints;
+        if (!collisionPoints.HasCollision)
+            return collisionPoints;
 
-        // collisionPoints.A;
-        // collisionPoints.B;
-        // collisionPoints.Normal;
-        // collisionPoints.Depth;
+        const auto delta = centerB - centerA;
+
+        const float overlapX = extentA.x + extentB.x - std::abs(delta.x);
+        const float overlapY = extentA.y + extentB.y - std::abs(delta.y);
+
+        if (overlapX < overlapY)
+        {
+            const float direction = delta.x >= 0.0F ? 1.0F : -1.0F;
+            collisionPoints.Normal = {-direction, 0.0F};
+            collisionPoints.Depth = overlapX;
+
+            const float minOverlapY = std::max(centerA.y - extentA.y, centerB.y - extentB.y);
+            const float maxOverlapY = std::min(centerA.y + extentA.y, centerB.y + extentB.y);
+            const float contactY = (minOverlapY + maxOverlapY) * 0.5F;
+
+            collisionPoints.A = {centerA.x + (extentA.x * direction), contactY};
+            collisionPoints.B = {centerB.x - (extentB.x * direction), contactY};
+        }
+        else
+        {
+            const float direction = delta.y >= 0.0F ? 1.0F : -1.0F;
+            collisionPoints.Normal = {0.0F, -direction};
+            collisionPoints.Depth = overlapY;
+
+            const float minOverlapX = std::max(centerA.x - extentA.x, centerB.x - extentB.x);
+            const float maxOverlapX = std::min(centerA.x + extentA.x, centerB.x + extentB.x);
+            const float contactX = (minOverlapX + maxOverlapX) * 0.5F;
+
+            collisionPoints.A = {contactX, centerA.y + (extentA.y * direction)};
+            collisionPoints.B = {contactX, centerB.y - (extentB.y * direction)};
+        }
 
         return collisionPoints;
     }
@@ -76,7 +106,8 @@ namespace
         const auto rhsA = rhs.BodyA.lock();
         const auto rhsB = rhs.BodyB.lock();
 
-        if (!lhsA || !lhsB || !rhsA || !rhsB) return false;
+        if (!lhsA || !lhsB || !rhsA || !rhsB)
+            return false;
 
         return (lhsA == rhsA && lhsB == rhsB) || (lhsA == rhsB && lhsB == rhsA);
     }
@@ -103,10 +134,12 @@ namespace Guch2D
         {
             for (const auto& objectB : _objects)
             {
-                if (objectA == objectB) break;
+                if (objectA == objectB)
+                    break;
 
                 const auto collisionPoints = CheckCollisions(objectA, objectB);
-                if (!collisionPoints.HasCollision) continue;
+                if (!collisionPoints.HasCollision)
+                    continue;
 
                 const auto collision = Collision(objectA, objectB, collisionPoints);
                 _collisions.emplace_back(collision);
@@ -118,7 +151,8 @@ namespace Guch2D
     {
         for (const auto& solver : _solvers)
         {
-            if (solver) solver->Solve(_collisions);
+            if (solver)
+                solver->Solve(_collisions);
         }
     }
 
@@ -136,8 +170,10 @@ namespace Guch2D
             const auto bodyA = collision.BodyA.lock();
             const auto bodyB = collision.BodyB.lock();
 
-            if (bodyA) bodyA->InvokeOnBeginOverlap(collision);
-            if (bodyB) bodyB->InvokeOnBeginOverlap(collision);
+            if (bodyA)
+                bodyA->InvokeOnBeginOverlap(collision);
+            if (bodyB)
+                bodyB->InvokeOnBeginOverlap(collision);
         });
     }
 
@@ -155,8 +191,10 @@ namespace Guch2D
             const auto bodyA = collision.BodyA.lock();
             const auto bodyB = collision.BodyB.lock();
 
-            if (bodyA) bodyA->InvokeOnEndOverlap(collision);
-            if (bodyB) bodyB->InvokeOnEndOverlap(collision);
+            if (bodyA)
+                bodyA->InvokeOnEndOverlap(collision);
+            if (bodyB)
+                bodyB->InvokeOnEndOverlap(collision);
         });
     }
 
@@ -178,12 +216,14 @@ namespace Guch2D
             }
         };
 
-        if (!bodyA || !bodyB) return {};
+        if (!bodyA || !bodyB)
+            return {};
 
         const auto& bodyACollider = bodyA->GetCollider();
         const auto& bodyBCollider = bodyB->GetCollider();
 
-        if (!bodyACollider || !bodyBCollider) return {};
+        if (!bodyACollider || !bodyBCollider)
+            return {};
 
         const auto typeA = static_cast<size_t>(bodyACollider->GetColliderType());
         const auto typeB = static_cast<size_t>(bodyBCollider->GetColliderType());
