@@ -25,7 +25,8 @@ namespace Guch2D
 
         void AddObject(const std::shared_ptr<CollisionBody>& object)
         {
-            if (!object) return;
+            if (!object)
+                return;
 
             // Avoid duplicates
             if (std::ranges::find(_objects, object) == _objects.end())
@@ -36,14 +37,16 @@ namespace Guch2D
 
         void RemoveObject(const std::shared_ptr<CollisionBody>& object)
         {
-            if (!object) return;
+            if (!object)
+                return;
 
             std::erase(_objects, object);
         }
 
         void AddSolver(const std::shared_ptr<Solver>& solver)
         {
-            if (!solver) return;
+            if (!solver)
+                return;
 
             // Avoid duplicates
             if (std::ranges::find(_solvers, solver) == _solvers.end())
@@ -54,7 +57,8 @@ namespace Guch2D
 
         void RemoveSolver(const std::shared_ptr<Solver>& solver)
         {
-            if (!solver) return;
+            if (!solver)
+                return;
 
             std::erase(_solvers, solver);
         }

@@ -1,7 +1,7 @@
 ---
 AccessModifierOffset: -4
 IndentWidth: 4
-AlignAfterOpenBracket: Align
+AlignAfterOpenBracket: true
 AlignArrayOfStructures: Left
 AlignConsecutiveMacros:
   Enabled: true
@@ -84,7 +84,7 @@ PointerAlignment: Left
 DerivePointerAlignment: false
 QualifierAlignment: Left
 ReferenceAlignment: Pointer
-ReflowComments: true
+ReflowComments: Always
 RemoveParentheses: ReturnStatement
 RemoveSemicolon: true
 RequiresClausePosition: OwnLine

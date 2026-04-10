@@ -11,7 +11,8 @@ namespace Guch2D
             const auto bodyA = BodyA.lock();
             const auto bodyB = BodyB.lock();
 
-            if (!bodyA || !bodyB) continue;
+            if (!bodyA || !bodyB)
+                continue;
 
             const Vect correction = Points.Normal * (Points.Depth / 2.0F);
 

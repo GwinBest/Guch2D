@@ -43,7 +43,7 @@ namespace Guch2D
         static constexpr Vect DefaultGravity = {0.0F, 9.81F};
 
     private:
-        // Default Earth gravity is set by default
+        // Default Earth gravity is set by default in (m/s²)
         Vect _gravity = DefaultGravity;
     };
 }   // namespace Guch2D

@@ -79,7 +79,8 @@ namespace Guch2D
 
         void UpdatePosition(const Vect& delta) noexcept
         {
-            if (!IsFinite(delta)) return;
+            if (!IsFinite(delta))
+                return;
 
             _position += delta;
         }
@@ -98,7 +99,8 @@ namespace Guch2D
 
         [[nodiscard]] Vect GetColliderCenterWorld() const noexcept
         {
-            if (!_collider) return _position;
+            if (!_collider)
+                return _position;
 
             return _position + _collider->GetCenterLocal();
         }
@@ -140,4 +142,4 @@ namespace Guch2D
         CollisionCallback _onBeginOverlap;
         CollisionCallback _onEndOverlap;
     };
-}   // namespace Guch2D
+} // namespace Guch2D

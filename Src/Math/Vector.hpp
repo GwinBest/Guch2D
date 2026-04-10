@@ -14,7 +14,7 @@ namespace Guch2D
 
     [[nodiscard]] inline bool IsFinite(const Vect& value) noexcept
     {
-        return IsFinite(value.x) && IsFinite(value.y); // NOLINT(*-pro-type-union-access)
+        return IsFinite(value.x) && IsFinite(value.y);   // NOLINT(*-pro-type-union-access)
     }
 
     [[nodiscard]] inline float VectLength(const Vect& vect) noexcept
@@ -24,7 +24,8 @@ namespace Guch2D
             return 0.0F;
         }
 
-        return std::sqrt((vect.x * vect.x) + (vect.y * vect.y)); // NOLINT(*-pro-type-union-access)
+        return std::sqrt((vect.x * vect.x)
+                         + (vect.y * vect.y));   // NOLINT(*-pro-type-union-access)
     }
 
     [[nodiscard]] inline Vect VectNormalize(const Vect& vect) noexcept
@@ -35,6 +36,6 @@ namespace Guch2D
             return {0.0F, 0.0F};
         }
 
-        return {vect.x / length, vect.y / length}; // NOLINT(*-pro-type-union-access)
+        return {vect.x / length, vect.y / length};   // NOLINT(*-pro-type-union-access)
     }
 }   // namespace Guch2D
