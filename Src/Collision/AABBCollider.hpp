@@ -15,7 +15,8 @@ namespace Guch2D
             SetExtent(extent);
         }
 
-        AABBCollider(const Vect& center, const Vect& extent) noexcept
+        AABBCollider(const Vect& center,            // NOLINT(*-easily-swappable-parameters)
+                     const Vect& extent) noexcept   // NOLINT(*-easily-swappable-parameters)
             : Collider(center)
         {
             SetColliderType(ColliderType::AABB);
