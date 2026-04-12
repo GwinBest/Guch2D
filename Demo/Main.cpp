@@ -463,9 +463,12 @@ private:
                 continue;
             }
 
-            DrawContactPoint(window, pair.points.A, pointAColor);
-            DrawContactPoint(window, pair.points.B, pointBColor);
-            DrawArrow(window, pair.points.A, pair.points.B - pair.points.A, normalColor);
+            DrawContactPoint(window, pair.points.ContactPoints.front(), pointAColor);
+            DrawContactPoint(window, pair.points.ContactPoints.back(), pointBColor);
+            DrawArrow(window,
+                      pair.points.ContactPoints.front(),
+                      pair.points.ContactPoints.back() - pair.points.ContactPoints.front(),
+                      normalColor);
         }
     }
 
