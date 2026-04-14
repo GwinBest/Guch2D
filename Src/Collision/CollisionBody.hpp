@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <functional>
 #include <memory>
 
@@ -13,10 +14,9 @@ namespace Guch2D
 
     struct CollisionPoints final
     {
-        Vect A = {0.0F, 0.0F};        // Furthest point of A into B
-        Vect B = {0.0F, 0.0F};        // Furthest point of B into A
-        Vect Normal = {0.0F, 0.0F};   // B – A normalized
-        float Depth = 0.0F;           // Length of B – A
+        std::array<Vect, 2> ContactPoints = {};
+        Vect Normal = {0.0F, 0.0F};   // ContactPoints.back() - ContactPoints.front() normalized
+        float Depth = 0.0F;           // Length of ContactPoints.back() - ContactPoints.front()
         bool HasCollision = false;
     };
 
@@ -29,8 +29,9 @@ namespace Guch2D
         bool operator==(const Collision& other) const
         {
             return this->BodyA.lock() == other.BodyA.lock()
-                && this->BodyB.lock() == other.BodyB.lock() && this->Points.A == other.Points.A
-                && this->Points.B == other.Points.B && this->Points.Normal == other.Points.Normal
+                && this->BodyB.lock() == other.BodyB.lock()
+                && this->Points.ContactPoints == other.Points.ContactPoints
+                && this->Points.Normal == other.Points.Normal
                 && this->Points.Depth == other.Points.Depth
                 && this->Points.HasCollision == other.Points.HasCollision;
         }
@@ -142,4 +143,4 @@ namespace Guch2D
         CollisionCallback _onBeginOverlap;
         CollisionCallback _onEndOverlap;
     };
-} // namespace Guch2D
+}   // namespace Guch2D

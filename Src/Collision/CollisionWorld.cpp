@@ -37,8 +37,8 @@ namespace
         const Guch2D::Vect directionAB = distance > 0.0F ? delta / distance
                                                          : Guch2D::Vect {1.0F, 0.0F};
 
-        collisionPoints.A = centerA + directionAB * radiusA;
-        collisionPoints.B = centerB - directionAB * radiusB;
+        collisionPoints.ContactPoints.front() = centerA + directionAB * radiusA;
+        collisionPoints.ContactPoints.back() = centerB - directionAB * radiusB;
         collisionPoints.Normal = -directionAB;
         collisionPoints.Depth = radiusSum - distance;
 
@@ -68,6 +68,7 @@ namespace
         const float overlapX = extentA.x + extentB.x - std::abs(delta.x);
         const float overlapY = extentA.y + extentB.y - std::abs(delta.y);
 
+        // Resolve collision along the axis with the smaller penetration depth.
         if (overlapX < overlapY)
         {
             const float direction = delta.x >= 0.0F ? 1.0F : -1.0F;
@@ -76,10 +77,11 @@ namespace
 
             const float minOverlapY = std::max(centerA.y - extentA.y, centerB.y - extentB.y);
             const float maxOverlapY = std::min(centerA.y + extentA.y, centerB.y + extentB.y);
-            const float contactY = (minOverlapY + maxOverlapY) * 0.5F;
 
-            collisionPoints.A = {centerA.x + (extentA.x * direction), contactY};
-            collisionPoints.B = {centerB.x - (extentB.x * direction), contactY};
+            collisionPoints.ContactPoints.front() = {centerA.x + (extentA.x * direction),
+                                                     minOverlapY};
+            collisionPoints.ContactPoints.back() = {centerB.x - (extentB.x * direction),
+                                                    maxOverlapY};
         }
         else
         {
@@ -89,10 +91,11 @@ namespace
 
             const float minOverlapX = std::max(centerA.x - extentA.x, centerB.x - extentB.x);
             const float maxOverlapX = std::min(centerA.x + extentA.x, centerB.x + extentB.x);
-            const float contactX = (minOverlapX + maxOverlapX) * 0.5F;
 
-            collisionPoints.A = {contactX, centerA.y + (extentA.y * direction)};
-            collisionPoints.B = {contactX, centerB.y - (extentB.y * direction)};
+            collisionPoints.ContactPoints.front() = {minOverlapX,
+                                                     centerA.y + (extentA.y * direction)};
+            collisionPoints.ContactPoints.back() = {maxOverlapX,
+                                                    centerB.y - (extentB.y * direction)};
         }
 
         return collisionPoints;
@@ -245,7 +248,8 @@ namespace Guch2D
                 // Swap back collision points
                 if (swap)
                 {
-                    std::swap(collisionPoints.A, collisionPoints.B);
+                    std::swap(collisionPoints.ContactPoints.front(),
+                              collisionPoints.ContactPoints.back());
                     collisionPoints.Normal = -collisionPoints.Normal;
                 }
 
