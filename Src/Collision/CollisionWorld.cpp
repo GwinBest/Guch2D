@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 #include <functional>
+#include <limits>
 #include <print>
 
 #include "Collision/AABBCollider.hpp"
@@ -15,32 +16,34 @@ namespace
         CheckCollisionCircleVsCircle(const std::shared_ptr<Guch2D::CollisionBody>& bodyA,
                                      const std::shared_ptr<Guch2D::CollisionBody>& bodyB)
     {
-        const auto& centerA = bodyA->GetColliderCenterWorld();
-        const auto& centerB = bodyB->GetColliderCenterWorld();
-        const auto& radiusA = std::dynamic_pointer_cast<Guch2D::CircleCollider>(
-                                  bodyA->GetCollider())
-                                  ->GetRadius();
-        const auto& radiusB = std::dynamic_pointer_cast<Guch2D::CircleCollider>(
-                                  bodyB->GetCollider())
-                                  ->GetRadius();
+        const auto centerA = bodyA->GetColliderCenterWorld();
+        const auto centerB = bodyB->GetColliderCenterWorld();
+        const auto radiusA = std::dynamic_pointer_cast<Guch2D::CircleCollider>(bodyA->GetCollider())
+                                 ->GetRadius();
+        const auto radiusB = std::dynamic_pointer_cast<Guch2D::CircleCollider>(bodyB->GetCollider())
+                                 ->GetRadius();
+
+        const auto delta = centerB - centerA;
+        const float radiusSum = radiusA + radiusB;
+        const float distanceSquared = (delta.x * delta.x) + (delta.y * delta.y);
+        const float radiusSumSquared = radiusSum * radiusSum;
+        const float scaledEpsilon = std::numeric_limits<float>::epsilon()
+                                 * std::max({1.0F, distanceSquared, radiusSumSquared});
 
         Guch2D::CollisionPoints collisionPoints;
-        const auto delta = centerB - centerA;
-        const float distance = Guch2D::VectLength(delta);
-        const float radiusSum = radiusA + radiusB;
-
-        collisionPoints.HasCollision = distance <= radiusSum;
+        collisionPoints.HasCollision = distanceSquared <= (radiusSumSquared + scaledEpsilon);
 
         if (!collisionPoints.HasCollision)
             return collisionPoints;
 
+        const float distance = std::sqrt(distanceSquared);
         const Guch2D::Vect directionAB = distance > 0.0F ? delta / distance
                                                          : Guch2D::Vect {1.0F, 0.0F};
 
         collisionPoints.ContactPoints.front() = centerA + directionAB * radiusA;
         collisionPoints.ContactPoints.back() = centerB - directionAB * radiusB;
         collisionPoints.Normal = -directionAB;
-        collisionPoints.Depth = radiusSum - distance;
+        collisionPoints.Depth = std::max(0.0F, radiusSum - distance);
 
         return collisionPoints;
     }
@@ -49,24 +52,32 @@ namespace
         CheckCollisionAABBVsAABB(const std::shared_ptr<Guch2D::CollisionBody>& bodyA,
                                  const std::shared_ptr<Guch2D::CollisionBody>& bodyB)
     {
-        const auto& centerA = bodyA->GetColliderCenterWorld();
-        const auto& centerB = bodyB->GetColliderCenterWorld();
-        const auto& extentA = std::dynamic_pointer_cast<Guch2D::AABBCollider>(bodyA->GetCollider())
-                                  ->GetExtent();
-        const auto& extentB = std::dynamic_pointer_cast<Guch2D::AABBCollider>(bodyB->GetCollider())
-                                  ->GetExtent();
+        const auto centerA = bodyA->GetColliderCenterWorld();
+        const auto centerB = bodyB->GetColliderCenterWorld();
+        const auto extentA = std::dynamic_pointer_cast<Guch2D::AABBCollider>(bodyA->GetCollider())
+                                 ->GetExtent();
+        const auto extentB = std::dynamic_pointer_cast<Guch2D::AABBCollider>(bodyB->GetCollider())
+                                 ->GetExtent();
+        const float deltaX = std::abs(centerA.x - centerB.x);
+        const float deltaY = std::abs(centerA.y - centerB.y);
+        const float sumExtentX = extentA.x + extentB.x;
+        const float sumExtentY = extentA.y + extentB.y;
+        const float scaledEpsilonX = std::numeric_limits<float>::epsilon()
+                                  * std::max({1.0F, deltaX, sumExtentX});
+        const float scaledEpsilonY = std::numeric_limits<float>::epsilon()
+                                  * std::max({1.0F, deltaY, sumExtentY});
 
         Guch2D::CollisionPoints collisionPoints;
-        collisionPoints.HasCollision = std::abs(centerA.x - centerB.x) <= extentA.x + extentB.x
-                                    && std::abs(centerA.y - centerB.y) <= extentA.y + extentB.y;
+        collisionPoints.HasCollision = deltaX <= (sumExtentX + scaledEpsilonX)
+                                    && deltaY <= (sumExtentY + scaledEpsilonY);
 
         if (!collisionPoints.HasCollision)
             return collisionPoints;
 
         const auto delta = centerB - centerA;
 
-        const float overlapX = extentA.x + extentB.x - std::abs(delta.x);
-        const float overlapY = extentA.y + extentB.y - std::abs(delta.y);
+        const float overlapX = std::max(0.0F, sumExtentX - deltaX);
+        const float overlapY = std::max(0.0F, sumExtentY - deltaY);
 
         // Resolve collision along the axis with the smaller penetration depth.
         if (overlapX < overlapY)
@@ -97,6 +108,86 @@ namespace
             collisionPoints.ContactPoints.back() = {maxOverlapX,
                                                     centerB.y - (extentB.y * direction)};
         }
+
+        return collisionPoints;
+    }
+
+    [[nodiscard]] Guch2D::CollisionPoints
+        CheckCollisionAABBVsCircle(const std::shared_ptr<Guch2D::CollisionBody>& bodyA,
+                                   const std::shared_ptr<Guch2D::CollisionBody>& bodyB)
+    {
+        const auto centerA = bodyA->GetColliderCenterWorld();
+        const auto centerB = bodyB->GetColliderCenterWorld();
+        const auto extentA = std::dynamic_pointer_cast<Guch2D::AABBCollider>(bodyA->GetCollider())
+                                 ->GetExtent();
+        const auto radiusB = std::dynamic_pointer_cast<Guch2D::CircleCollider>(bodyB->GetCollider())
+                                 ->GetRadius();
+
+        Guch2D::CollisionPoints collisionPoints;
+
+        const float minX = centerA.x - extentA.x;
+        const float maxX = centerA.x + extentA.x;
+        const float minY = centerA.y - extentA.y;
+        const float maxY = centerA.y + extentA.y;
+
+        const auto closestX = std::clamp(centerB.x, minX, maxX);
+        const auto closestY = std::clamp(centerB.y, minY, maxY);
+        const Guch2D::Vect closestPoint = {closestX, closestY};
+        const auto delta = closestPoint - centerB;
+        const float distanceSquared = (delta.x * delta.x) + (delta.y * delta.y);
+        const float radiusSquared = radiusB * radiusB;
+        const float scaledEpsilon = std::numeric_limits<float>::epsilon()
+                                  * std::max({1.0F, distanceSquared, radiusSquared});
+
+        collisionPoints.HasCollision = distanceSquared <= (radiusSquared + scaledEpsilon);
+
+        if (!collisionPoints.HasCollision)
+            return collisionPoints;
+
+        if (distanceSquared > 0.0F)
+        {
+            const float distance = std::sqrt(distanceSquared);
+            collisionPoints.Normal = delta / distance;
+            collisionPoints.Depth = std::max(0.0F, radiusB - distance);
+            collisionPoints.ContactPoints.front() = closestPoint;
+            collisionPoints.ContactPoints.back() = centerB + (collisionPoints.Normal * radiusB);
+            return collisionPoints;
+        }
+
+        // Circle center is inside the AABB (or exactly on the boundary).
+        // Choose the nearest face and orient normal to match solver expectations.
+        const float distanceToLeft = centerB.x - minX;
+        const float distanceToRight = maxX - centerB.x;
+        const float distanceToBottom = centerB.y - minY;
+        const float distanceToTop = maxY - centerB.y;
+
+        float minDistanceToFace = distanceToLeft;
+        collisionPoints.Normal = {1.0F, 0.0F};
+        collisionPoints.ContactPoints.front() = {minX, centerB.y};
+
+        if (distanceToRight < minDistanceToFace)
+        {
+            minDistanceToFace = distanceToRight;
+            collisionPoints.Normal = {-1.0F, 0.0F};
+            collisionPoints.ContactPoints.front() = {maxX, centerB.y};
+        }
+
+        if (distanceToBottom < minDistanceToFace)
+        {
+            minDistanceToFace = distanceToBottom;
+            collisionPoints.Normal = {0.0F, 1.0F};
+            collisionPoints.ContactPoints.front() = {centerB.x, minY};
+        }
+
+        if (distanceToTop < minDistanceToFace)
+        {
+            minDistanceToFace = distanceToTop;
+            collisionPoints.Normal = {0.0F, -1.0F};
+            collisionPoints.ContactPoints.front() = {centerB.x, maxY};
+        }
+
+        collisionPoints.Depth = radiusB + minDistanceToFace;
+        collisionPoints.ContactPoints.back() = centerB + (collisionPoints.Normal * radiusB);
 
         return collisionPoints;
     }
@@ -213,9 +304,9 @@ namespace Guch2D
         static const CollisionFuncMatrix CollisionCheckMatrix = {
             {
              //     None          Circle      AABB
-                {nullptr, nullptr, nullptr},                         // None
-                {nullptr, &CheckCollisionCircleVsCircle, nullptr},   // Circle
-                {nullptr, nullptr, CheckCollisionAABBVsAABB},        // AABB
+                {nullptr, nullptr, nullptr},                                             // None
+                {nullptr, &CheckCollisionCircleVsCircle, &CheckCollisionAABBVsCircle},   // Circle
+                {nullptr, &CheckCollisionAABBVsCircle, &CheckCollisionAABBVsAABB},       // AABB
             }
         };
 
@@ -228,8 +319,8 @@ namespace Guch2D
         if (!bodyACollider || !bodyBCollider)
             return {};
 
-        const auto typeA = static_cast<size_t>(bodyACollider->GetColliderType());
-        const auto typeB = static_cast<size_t>(bodyBCollider->GetColliderType());
+        const auto typeA = static_cast<uint8_t>(bodyACollider->GetColliderType());
+        const auto typeB = static_cast<uint8_t>(bodyBCollider->GetColliderType());
 
         // Ensure a consistent body order for collision functions: if B's type is greater,
         // swap A/B. Collision points are swapped back below to match the original order.
