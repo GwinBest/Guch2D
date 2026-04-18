@@ -9,7 +9,6 @@
 
 namespace
 {
-
     class CollisionWorldTest final : public Guch2D::CollisionWorld
     {
     public:
