@@ -1,6 +1,10 @@
 #pragma once
 
+#ifndef NDEBUG
 #include <print>
+#endif
+
+#include <source_location>
 #include <string_view>
 
 namespace Guch2D
@@ -35,19 +39,34 @@ namespace Guch2D
     inline void InfoLog(const std::string_view msg,
                         const std::source_location loc = std::source_location::current())
     {
+#ifndef NDEBUG
         std::println("{}[Info] {}: {}{}", ResetColor, loc.function_name(), msg, ResetColor);
+#else
+        (void)msg;
+        (void)loc;
+#endif
     }
 
     inline void WarnLog(const std::string_view msg,
                         const std::source_location loc = std::source_location::current())
     {
+#ifndef NDEBUG
         std::println("{}[Warning] {}: {}{}", Yellow, loc.function_name(), msg, ResetColor);
+#else
+        (void)msg;
+        (void)loc;
+#endif
     }
 
     inline void ErrorLog(const std::string_view msg,
                          const std::source_location loc = std::source_location::current())
     {
+#ifndef NDEBUG
         std::println("{}[Error] {}: {}{}", Red, loc.function_name(), msg, ResetColor);
+#else
+        (void)msg;
+        (void)loc;
+#endif
     }
 
 }   // namespace Guch2D
