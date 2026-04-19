@@ -35,7 +35,7 @@ namespace Guch2D
     inline void InfoLog(const std::string_view msg,
                         const std::source_location loc = std::source_location::current())
     {
-        std::println("{}[Info] {}: {}{}", White, loc.function_name(), msg, ResetColor);
+        std::println("{}[Info] {}: {}{}", ResetColor, loc.function_name(), msg, ResetColor);
     }
 
     inline void WarnLog(const std::string_view msg,
