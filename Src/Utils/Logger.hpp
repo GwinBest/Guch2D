@@ -36,36 +36,30 @@ namespace Guch2D
     // Reset all styles and colors
     constexpr std::string_view ResetColor = "\033[0m";
 
-    inline void InfoLog(const std::string_view msg,
-                        const std::source_location loc = std::source_location::current())
+    inline void
+        InfoLog([[maybe_unused]] const std::string_view msg,
+                [[maybe_unused]] const std::source_location loc = std::source_location::current())
     {
 #ifndef NDEBUG
-        std::println("{}[Info] {}: {}{}", ResetColor, loc.function_name(), msg, ResetColor);
-#else
-        (void)msg;
-        (void)loc;
+        std::println("{}[Info] {}: {}{}", Yellow, loc.function_name(), msg, ResetColor);
 #endif
     }
 
-    inline void WarnLog(const std::string_view msg,
-                        const std::source_location loc = std::source_location::current())
+    inline void
+        WarnLog([[maybe_unused]] const std::string_view msg,
+                [[maybe_unused]] const std::source_location loc = std::source_location::current())
     {
 #ifndef NDEBUG
         std::println("{}[Warning] {}: {}{}", Yellow, loc.function_name(), msg, ResetColor);
-#else
-        (void)msg;
-        (void)loc;
 #endif
     }
 
-    inline void ErrorLog(const std::string_view msg,
-                         const std::source_location loc = std::source_location::current())
+    inline void
+        ErrorLog([[maybe_unused]] const std::string_view msg,
+                 [[maybe_unused]] const std::source_location loc = std::source_location::current())
     {
 #ifndef NDEBUG
-        std::println("{}[Error] {}: {}{}", Red, loc.function_name(), msg, ResetColor);
-#else
-        (void)msg;
-        (void)loc;
+        std::println("{}[Error] {}: {}{}", Yellow, loc.function_name(), msg, ResetColor);
 #endif
     }
 
