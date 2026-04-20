@@ -41,7 +41,7 @@ namespace Guch2D
                 [[maybe_unused]] const std::source_location loc = std::source_location::current())
     {
 #ifndef NDEBUG
-        std::println("{}[Info] {}: {}{}", Yellow, loc.function_name(), msg, ResetColor);
+        std::println("{}[Info] {}: {}{}", ResetColor, loc.function_name(), msg, ResetColor);
 #endif
     }
 
@@ -59,7 +59,7 @@ namespace Guch2D
                  [[maybe_unused]] const std::source_location loc = std::source_location::current())
     {
 #ifndef NDEBUG
-        std::println("{}[Error] {}: {}{}", Yellow, loc.function_name(), msg, ResetColor);
+        std::println("{}[Error] {}: {}{}", Red, loc.function_name(), msg, ResetColor);
 #endif
     }
 
