@@ -11,6 +11,64 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 option(BUILD_DEMO "Build demo executable" OFF)
 option(BUILD_TEST "Build tests" OFF)
 option(ENABLE_ASAN "Enable AddressSanitizer" ON)
+option(ENABLE_UBSAN "Enable UndefinedBehaviorSanitizer" ON)
+option(ENABLE_LSAN "Enable LeakSanitizer" ON)
+
+include(CheckCXXCompilerFlag)
+include(CheckLinkerFlag)
+
+set(PROJECT_SANITIZER_COMPILE_FLAGS "")
+set(PROJECT_SANITIZER_LINK_FLAGS "")
+
+macro(append_sanitizer_if_supported sanitizer_name sanitizer_flag)
+    string(MAKE_C_IDENTIFIER "${sanitizer_flag}" sanitizer_flag_id)
+
+    if (DEFINED CMAKE_TRY_COMPILE_TARGET_TYPE)
+        set(_saved_try_compile_target_type "${CMAKE_TRY_COMPILE_TARGET_TYPE}")
+        set(_saved_try_compile_target_type_is_set TRUE)
+    else ()
+        set(_saved_try_compile_target_type_is_set FALSE)
+    endif ()
+
+    set(CMAKE_TRY_COMPILE_TARGET_TYPE "STATIC_LIBRARY")
+    check_cxx_compiler_flag("${sanitizer_flag}" "HAS_CXX_FLAG_${sanitizer_flag_id}")
+    if (_saved_try_compile_target_type_is_set)
+        set(CMAKE_TRY_COMPILE_TARGET_TYPE "${_saved_try_compile_target_type}")
+    else ()
+        unset(CMAKE_TRY_COMPILE_TARGET_TYPE)
+    endif ()
+
+    check_linker_flag(CXX "${sanitizer_flag}" "HAS_LINKER_FLAG_${sanitizer_flag_id}")
+
+    if (HAS_CXX_FLAG_${sanitizer_flag_id} AND HAS_LINKER_FLAG_${sanitizer_flag_id})
+        list(APPEND PROJECT_SANITIZER_COMPILE_FLAGS "${sanitizer_flag}")
+        list(APPEND PROJECT_SANITIZER_LINK_FLAGS "${sanitizer_flag}")
+    else ()
+        message(WARNING
+                "${sanitizer_name} requested, but '${sanitizer_flag}' is not fully supported by "
+                "${CMAKE_CXX_COMPILER_ID} (${CMAKE_CXX_COMPILER}). Skipping ${sanitizer_name}."
+        )
+    endif ()
+endmacro()
+
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+    if (ENABLE_ASAN)
+        append_sanitizer_if_supported("ASan" "-fsanitize=address")
+    endif ()
+    if (ENABLE_UBSAN)
+        append_sanitizer_if_supported("UBSan" "-fsanitize=undefined")
+    endif ()
+    if (ENABLE_LSAN)
+        append_sanitizer_if_supported("LSan" "-fsanitize=leak")
+    endif ()
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    if (ENABLE_UBSAN)
+        message(WARNING "UBSan is not supported by the MSVC toolchain and will be ignored.")
+    endif ()
+    if (ENABLE_LSAN)
+        message(WARNING "LSan is not supported by the MSVC toolchain and will be ignored.")
+    endif ()
+endif ()
 
 function(copy_msvc_asan_runtime target_name)
     if (NOT MSVC OR NOT ENABLE_ASAN)
@@ -45,27 +103,48 @@ function(copy_msvc_asan_runtime target_name)
     endforeach ()
 endfunction()
 
-function(enable_asan target_name)
-    if (NOT ENABLE_ASAN)
-        return()
-    endif ()
-
+function(enable_sanitizers target_name)
     if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
-        target_compile_options(${target_name} PRIVATE
-                $<$<CONFIG:Debug>:-fsanitize=address -fno-omit-frame-pointer>
-                $<$<CONFIG:RelWithDebInfo>:-fsanitize=address -fno-omit-frame-pointer>
-        )
-        target_link_options(${target_name} PRIVATE
-                $<$<CONFIG:Debug>:-fsanitize=address>
-                $<$<CONFIG:RelWithDebInfo>:-fsanitize=address>
-        )
-    elseif (MSVC)
+        if (NOT PROJECT_SANITIZER_COMPILE_FLAGS)
+            return()
+        endif ()
+
+        foreach (sanitizer_flag IN LISTS PROJECT_SANITIZER_COMPILE_FLAGS)
+            target_compile_options(${target_name} PRIVATE
+                    $<$<CONFIG:Debug>:${sanitizer_flag}>
+                    $<$<CONFIG:RelWithDebInfo>:${sanitizer_flag}>
+            )
+        endforeach ()
+
+        foreach (sanitizer_flag IN LISTS PROJECT_SANITIZER_LINK_FLAGS)
+            target_link_options(${target_name} PRIVATE
+                    $<$<CONFIG:Debug>:${sanitizer_flag}>
+                    $<$<CONFIG:RelWithDebInfo>:${sanitizer_flag}>
+            )
+        endforeach ()
+
+        if ("-fsanitize=address" IN_LIST PROJECT_SANITIZER_COMPILE_FLAGS
+                OR "-fsanitize=leak" IN_LIST PROJECT_SANITIZER_COMPILE_FLAGS)
+            target_compile_options(${target_name} PRIVATE
+                    $<$<CONFIG:Debug>:-fno-omit-frame-pointer>
+                    $<$<CONFIG:RelWithDebInfo>:-fno-omit-frame-pointer>
+            )
+        endif ()
+    elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+        if (NOT ENABLE_ASAN)
+            return()
+        endif ()
+
         target_compile_options(${target_name} PRIVATE
                 $<$<CONFIG:Debug>:/fsanitize=address>
                 $<$<CONFIG:RelWithDebInfo>:/fsanitize=address>
         )
         copy_msvc_asan_runtime(${target_name})
     endif ()
+endfunction()
+
+function(enable_asan target_name)
+    enable_sanitizers(${target_name})
 endfunction()
 
 function(enable_project_warnings target_name)
