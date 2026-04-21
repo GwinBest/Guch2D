@@ -12,11 +12,6 @@ namespace Guch2D
         CollisionWorld::Step();
         ApplyGravity();
         MoveBodies();
-
-        int max = std::numeric_limits<int>::max();
-        int overflow = max + 1;
-
-        std::println("Result: {}", overflow);
     }
 
     void DynamicWorld::ApplyGravity() const noexcept
