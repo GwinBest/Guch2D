@@ -1,7 +1,7 @@
 #include "DynamicWorld.hpp"
 
 #include <cmath>
-#include <ostream>
+#include <print>
 
 #include "Dynamics/DynamicRigidBody.hpp"
 
