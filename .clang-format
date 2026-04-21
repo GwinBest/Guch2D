@@ -1,7 +1,7 @@
 ---
 AccessModifierOffset: -4
 IndentWidth: 4
-AlignAfterOpenBracket: Align
+AlignAfterOpenBracket: true
 AlignArrayOfStructures: Left
 AlignConsecutiveMacros:
   Enabled: true
@@ -23,7 +23,7 @@ AllowShortCaseLabelsOnASingleLine: true
 AllowShortCompoundRequirementOnASingleLine: true
 AllowShortEnumsOnASingleLine: false
 AllowShortFunctionsOnASingleLine: InlineOnly
-AllowShortIfStatementsOnASingleLine: AllIfsAndElse
+AllowShortIfStatementsOnASingleLine: Never
 AllowShortLambdasOnASingleLine: All
 AllowShortLoopsOnASingleLine: true
 AlwaysBreakBeforeMultilineStrings: false
@@ -84,7 +84,7 @@ PointerAlignment: Left
 DerivePointerAlignment: false
 QualifierAlignment: Left
 ReferenceAlignment: Pointer
-ReflowComments: true
+ReflowComments: Always
 RemoveParentheses: ReturnStatement
 RemoveSemicolon: true
 RequiresClausePosition: OwnLine

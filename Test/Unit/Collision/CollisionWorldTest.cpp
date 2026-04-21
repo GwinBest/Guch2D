@@ -1,18 +1,49 @@
 #include "Collision/CollisionWorld.hpp"
 
+#include <cmath>
 #include <gtest/gtest.h>
 
+#include "Collision/AABBCollider.hpp"
 #include "Collision/CircleCollider.hpp"
 #include "Solver/PenetrationVectorSolver.hpp"
 
 namespace
 {
-
     class CollisionWorldTest final : public Guch2D::CollisionWorld
     {
     public:
         using Guch2D::CollisionWorld::CheckCollisions;
     };
+
+    [[nodiscard]] std::shared_ptr<Guch2D::CollisionBody>
+        MakeAABBBody(const Guch2D::Vect& position,
+                     const Guch2D::Vect& extent,
+                     const Guch2D::Vect& colliderCenter = {0.0F, 0.0F})
+    {
+        const auto body = std::make_shared<Guch2D::CollisionBody>();
+        body->SetPosition(position);
+
+        const auto collider = std::make_shared<Guch2D::AABBCollider>(extent);
+        collider->SetCenterLocal(colliderCenter);
+        body->SetCollider(collider);
+
+        return body;
+    }
+
+    [[nodiscard]] std::shared_ptr<Guch2D::CollisionBody>
+        MakeCircleBody(const Guch2D::Vect& position,
+                       const float radius,
+                       const Guch2D::Vect& colliderCenter = {0.0F, 0.0F})
+    {
+        const auto body = std::make_shared<Guch2D::CollisionBody>();
+        body->SetPosition(position);
+
+        const auto collider = std::make_shared<Guch2D::CircleCollider>(radius);
+        collider->SetCenterLocal(colliderCenter);
+        body->SetCollider(collider);
+
+        return body;
+    }
 
     TEST(CollisionWorldTest, DefaultConstructor)
     {
@@ -109,7 +140,7 @@ namespace
 
     TEST(CollisionWorldTest, StepNoObjects)
     {
-        const Guch2D::CollisionWorld world;
+        Guch2D::CollisionWorld world;
         world.Step();
         SUCCEED();
     }
@@ -454,6 +485,245 @@ namespace
         EXPECT_EQ(endOverlapCountB, 1);
         EXPECT_EQ(beginOverlapCountC, 0);
         EXPECT_EQ(endOverlapCountC, 0);
+    }
+
+    TEST(CollisionWorld, CheckCollisionsAABBVsAABBOverlapX)
+    {
+        const auto bodyA = std::make_shared<Guch2D::CollisionBody>();
+        bodyA->SetPosition({0.0F, 0.0F});
+        bodyA->SetCollider(std::make_shared<Guch2D::AABBCollider>(Guch2D::Vect {2.0F, 1.0F}));
+
+        const auto bodyB = std::make_shared<Guch2D::CollisionBody>();
+        bodyB->SetPosition({3.0F, 0.5F});
+        bodyB->SetCollider(std::make_shared<Guch2D::AABBCollider>(Guch2D::Vect {2.0F, 1.0F}));
+
+        const auto collisionPoints = CollisionWorldTest::CheckCollisions(bodyA, bodyB);
+        EXPECT_TRUE(collisionPoints.HasCollision);
+        EXPECT_FLOAT_EQ(collisionPoints.Depth, 1.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.Normal.x, -1.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.Normal.y, 0.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().x, 2.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().y, -0.5F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().x, 1.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().y, 1.0F);
+    }
+
+    TEST(CollisionWorld, CheckCollisionsAABBVsAABBOverlapY)
+    {
+        const auto bodyA = std::make_shared<Guch2D::CollisionBody>();
+        bodyA->SetPosition({0.0F, 0.0F});
+        bodyA->SetCollider(std::make_shared<Guch2D::AABBCollider>(Guch2D::Vect {1.0F, 2.0F}));
+
+        const auto bodyB = std::make_shared<Guch2D::CollisionBody>();
+        bodyB->SetPosition({0.25F, 3.0F});
+        bodyB->SetCollider(std::make_shared<Guch2D::AABBCollider>(Guch2D::Vect {1.0F, 2.0F}));
+
+        const auto collisionPoints = CollisionWorldTest::CheckCollisions(bodyA, bodyB);
+        EXPECT_TRUE(collisionPoints.HasCollision);
+        EXPECT_FLOAT_EQ(collisionPoints.Depth, 1.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.Normal.x, 0.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.Normal.y, -1.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().x, -0.75F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().y, 2.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().x, 1.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().y, 1.0F);
+    }
+
+    TEST(CollisionWorld, CheckCollisionsAABBVsCircleNoCollisionOutsideFace)
+    {
+        const auto bodyA = MakeAABBBody({0.0F, 0.0F}, {2.0F, 1.0F});
+        const auto bodyB = MakeCircleBody({4.1F, 0.0F}, 2.0F);
+
+        const auto collisionPoints = CollisionWorldTest::CheckCollisions(bodyA, bodyB);
+        EXPECT_FALSE(collisionPoints.HasCollision);
+    }
+
+    TEST(CollisionWorld, CheckCollisionsAABBVsCircleNoCollisionOutsideCorner)
+    {
+        const auto bodyA = MakeAABBBody({0.0F, 0.0F}, {2.0F, 2.0F});
+        const auto bodyB = MakeCircleBody({4.0F, 4.0F}, 2.8F);
+
+        const auto collisionPoints = CollisionWorldTest::CheckCollisions(bodyA, bodyB);
+        EXPECT_FALSE(collisionPoints.HasCollision);
+    }
+
+    TEST(CollisionWorld, CheckCollisionsAABBVsCircleTouchingFace)
+    {
+        const auto bodyA = MakeAABBBody({0.0F, 0.0F}, {2.0F, 1.0F});
+        const auto bodyB = MakeCircleBody({4.0F, 0.0F}, 2.0F);
+
+        const auto collisionPoints = CollisionWorldTest::CheckCollisions(bodyA, bodyB);
+        EXPECT_TRUE(collisionPoints.HasCollision);
+        EXPECT_FLOAT_EQ(collisionPoints.Normal.x, -1.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.Normal.y, 0.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.Depth, 0.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().x, 2.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().y, 0.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().x, 2.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().y, 0.0F);
+    }
+
+    TEST(CollisionWorld, CheckCollisionsAABBVsCirclePenetratingFace)
+    {
+        const auto bodyA = MakeAABBBody({0.0F, 0.0F}, {2.0F, 1.0F});
+        const auto bodyB = MakeCircleBody({3.0F, 0.0F}, 2.0F);
+
+        const auto collisionPoints = CollisionWorldTest::CheckCollisions(bodyA, bodyB);
+        EXPECT_TRUE(collisionPoints.HasCollision);
+        EXPECT_FLOAT_EQ(collisionPoints.Normal.x, -1.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.Normal.y, 0.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.Depth, 1.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().x, 2.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().y, 0.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().x, 1.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().y, 0.0F);
+    }
+
+    TEST(CollisionWorld, CheckCollisionsAABBVsCircleTouchingCorner)
+    {
+        const auto bodyA = MakeAABBBody({0.0F, 0.0F}, {2.0F, 2.0F});
+        const auto bodyB = MakeCircleBody({4.0F, 4.0F}, std::sqrt(8.0F));
+
+        const auto collisionPoints = CollisionWorldTest::CheckCollisions(bodyA, bodyB);
+        EXPECT_TRUE(collisionPoints.HasCollision);
+        EXPECT_NEAR(collisionPoints.Normal.x, -0.70710677F, 1.0e-6F);
+        EXPECT_NEAR(collisionPoints.Normal.y, -0.70710677F, 1.0e-6F);
+        EXPECT_FLOAT_EQ(collisionPoints.Depth, 0.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().x, 2.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().y, 2.0F);
+        EXPECT_NEAR(collisionPoints.ContactPoints.back().x, 2.0F, 1.0e-5F);
+        EXPECT_NEAR(collisionPoints.ContactPoints.back().y, 2.0F, 1.0e-5F);
+    }
+
+    TEST(CollisionWorld, CheckCollisionsAABBVsCirclePenetratingCorner)
+    {
+        const auto bodyA = MakeAABBBody({0.0F, 0.0F}, {2.0F, 2.0F});
+        const auto bodyB = MakeCircleBody({4.0F, 4.0F}, 3.0F);
+
+        const auto collisionPoints = CollisionWorldTest::CheckCollisions(bodyA, bodyB);
+        EXPECT_TRUE(collisionPoints.HasCollision);
+        EXPECT_NEAR(collisionPoints.Normal.x, -0.70710677F, 1.0e-6F);
+        EXPECT_NEAR(collisionPoints.Normal.y, -0.70710677F, 1.0e-6F);
+        EXPECT_NEAR(collisionPoints.Depth, 0.17157292F, 1.0e-6F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().x, 2.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().y, 2.0F);
+        EXPECT_NEAR(collisionPoints.ContactPoints.back().x, 1.87867963F, 1.0e-6F);
+        EXPECT_NEAR(collisionPoints.ContactPoints.back().y, 1.87867963F, 1.0e-6F);
+    }
+
+    TEST(CollisionWorld, CheckCollisionsAABBVsCircleInsideChoosesLeftFace)
+    {
+        const auto bodyA = MakeAABBBody({0.0F, 0.0F}, {2.0F, 2.0F});
+        const auto bodyB = MakeCircleBody({-1.8F, 0.0F}, 0.5F);
+
+        const auto collisionPoints = CollisionWorldTest::CheckCollisions(bodyA, bodyB);
+        EXPECT_TRUE(collisionPoints.HasCollision);
+        EXPECT_FLOAT_EQ(collisionPoints.Normal.x, 1.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.Normal.y, 0.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.Depth, 0.7F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().x, -2.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().y, 0.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().x, -1.3F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().y, 0.0F);
+    }
+
+    TEST(CollisionWorld, CheckCollisionsAABBVsCircleInsideChoosesRightFace)
+    {
+        const auto bodyA = MakeAABBBody({0.0F, 0.0F}, {2.0F, 2.0F});
+        const auto bodyB = MakeCircleBody({1.8F, 0.0F}, 0.5F);
+
+        const auto collisionPoints = CollisionWorldTest::CheckCollisions(bodyA, bodyB);
+        EXPECT_TRUE(collisionPoints.HasCollision);
+        EXPECT_FLOAT_EQ(collisionPoints.Normal.x, -1.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.Normal.y, 0.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.Depth, 0.7F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().x, 2.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().y, 0.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().x, 1.3F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().y, 0.0F);
+    }
+
+    TEST(CollisionWorld, CheckCollisionsAABBVsCircleInsideChoosesBottomFace)
+    {
+        const auto bodyA = MakeAABBBody({0.0F, 0.0F}, {2.0F, 2.0F});
+        const auto bodyB = MakeCircleBody({0.0F, -1.75F}, 0.5F);
+
+        const auto collisionPoints = CollisionWorldTest::CheckCollisions(bodyA, bodyB);
+        EXPECT_TRUE(collisionPoints.HasCollision);
+        EXPECT_FLOAT_EQ(collisionPoints.Normal.x, 0.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.Normal.y, 1.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.Depth, 0.75F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().x, 0.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().y, -2.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().x, 0.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().y, -1.25F);
+    }
+
+    TEST(CollisionWorld, CheckCollisionsAABBVsCircleInsideChoosesTopFace)
+    {
+        const auto bodyA = MakeAABBBody({0.0F, 0.0F}, {2.0F, 2.0F});
+        const auto bodyB = MakeCircleBody({0.0F, 1.75F}, 0.5F);
+
+        const auto collisionPoints = CollisionWorldTest::CheckCollisions(bodyA, bodyB);
+        EXPECT_TRUE(collisionPoints.HasCollision);
+        EXPECT_FLOAT_EQ(collisionPoints.Normal.x, 0.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.Normal.y, -1.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.Depth, 0.75F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().x, 0.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().y, 2.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().x, 0.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().y, 1.25F);
+    }
+
+    TEST(CollisionWorld, CheckCollisionsAABBVsCircleInsideEqualDistanceChoosesLeftFace)
+    {
+        const auto bodyA = MakeAABBBody({0.0F, 0.0F}, {2.0F, 2.0F});
+        const auto bodyB = MakeCircleBody({0.0F, 0.0F}, 0.5F);
+
+        const auto collisionPoints = CollisionWorldTest::CheckCollisions(bodyA, bodyB);
+        EXPECT_TRUE(collisionPoints.HasCollision);
+        EXPECT_FLOAT_EQ(collisionPoints.Normal.x, 1.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.Normal.y, 0.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.Depth, 2.5F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().x, -2.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().y, 0.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().x, 0.5F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().y, 0.0F);
+    }
+
+    TEST(CollisionWorld, CheckCollisionsAABBVsCircleUsesColliderLocalCenter)
+    {
+        const auto bodyA = MakeAABBBody({10.0F, 10.0F}, {2.0F, 2.0F}, {1.0F, -1.0F});
+        const auto bodyB = MakeCircleBody({12.0F, 9.0F}, 1.5F, {1.0F, 0.0F});
+
+        const auto collisionPoints = CollisionWorldTest::CheckCollisions(bodyA, bodyB);
+        EXPECT_TRUE(collisionPoints.HasCollision);
+        EXPECT_FLOAT_EQ(collisionPoints.Normal.x, -1.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.Normal.y, 0.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.Depth, 1.5F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().x, 13.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().y, 9.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().x, 11.5F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().y, 9.0F);
+    }
+
+    TEST(CollisionWorld, CheckCollisionsCircleVsAABBReturnsSwappedNormalAndContacts)
+    {
+        const auto aabbBody = MakeAABBBody({0.0F, 0.0F}, {2.0F, 1.0F});
+        const auto circleBody = MakeCircleBody({3.0F, 0.0F}, 2.0F);
+
+        const auto aabbVsCircle = CollisionWorldTest::CheckCollisions(aabbBody, circleBody);
+        const auto circleVsAabb = CollisionWorldTest::CheckCollisions(circleBody, aabbBody);
+
+        EXPECT_TRUE(aabbVsCircle.HasCollision);
+        EXPECT_TRUE(circleVsAabb.HasCollision);
+        EXPECT_FLOAT_EQ(aabbVsCircle.Depth, circleVsAabb.Depth);
+        EXPECT_FLOAT_EQ(aabbVsCircle.Normal.x, -circleVsAabb.Normal.x);
+        EXPECT_FLOAT_EQ(aabbVsCircle.Normal.y, -circleVsAabb.Normal.y);
+        EXPECT_FLOAT_EQ(aabbVsCircle.ContactPoints.front().x, circleVsAabb.ContactPoints.back().x);
+        EXPECT_FLOAT_EQ(aabbVsCircle.ContactPoints.front().y, circleVsAabb.ContactPoints.back().y);
+        EXPECT_FLOAT_EQ(aabbVsCircle.ContactPoints.back().x, circleVsAabb.ContactPoints.front().x);
+        EXPECT_FLOAT_EQ(aabbVsCircle.ContactPoints.back().y, circleVsAabb.ContactPoints.front().y);
     }
 
     TEST(CollisionWorld, CheckCollisionsNullBodyA)

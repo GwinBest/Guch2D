@@ -1,12 +1,39 @@
 #include "Collision/Collider.hpp"
 
+#include <cmath>
 #include <gtest/gtest.h>
 
 namespace
 {
+    class TestCollider final : public Guch2D::Collider
+    {
+    public:
+        using Guch2D::Collider::Collider;
+
+        [[nodiscard]] Guch2D::Vect LeftBorder() const noexcept override
+        {
+            return GetCenterLocal();
+        }
+
+        [[nodiscard]] Guch2D::Vect RightBorder() const noexcept override
+        {
+            return GetCenterLocal();
+        }
+
+        [[nodiscard]] Guch2D::Vect TopBorder() const noexcept override
+        {
+            return GetCenterLocal();
+        }
+
+        [[nodiscard]] Guch2D::Vect BottomBorder() const noexcept override
+        {
+            return GetCenterLocal();
+        }
+    };
+
     TEST(ColliderTest, DefaultConstructor)
     {
-        const Guch2D::Collider collider;
+        const TestCollider collider;
         EXPECT_EQ(collider.GetColliderType(), Guch2D::ColliderType::None);
         EXPECT_EQ(collider.GetCenterLocal(), Guch2D::Vect(0.0F, 0.0F));
     }
@@ -14,21 +41,21 @@ namespace
     TEST(ColliderTest, CenterConstructor)
     {
         constexpr Guch2D::Vect center {1.0F, 2.0F};
-        const Guch2D::Collider collider(center);
+        const TestCollider collider(center);
         EXPECT_EQ(collider.GetColliderType(), Guch2D::ColliderType::None);
         EXPECT_EQ(collider.GetCenterLocal(), center);
     }
 
     TEST(CollierTest, SetColliderType)
     {
-        Guch2D::Collider collider;
+        TestCollider collider;
         collider.SetColliderType(Guch2D::ColliderType::Circle);
         EXPECT_EQ(collider.GetColliderType(), Guch2D::ColliderType::Circle);
     }
 
     TEST(ColliderTest, SetCenterLocalPositive)
     {
-        Guch2D::Collider collider;
+        TestCollider collider;
         constexpr Guch2D::Vect center {3.0F, 4.0F};
         collider.SetCenterLocal(center);
         EXPECT_EQ(collider.GetCenterLocal(), center);
@@ -36,7 +63,7 @@ namespace
 
     TEST(ColliderTest, SetCenterLocalNegative)
     {
-        Guch2D::Collider collider;
+        TestCollider collider;
         constexpr Guch2D::Vect center {-5.0F, -6.0F};
         collider.SetCenterLocal(center);
         EXPECT_EQ(collider.GetCenterLocal(), center);
@@ -44,7 +71,7 @@ namespace
 
     TEST(ColliderTest, SetCenterLocalZero)
     {
-        Guch2D::Collider collider;
+        TestCollider collider;
         constexpr Guch2D::Vect center {0.0F, 0.0F};
         collider.SetCenterLocal(center);
         EXPECT_EQ(collider.GetCenterLocal(), center);
@@ -52,7 +79,7 @@ namespace
 
     TEST(ColliderTest, SetCenterLocalNaN)
     {
-        Guch2D::Collider collider;
+        TestCollider collider;
         constexpr Guch2D::Vect center {NAN, 0.0F};
         collider.SetCenterLocal(center);
         EXPECT_EQ(collider.GetCenterLocal(), Guch2D::Vect(0.0F, 0.0F));
@@ -60,7 +87,7 @@ namespace
 
     TEST(ColliderTest, SetCenterLocalInfinite)
     {
-        Guch2D::Collider collider;
+        TestCollider collider;
         constexpr Guch2D::Vect center {INFINITY, 0.0F};
         collider.SetCenterLocal(center);
         EXPECT_EQ(collider.GetCenterLocal(), Guch2D::Vect(0.0F, 0.0F));

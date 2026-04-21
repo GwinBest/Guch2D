@@ -39,7 +39,8 @@ namespace Guch2D
 
         void AddForce(const Vect& force) noexcept
         {
-            if (!IsFinite(force)) return;
+            if (!IsFinite(force))
+                return;
 
             _force += force;
         }
@@ -74,7 +75,8 @@ namespace Guch2D
 
         void AddVelocity(const Vect& velocity) noexcept
         {
-            if (!IsFinite(velocity)) return;
+            if (!IsFinite(velocity))
+                return;
 
             _velocity += velocity;
         }

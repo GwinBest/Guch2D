@@ -15,11 +15,38 @@ namespace Guch2D
             SetRadius(radius);
         }
 
+        CircleCollider(const Vect& center, const float radius) noexcept
+            : Collider(center)
+        {
+            SetColliderType(ColliderType::Circle);
+            SetRadius(radius);
+        }
+
         CircleCollider(const CircleCollider&) = default;
         CircleCollider(CircleCollider&&) = default;
         CircleCollider& operator=(const CircleCollider&) = default;
         CircleCollider& operator=(CircleCollider&&) = default;
         ~CircleCollider() override = default;
+
+        [[nodiscard]] Vect LeftBorder() const noexcept override
+        {
+            return {GetCenterLocal().x - _radius, GetCenterLocal().y};
+        }
+
+        [[nodiscard]] Vect RightBorder() const noexcept override
+        {
+            return {GetCenterLocal().x + _radius, GetCenterLocal().y};
+        }
+
+        [[nodiscard]] Vect TopBorder() const noexcept override
+        {
+            return {GetCenterLocal().x, GetCenterLocal().y + _radius};
+        }
+
+        [[nodiscard]] Vect BottomBorder() const noexcept override
+        {
+            return {GetCenterLocal().x, GetCenterLocal().y - _radius};
+        }
 
         [[nodiscard]] float GetRadius() const noexcept { return _radius; }
 

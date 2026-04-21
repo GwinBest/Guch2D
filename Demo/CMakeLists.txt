@@ -15,4 +15,11 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(SFML)
 
+# Keep ASan annotation settings aligned across Demo, SFML, and project library on MSVC.
+foreach (sfml_target IN ITEMS sfml-system sfml-window sfml-graphics)
+    if (TARGET ${sfml_target})
+        enable_asan(${sfml_target})
+    endif ()
+endforeach ()
+
 target_link_libraries(${PROJECT_NAME}-Demo PRIVATE SFML::Graphics ${PROJECT_NAME})

@@ -6,7 +6,7 @@
 
 namespace Guch2D
 {
-    void DynamicWorld::Step() const
+    void DynamicWorld::Step()
     {
         CollisionWorld::Step();
         ApplyGravity();
@@ -58,11 +58,15 @@ namespace Guch2D
         const std::shared_ptr<DynamicRigidBody>& dynamicRigidBody) const noexcept
     {
         const float dampingFactorX = std::clamp(
-            1.0F - (_timeStep * dynamicRigidBody->GetLinearDamping().x), // NOLINT(*-pro-type-union-access)
+            1.0F
+                - (_timeStep
+                   * dynamicRigidBody->GetLinearDamping().x),   // NOLINT(*-pro-type-union-access)
             0.0F,
             1.0F);
         const float dampingFactorY = std::clamp(
-            1.0F - (_timeStep * dynamicRigidBody->GetLinearDamping().y), // NOLINT(*-pro-type-union-access)
+            1.0F
+                - (_timeStep
+                   * dynamicRigidBody->GetLinearDamping().y),   // NOLINT(*-pro-type-union-access)
             0.0F,
             1.0F);
 
