@@ -1,4 +1,6 @@
 #include "Collision/AABBCollider.hpp"
+
+#include <cmath>
 #include <gtest/gtest.h>
 
 namespace
@@ -58,5 +60,35 @@ namespace
         constexpr Guch2D::Vect extent{INFINITY, 0.0F};
         collider.SetExtent(extent);
         EXPECT_EQ(collider.GetExtent(), Guch2D::Vect(0.0F, 0.0F));
+    }
+
+    TEST(AABBColliderTest, BordersWithZeroCenter)
+    {
+        const Guch2D::AABBCollider collider({2.0F, 3.0F});
+
+        EXPECT_EQ(collider.LeftBorder(), Guch2D::Vect(-2.0F, 0.0F));
+        EXPECT_EQ(collider.RightBorder(), Guch2D::Vect(2.0F, 0.0F));
+        EXPECT_EQ(collider.TopBorder(), Guch2D::Vect(0.0F, 3.0F));
+        EXPECT_EQ(collider.BottomBorder(), Guch2D::Vect(0.0F, -3.0F));
+    }
+
+    TEST(AABBColliderTest, BordersWithCustomCenter)
+    {
+        const Guch2D::AABBCollider collider({1.0F, -2.0F}, {3.0F, 4.0F});
+
+        EXPECT_EQ(collider.LeftBorder(), Guch2D::Vect(-2.0F, -2.0F));
+        EXPECT_EQ(collider.RightBorder(), Guch2D::Vect(4.0F, -2.0F));
+        EXPECT_EQ(collider.TopBorder(), Guch2D::Vect(1.0F, 2.0F));
+        EXPECT_EQ(collider.BottomBorder(), Guch2D::Vect(1.0F, -6.0F));
+    }
+
+    TEST(AABBColliderTest, BordersWithZeroExtentMatchCenter)
+    {
+        const Guch2D::AABBCollider collider({-7.0F, 11.0F}, {0.0F, 0.0F});
+
+        EXPECT_EQ(collider.LeftBorder(), collider.GetCenterLocal());
+        EXPECT_EQ(collider.RightBorder(), collider.GetCenterLocal());
+        EXPECT_EQ(collider.TopBorder(), collider.GetCenterLocal());
+        EXPECT_EQ(collider.BottomBorder(), collider.GetCenterLocal());
     }
 }

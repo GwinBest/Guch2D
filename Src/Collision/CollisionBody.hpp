@@ -101,9 +101,41 @@ namespace Guch2D
         [[nodiscard]] Vect GetColliderCenterWorld() const noexcept
         {
             if (!_collider)
-                return _position;
+                return {};
 
             return _position + _collider->GetCenterLocal();
+        }
+
+        [[nodiscard]] Vect GetColliderLeftBorderWorld() const noexcept
+        {
+            if (!_collider)
+                return {};
+
+            return _position + _collider->LeftBorder();
+        }
+
+        [[nodiscard]] Vect GetColliderRightBorderWorld() const noexcept
+        {
+            if (!_collider)
+                return {};
+
+            return _position + _collider->RightBorder();
+        }
+
+        [[nodiscard]] Vect GetColliderTopBorderWorld() const noexcept
+        {
+            if (!_collider)
+                return {};
+
+            return _position + _collider->TopBorder();
+        }
+
+        [[nodiscard]] Vect GetColliderBottomBorderWorld() const noexcept
+        {
+            if (!_collider)
+                return {};
+
+            return _position + _collider->BottomBorder();
         }
 
         void BindOnBeginOverlap(CollisionCallback callback) noexcept

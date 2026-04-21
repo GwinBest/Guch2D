@@ -29,6 +29,26 @@ namespace Guch2D
         AABBCollider& operator=(AABBCollider&&) = default;
         ~AABBCollider() override = default;
 
+        [[nodiscard]] Vect LeftBorder() const noexcept override
+        {
+            return {GetCenterLocal().x - _extent.x, GetCenterLocal().y};
+        }
+
+        [[nodiscard]] Vect RightBorder() const noexcept override
+        {
+            return {GetCenterLocal().x + _extent.x, GetCenterLocal().y};
+        }
+
+        [[nodiscard]] Vect TopBorder() const noexcept override
+        {
+            return {GetCenterLocal().x, GetCenterLocal().y + _extent.y};
+        }
+
+        [[nodiscard]] Vect BottomBorder() const noexcept override
+        {
+            return {GetCenterLocal().x, GetCenterLocal().y - _extent.y};
+        }
+
         void SetExtent(const Vect& extent) noexcept
         {
             if (!IsFinite(extent))

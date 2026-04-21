@@ -6,7 +6,7 @@
 
 namespace Guch2D
 {
-    void DynamicWorld::Step() const
+    void DynamicWorld::Step()
     {
         CollisionWorld::Step();
         ApplyGravity();

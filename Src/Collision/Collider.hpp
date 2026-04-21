@@ -27,6 +27,11 @@ namespace Guch2D
         Collider& operator=(Collider&&) = default;
         virtual ~Collider() = default;
 
+        [[nodiscard]] virtual Vect LeftBorder() const noexcept = 0;
+        [[nodiscard]] virtual Vect RightBorder() const noexcept = 0;
+        [[nodiscard]] virtual Vect TopBorder() const noexcept = 0;
+        [[nodiscard]] virtual Vect BottomBorder() const noexcept = 0;
+
         [[nodiscard]] ColliderType GetColliderType() const noexcept { return _type; }
 
         void SetColliderType(const ColliderType type) noexcept { _type = type; }

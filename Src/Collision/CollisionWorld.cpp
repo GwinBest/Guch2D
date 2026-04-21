@@ -5,10 +5,12 @@
 #include <functional>
 #include <limits>
 #include <print>
+#include <source_location>
 
 #include "Collision/AABBCollider.hpp"
 #include "Collision/CircleCollider.hpp"
 #include "Solver/PenetrationVectorSolver.hpp"
+#include "Utils/Logger.hpp"
 
 namespace
 {
@@ -28,7 +30,7 @@ namespace
         const float distanceSquared = (delta.x * delta.x) + (delta.y * delta.y);
         const float radiusSumSquared = radiusSum * radiusSum;
         const float scaledEpsilon = std::numeric_limits<float>::epsilon()
-                                 * std::max({1.0F, distanceSquared, radiusSumSquared});
+                                  * std::max({1.0F, distanceSquared, radiusSumSquared});
 
         Guch2D::CollisionPoints collisionPoints;
         collisionPoints.HasCollision = distanceSquared <= (radiusSumSquared + scaledEpsilon);
@@ -63,9 +65,9 @@ namespace
         const float sumExtentX = extentA.x + extentB.x;
         const float sumExtentY = extentA.y + extentB.y;
         const float scaledEpsilonX = std::numeric_limits<float>::epsilon()
-                                  * std::max({1.0F, deltaX, sumExtentX});
+                                   * std::max({1.0F, deltaX, sumExtentX});
         const float scaledEpsilonY = std::numeric_limits<float>::epsilon()
-                                  * std::max({1.0F, deltaY, sumExtentY});
+                                   * std::max({1.0F, deltaY, sumExtentY});
 
         Guch2D::CollisionPoints collisionPoints;
         collisionPoints.HasCollision = deltaX <= (sumExtentX + scaledEpsilonX)
@@ -209,9 +211,13 @@ namespace
 
 namespace Guch2D
 {
-    void CollisionWorld::Step() const
+    void CollisionWorld::Step()
     {
-        FindCollisions();
+        _collisions.clear();
+        
+        const auto possibleCollisions = BroadPhase();
+        NarrowPhase(possibleCollisions);
+
         InvokeBeginOverlap();
         InvokeEndOverlap();
 
@@ -220,34 +226,41 @@ namespace Guch2D
         _previousCollisions = std::move(_collisions);
     }
 
-    void CollisionWorld::FindCollisions() const
+    std::vector<Collision> CollisionWorld::BroadPhase()
     {
-        _collisions.clear();
-
-        for (const auto& objectA : _objects)
+        switch (_broadPhaseType)
         {
-            for (const auto& objectB : _objects)
-            {
-                if (objectA == objectB)
-                    break;
-
-                const auto collisionPoints = CheckCollisions(objectA, objectB);
-                if (!collisionPoints.HasCollision)
-                    continue;
-
-                const auto collision = Collision(objectA, objectB, collisionPoints);
-                _collisions.emplace_back(collision);
-            }
+        case BroadPhaseType::SweepAndPrune:
+        {
+            return SweepAndPrune();
         }
+        default:
+        {
+            WarnLog("Unknown broad phase type");
+            break;
+        }
+        }
+
+        return {};
     }
 
-    void CollisionWorld::SolveCollisions() const
+    void CollisionWorld::NarrowPhase(const std::vector<Collision>& possibleCollisions) const
     {
-        for (const auto& solver : _solvers)
+        for (const auto& collision : possibleCollisions)
         {
-            if (solver)
-                solver->Solve(_collisions);
+            const auto collisionPoints = CheckCollisions(collision.BodyA.lock(),
+                                                         collision.BodyB.lock());
+
+            if (!collisionPoints.HasCollision)
+                continue;
+
+            _collisions.emplace_back(collision.BodyA.lock(),
+                                     collision.BodyB.lock(),
+                                     collisionPoints);
         }
+
+        std::erase_if(_collisions,
+                      [](const Collision& collision) { return !collision.Points.HasCollision; });
     }
 
     void CollisionWorld::InvokeBeginOverlap() const
@@ -292,10 +305,19 @@ namespace Guch2D
         });
     }
 
+    void CollisionWorld::SolveCollisions() const
+    {
+        for (const auto& solver : _solvers)
+        {
+            if (solver)
+                solver->Solve(_collisions);
+        }
+    }
+
     CollisionPoints CollisionWorld::CheckCollisions(std::shared_ptr<CollisionBody> bodyA,
                                                     std::shared_ptr<CollisionBody> bodyB)
     {
-        constexpr auto typeCount = static_cast<size_t>(ColliderType::Count);
+        constexpr auto typeCount = static_cast<uint8_t>(ColliderType::Count);
 
         using CollisionFunc = std::function<CollisionPoints(const std::shared_ptr<CollisionBody>&,
                                                             const std::shared_ptr<CollisionBody>&)>;
@@ -349,9 +371,37 @@ namespace Guch2D
         }
         catch (std::out_of_range&)
         {
-            std::println("[Warning] CollisionWorld::CheckCollisions: Invalid collider type");
+            WarnLog("Invalid collider type");
         }
 
         return {};
+    }
+
+    std::vector<Collision> CollisionWorld::SweepAndPrune()
+    {
+        if (_objects.empty())
+            return {};
+
+        // sort object to its left border
+        std::ranges::sort(_objects, std::ranges::less {}, [](const auto& body) {
+            return body ? body->GetColliderLeftBorderWorld().x
+                        : -std::numeric_limits<float>::infinity();
+        });
+
+        std::vector<Collision> possibleCollisions;
+
+        for (size_t i = 0; i < _objects.size(); ++i)
+        {
+            for (size_t j = i + 1; j < _objects.size(); ++j)
+            {
+                if (_objects.at(i)->GetColliderRightBorderWorld().x
+                    < _objects.at(j)->GetColliderLeftBorderWorld().x)
+                    break;
+
+                possibleCollisions.emplace_back(_objects.at(i), _objects.at(j));
+            }
+        }
+
+        return possibleCollisions;
     }
 }   // namespace Guch2D

@@ -11,6 +11,11 @@ namespace Guch2D
 {
     class Solver;
 
+    enum class BroadPhaseType : std::uint8_t
+    {
+        SweepAndPrune,
+    };
+
     class CollisionWorld
     {
     public:
@@ -21,7 +26,7 @@ namespace Guch2D
         CollisionWorld& operator=(CollisionWorld&&) = default;
         virtual ~CollisionWorld() = default;
 
-        virtual void Step() const;
+        virtual void Step();
 
         void AddObject(const std::shared_ptr<CollisionBody>& object)
         {
@@ -80,16 +85,28 @@ namespace Guch2D
             _timeStep = timeStep;
         }
 
-    protected:
-        void FindCollisions() const;
+        [[nodiscard]] BroadPhaseType GetBroadPhaseType() const noexcept { return _broadPhaseType; }
 
-        void SolveCollisions() const;
+        void SetBroadPhaseType(const BroadPhaseType broadPhaseType) noexcept
+        {
+            _broadPhaseType = broadPhaseType;
+        }
+
+    protected:
+        std::vector<Collision> BroadPhase();
+
+        void NarrowPhase(const std::vector<Collision>& possibleCollisions) const;
 
         void InvokeBeginOverlap() const;
         void InvokeEndOverlap() const;
 
+        void SolveCollisions() const;
+
         [[nodiscard]] static CollisionPoints CheckCollisions(std::shared_ptr<CollisionBody> bodyA,
                                                              std::shared_ptr<CollisionBody> bodyB);
+
+    private:
+        std::vector<Collision> SweepAndPrune();
 
     public:
         static constexpr float DefaultTimeStep = 1.0F / 60.0F;
@@ -102,5 +119,7 @@ namespace Guch2D
 
         mutable std::vector<Collision> _collisions;
         mutable std::vector<Collision> _previousCollisions;
+
+        BroadPhaseType _broadPhaseType = BroadPhaseType::SweepAndPrune;
     };
 }   // namespace Guch2D

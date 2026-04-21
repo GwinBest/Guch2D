@@ -140,7 +140,7 @@ namespace
 
     TEST(CollisionWorldTest, StepNoObjects)
     {
-        const Guch2D::CollisionWorld world;
+        Guch2D::CollisionWorld world;
         world.Step();
         SUCCEED();
     }

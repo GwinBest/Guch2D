@@ -1,6 +1,10 @@
 #include "Collision/CollisionBody.hpp"
 
+#include <cmath>
 #include <gtest/gtest.h>
+
+#include "Collision/AABBCollider.hpp"
+#include "Collision/CircleCollider.hpp"
 
 namespace
 {
@@ -29,7 +33,8 @@ namespace
 
     TEST(CollisionBodyTest, ColliderConstructor)
     {
-        const auto collider = std::make_shared<Guch2D::Collider>();
+        const std::shared_ptr<Guch2D::Collider> collider =
+            std::make_shared<Guch2D::CircleCollider>(1.0F);
         const Guch2D::CollisionBody body(collider);
         EXPECT_EQ(body.GetPosition(), Guch2D::Vect(0.0F, 0.0F));
         EXPECT_EQ(body.GetCollider(), collider);
@@ -38,7 +43,8 @@ namespace
     TEST(CollisionBodyTest, PositionAndColliderConstructor)
     {
         constexpr Guch2D::Vect position {3.0F, 4.0F};
-        const auto collider = std::make_shared<Guch2D::Collider>();
+        const std::shared_ptr<Guch2D::Collider> collider =
+            std::make_shared<Guch2D::CircleCollider>(1.0F);
         const Guch2D::CollisionBody body(position, collider);
         EXPECT_EQ(body.GetPosition(), position);
         EXPECT_EQ(body.GetCollider(), collider);
@@ -127,7 +133,8 @@ namespace
     TEST(CollisionBodyTest, SetCollider)
     {
         Guch2D::CollisionBody body;
-        const auto collider = std::make_shared<Guch2D::Collider>();
+        const std::shared_ptr<Guch2D::Collider> collider =
+            std::make_shared<Guch2D::CircleCollider>(1.0F);
         body.SetCollider(collider);
         EXPECT_EQ(body.GetCollider(), collider);
     }
@@ -143,7 +150,8 @@ namespace
     TEST(CollisionBodyTest, RemoveCollider)
     {
         Guch2D::CollisionBody body;
-        const auto collider = std::make_shared<Guch2D::Collider>();
+        const std::shared_ptr<Guch2D::Collider> collider =
+            std::make_shared<Guch2D::CircleCollider>(1.0F);
         body.SetCollider(collider);
         body.RemoveCollider();
         EXPECT_EQ(body.GetCollider(), nullptr);
@@ -160,11 +168,54 @@ namespace
         Guch2D::CollisionBody body;
         constexpr Guch2D::Vect position {1.0F, 2.0F};
         body.SetPosition(position);
-        const auto collider = std::make_shared<Guch2D::Collider>();
+        const std::shared_ptr<Guch2D::Collider> collider =
+            std::make_shared<Guch2D::CircleCollider>(1.0F);
         constexpr Guch2D::Vect colliderCenter {3.0F, 4.0F};
         collider->SetCenterLocal(colliderCenter);
         body.SetCollider(collider);
         EXPECT_EQ(body.GetColliderCenterWorld(), position + colliderCenter);
+    }
+
+    TEST(CollisionBodyTest, GetColliderBordersWorldNoCollider)
+    {
+        const Guch2D::CollisionBody body;
+
+        EXPECT_EQ(body.GetColliderLeftBorderWorld(), Guch2D::Vect(0.0F, 0.0F));
+        EXPECT_EQ(body.GetColliderRightBorderWorld(), Guch2D::Vect(0.0F, 0.0F));
+        EXPECT_EQ(body.GetColliderTopBorderWorld(), Guch2D::Vect(0.0F, 0.0F));
+        EXPECT_EQ(body.GetColliderBottomBorderWorld(), Guch2D::Vect(0.0F, 0.0F));
+    }
+
+    TEST(CollisionBodyTest, GetColliderBordersWorldWithAABBCollider)
+    {
+        Guch2D::CollisionBody body;
+        body.SetPosition({10.0F, 20.0F});
+
+        const auto collider = std::make_shared<Guch2D::AABBCollider>(
+            Guch2D::Vect {1.0F, 2.0F},
+            Guch2D::Vect {3.0F, 4.0F});
+        body.SetCollider(collider);
+
+        EXPECT_EQ(body.GetColliderLeftBorderWorld(), Guch2D::Vect(8.0F, 22.0F));
+        EXPECT_EQ(body.GetColliderRightBorderWorld(), Guch2D::Vect(14.0F, 22.0F));
+        EXPECT_EQ(body.GetColliderTopBorderWorld(), Guch2D::Vect(11.0F, 26.0F));
+        EXPECT_EQ(body.GetColliderBottomBorderWorld(), Guch2D::Vect(11.0F, 18.0F));
+    }
+
+    TEST(CollisionBodyTest, GetColliderBordersWorldWithCircleCollider)
+    {
+        Guch2D::CollisionBody body;
+        body.SetPosition({-5.0F, 6.0F});
+
+        const auto collider = std::make_shared<Guch2D::CircleCollider>(
+            Guch2D::Vect {2.0F, -1.0F},
+            3.0F);
+        body.SetCollider(collider);
+
+        EXPECT_EQ(body.GetColliderLeftBorderWorld(), Guch2D::Vect(-6.0F, 5.0F));
+        EXPECT_EQ(body.GetColliderRightBorderWorld(), Guch2D::Vect(0.0F, 5.0F));
+        EXPECT_EQ(body.GetColliderTopBorderWorld(), Guch2D::Vect(-3.0F, 8.0F));
+        EXPECT_EQ(body.GetColliderBottomBorderWorld(), Guch2D::Vect(-3.0F, 2.0F));
     }
 
     TEST(CollisionBodyTest, InvokeOnBeginOverlap)
