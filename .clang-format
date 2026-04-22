@@ -133,6 +133,6 @@ IncludeCategories:
   - Regex: ^"[^"]*"
 AlignConsecutiveBitFields:
   Enabled: true
-AlignEscapedNewlines: LeftWithLastLine
+AlignEscapedNewlines: Left
 PenaltyBreakBeforeFirstCallParameter: 1
 PenaltyBreakAssignment: 10000
