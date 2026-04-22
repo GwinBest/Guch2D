@@ -24,7 +24,7 @@ namespace
             return GetCenterLocal();
         }
     };
-    
+
     TEST(ColliderTest, DefaultConstructor)
     {
         const TestCollider collider;
