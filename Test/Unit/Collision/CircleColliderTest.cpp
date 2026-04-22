@@ -62,7 +62,7 @@ namespace
 
     TEST(CircleColliderTest, CenterRadiusConstructor)
     {
-        constexpr Guch2D::Vect center{2.0F, 3.0F};
+        constexpr Guch2D::Vect center {2.0F, 3.0F};
         constexpr float radius = 4.0F;
         const Guch2D::CircleCollider collider(center, radius);
         EXPECT_EQ(collider.GetColliderType(), Guch2D::ColliderType::Circle);
