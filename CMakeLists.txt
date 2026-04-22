@@ -12,7 +12,31 @@ option(BUILD_DEMO "Build demo executable" OFF)
 option(BUILD_TEST "Build tests" OFF)
 option(ENABLE_ASAN "Enable AddressSanitizer" ON)
 option(ENABLE_UBSAN "Enable UndefinedBehaviorSanitizer" ON)
-option(ENABLE_LSAN "Enable LeakSanitizer" ON)
+option(ENABLE_CLANG_TIDY "Enable clang-tidy checks for project targets" OFF)
+option(ENABLE_CLANG_FORMAT "Enable clang-format helper targets" ON)
+option(ENABLE_LINT_STRICT "Fail configuration when enabled lint tools are missing" OFF)
+
+set(CLANG_TIDY_CONFIG_FILE "${CMAKE_SOURCE_DIR}/.clang-tidy" CACHE FILEPATH
+        "Path to clang-tidy configuration file."
+)
+set(CLANG_TIDY_HEADER_FILTER "^${CMAKE_SOURCE_DIR}/Src/" CACHE STRING
+        "Regex for headers analyzed by clang-tidy."
+)
+set(CLANG_FORMAT_STYLE_FILE "${CMAKE_SOURCE_DIR}/.clang-format" CACHE FILEPATH
+        "Path to clang-format style configuration file."
+)
+
+set(PROJECT_FORMAT_DIRS Src Demo Test)
+set(PROJECT_FORMAT_EXTENSIONS h hh hpp hxx c cc cpp cxx)
+set(PROJECT_FORMAT_PATTERNS)
+
+foreach (format_dir IN LISTS PROJECT_FORMAT_DIRS)
+    foreach (format_ext IN LISTS PROJECT_FORMAT_EXTENSIONS)
+        list(APPEND PROJECT_FORMAT_PATTERNS "${CMAKE_SOURCE_DIR}/${format_dir}/*.${format_ext}")
+    endforeach ()
+endforeach ()
+
+file(GLOB_RECURSE PROJECT_FORMAT_SOURCES CONFIGURE_DEPENDS ${PROJECT_FORMAT_PATTERNS})
 
 include(CheckCXXCompilerFlag)
 include(CheckLinkerFlag)
@@ -58,16 +82,91 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
     if (ENABLE_UBSAN)
         append_sanitizer_if_supported("UBSan" "-fsanitize=undefined")
     endif ()
-    if (ENABLE_LSAN)
-        append_sanitizer_if_supported("LSan" "-fsanitize=leak")
-    endif ()
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     if (ENABLE_UBSAN)
         message(WARNING "UBSan is not supported by the MSVC toolchain and will be ignored.")
     endif ()
-    if (ENABLE_LSAN)
-        message(WARNING "LSan is not supported by the MSVC toolchain and will be ignored.")
+endif ()
+
+if (ENABLE_CLANG_TIDY)
+    find_program(CLANG_TIDY_EXE NAMES clang-tidy)
+    if (NOT CLANG_TIDY_EXE)
+        if (ENABLE_LINT_STRICT)
+            message(FATAL_ERROR
+                    "ENABLE_CLANG_TIDY is ON, but clang-tidy was not found in PATH."
+            )
+        endif ()
+        message(WARNING
+                "ENABLE_CLANG_TIDY is ON, but clang-tidy was not found in PATH. "
+                "Disabling clang-tidy integration for this configure."
+        )
+        set(ENABLE_CLANG_TIDY OFF)
     endif ()
+endif ()
+
+if (ENABLE_CLANG_TIDY)
+    if (NOT EXISTS "${CLANG_TIDY_CONFIG_FILE}")
+        message(FATAL_ERROR
+                "ENABLE_CLANG_TIDY is ON, but '${CLANG_TIDY_CONFIG_FILE}' does not exist."
+        )
+    endif ()
+
+    set(PROJECT_CXX_CLANG_TIDY
+            "${CLANG_TIDY_EXE}"
+            "-p=${CMAKE_BINARY_DIR}"
+            "--config-file=${CLANG_TIDY_CONFIG_FILE}"
+            "-header-filter=${CLANG_TIDY_HEADER_FILTER}"
+    )
+
+    message(STATUS "clang-tidy enabled for Src target: ${CLANG_TIDY_EXE}")
+else ()
+    unset(PROJECT_CXX_CLANG_TIDY)
+endif ()
+
+if (ENABLE_CLANG_FORMAT)
+    find_program(CLANG_FORMAT_EXE NAMES clang-format)
+    if (NOT CLANG_FORMAT_EXE)
+        if (ENABLE_LINT_STRICT)
+            message(FATAL_ERROR
+                    "ENABLE_CLANG_FORMAT is ON, but clang-format was not found in PATH."
+            )
+        endif ()
+        message(WARNING
+                "ENABLE_CLANG_FORMAT is ON, but clang-format was not found in PATH. "
+                "Skipping format helper targets."
+        )
+        set(ENABLE_CLANG_FORMAT OFF)
+    endif ()
+endif ()
+
+if (ENABLE_CLANG_FORMAT)
+    if (NOT EXISTS "${CLANG_FORMAT_STYLE_FILE}")
+        message(FATAL_ERROR
+                "ENABLE_CLANG_FORMAT is ON, but '${CLANG_FORMAT_STYLE_FILE}' does not exist."
+        )
+    endif ()
+
+    if (NOT PROJECT_FORMAT_SOURCES)
+        message(WARNING
+                "ENABLE_CLANG_FORMAT is ON, but no source files were found for format targets."
+        )
+    else ()
+        add_custom_target(format
+                COMMAND "${CLANG_FORMAT_EXE}" -i --style=file ${PROJECT_FORMAT_SOURCES}
+                WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+                COMMENT "Formatting project sources with clang-format"
+                VERBATIM
+        )
+
+        add_custom_target(format-check
+                COMMAND "${CLANG_FORMAT_EXE}" --dry-run --Werror --style=file ${PROJECT_FORMAT_SOURCES}
+                WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+                COMMENT "Checking formatting of project sources with clang-format"
+                VERBATIM
+        )
+    endif ()
+
+    message(STATUS "clang-format enabled: ${CLANG_FORMAT_EXE}")
 endif ()
 
 function(copy_msvc_asan_runtime target_name)

@@ -4,6 +4,9 @@ file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
 )
 
 add_library(${PROJECT_NAME} ${SOURCES})
+if (ENABLE_CLANG_TIDY AND PROJECT_CXX_CLANG_TIDY)
+    set_target_properties(${PROJECT_NAME} PROPERTIES CXX_CLANG_TIDY "${PROJECT_CXX_CLANG_TIDY}")
+endif ()
 enable_asan(${PROJECT_NAME})
 enable_project_warnings(${PROJECT_NAME})
 

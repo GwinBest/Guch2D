@@ -214,7 +214,7 @@ namespace Guch2D
     void CollisionWorld::Step()
     {
         _collisions.clear();
-        
+
         const auto possibleCollisions = BroadPhase();
         NarrowPhase(possibleCollisions);
 
@@ -384,8 +384,7 @@ namespace Guch2D
 
         // sort object to its left border
         std::ranges::sort(_objects, std::ranges::less {}, [](const auto& body) {
-            return body ? body->GetColliderLeftBorderWorld().x
-                        : -std::numeric_limits<float>::infinity();
+            return body->GetColliderLeftBorderWorld().x;
         });
 
         std::vector<Collision> possibleCollisions;
