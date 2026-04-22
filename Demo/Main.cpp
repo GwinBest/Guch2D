@@ -307,7 +307,7 @@ public:
         }
 
         const sf::Color probeColor = _probe.overlapCount > 0 ? sf::Color(255, 80, 80, 160)
-                                                              : sf::Color(80, 240, 120, 160);
+                                                             : sf::Color(80, 240, 120, 160);
         DrawCircle(window, _probe, probeColor, sf::Color(255, 255, 255, 200), 2.0f);
 
         DrawCollisionDebug(window);
@@ -321,8 +321,7 @@ public:
         lines.emplace_back("RIGHT MOUSE DRAG: MOVE CIRCLE PROBE");
         lines.emplace_back("C: CLEAR SHAPES");
         lines.emplace_back("R: RESET DEMO");
-        lines.emplace_back(std::string("SPAWN MODE: ")
-                           + (_spawnAABBMode ? "AABB" : "CIRCLE"));
+        lines.emplace_back(std::string("SPAWN MODE: ") + (_spawnAABBMode ? "AABB" : "CIRCLE"));
         lines.emplace_back("CIRCLES: " + std::to_string(_circles.size()));
         lines.emplace_back("AABBS: " + std::to_string(_aabbs.size()));
         lines.emplace_back("OVERLAPS: " + std::to_string(CountOverlaps()));

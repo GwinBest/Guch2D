@@ -10,20 +10,14 @@ namespace
     public:
         using Guch2D::Collider::Collider;
 
-        [[nodiscard]] Guch2D::Vect LeftBorder() const noexcept override
-        {
-            return GetCenterLocal();
-        }
+        [[nodiscard]] Guch2D::Vect LeftBorder() const noexcept override { return GetCenterLocal(); }
 
         [[nodiscard]] Guch2D::Vect RightBorder() const noexcept override
         {
             return GetCenterLocal();
         }
 
-        [[nodiscard]] Guch2D::Vect TopBorder() const noexcept override
-        {
-            return GetCenterLocal();
-        }
+        [[nodiscard]] Guch2D::Vect TopBorder() const noexcept override { return GetCenterLocal(); }
 
         [[nodiscard]] Guch2D::Vect BottomBorder() const noexcept override
         {
