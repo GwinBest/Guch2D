@@ -40,6 +40,7 @@ namespace Guch2D
         }
 
     private:
+        // Mass of the rigid body, in kilograms (kg)
         float _mass = 0.0F;
     };
 }   // namespace Guch2D
