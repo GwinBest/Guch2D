@@ -1,11 +1,12 @@
 #include "Dynamics/RigidBody.hpp"
-#include "Collision/AABBCollider.hpp"
-#include "Collision/CircleCollider.hpp"
 
 #include <cmath>
+#include <gtest/gtest.h>
 #include <memory>
 #include <numbers>
-#include <gtest/gtest.h>
+
+#include "Collision/AABBCollider.hpp"
+#include "Collision/CircleCollider.hpp"
 
 namespace
 {
