@@ -7,6 +7,13 @@ namespace Guch2D
 {
     class RigidBody : public CollisionBody
     {
+    private:
+        enum class MassMode : std::uint8_t
+        {
+            Manual,
+            FromDensity
+        };
+
     public:
         RigidBody() noexcept = default;
 
@@ -26,20 +33,44 @@ namespace Guch2D
         RigidBody& operator=(RigidBody&&) = default;
         ~RigidBody() override = default;
 
-        [[nodiscard]] float GetMass() const noexcept { return _mass; }
+        [[nodiscard]] float GetMass() const noexcept
+        {
+            if (_massMode == MassMode::FromDensity)
+            {
+                const auto collider = GetCollider();
+                if (!collider)
+                    return 0.0F;
+
+                const float mass = _density * collider->GetArea();
+                return (mass > 0.0F && IsFinite(mass)) ? mass : 0.0F;
+            }
+
+            return _mass;
+        }
 
         void SetMass(const float mass) noexcept
         {
-            if (mass <= 0.0F || !IsFinite(mass))
-            {
-                _mass = 0.0F;
-                return;
-            }
+            _massMode = MassMode::Manual;
+            _density = 0.0F;
+            _mass = (mass > 0.0F && IsFinite(mass)) ? mass : 0.0F;
+        }
 
-            _mass = mass;
+        [[nodiscard]] float GetDensity() const noexcept { return _density; }
+
+        void SetDensity(const float density) noexcept
+        {
+            _density = (density > 0.0F && IsFinite(density)) ? density : 0.0F;
+            _massMode = (_density > 0.0F) ? MassMode::FromDensity : MassMode::Manual;
         }
 
     private:
+        // Mass of the rigid body, in kilograms (kg)
+        // NOTE: Do not access this field directly, use GetMass() instead
         float _mass = 0.0F;
+
+        // Density of the rigid body, in kilograms per square meter (kg/m^2)
+        float _density = 0.0F;
+
+        MassMode _massMode = MassMode::Manual;
     };
 }   // namespace Guch2D

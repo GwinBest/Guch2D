@@ -1,5 +1,7 @@
 #pragma once
 
+#include <numbers>
+
 #include "Collision/Collider.hpp"
 
 namespace Guch2D
@@ -46,6 +48,11 @@ namespace Guch2D
         [[nodiscard]] Vect BottomBorder() const noexcept override
         {
             return {GetCenterLocal().x, GetCenterLocal().y - _radius};
+        }
+
+        [[nodiscard]] float GetArea() const noexcept override
+        {
+            return std::abs(std::numbers::pi_v<float> * _radius * _radius);
         }
 
         [[nodiscard]] float GetRadius() const noexcept { return _radius; }
