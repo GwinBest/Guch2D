@@ -91,4 +91,63 @@ namespace
         EXPECT_EQ(collider.TopBorder(), collider.GetCenterLocal());
         EXPECT_EQ(collider.BottomBorder(), collider.GetCenterLocal());
     }
+
+    TEST(AABBColliderTest, GetAreaMatchesKnownValues)
+    {
+        struct TestCase
+        {
+            Guch2D::Vect Extent;
+            float ExpectedArea;
+        };
+
+        const TestCase testCases[] = {
+            {{0.0F, 0.0F},   0.0F },
+            {{1.0F, 1.0F},   4.0F },
+            {{3.0F, 4.0F},   48.0F},
+            {{-2.0F, -3.0F}, 24.0F}
+        };
+
+        for (const auto& testCase : testCases)
+        {
+            SCOPED_TRACE(::testing::Message()
+                         << "extent=(" << testCase.Extent.x << ", " << testCase.Extent.y << ")");
+
+            const Guch2D::AABBCollider collider(testCase.Extent);
+            EXPECT_FLOAT_EQ(collider.GetArea(), testCase.ExpectedArea);
+        }
+    }
+
+    TEST(AABBColliderTest, GetAreaPreservesSignForMixedExtentSigns)
+    {
+        const Guch2D::AABBCollider collider({-2.0F, 3.0F});
+        EXPECT_FLOAT_EQ(collider.GetArea(), 24.0F);
+    }
+
+    TEST(AABBColliderTest, GetAreaScalesLinearlyByEachAxis)
+    {
+        const Guch2D::AABBCollider baseCollider({2.5F, 3.0F});
+        const Guch2D::AABBCollider xScaledCollider({5.0F, 3.0F});
+        const Guch2D::AABBCollider yScaledCollider({2.5F, 6.0F});
+
+        EXPECT_FLOAT_EQ(xScaledCollider.GetArea(), baseCollider.GetArea() * 2.0F);
+        EXPECT_FLOAT_EQ(yScaledCollider.GetArea(), baseCollider.GetArea() * 2.0F);
+    }
+
+    TEST(AABBColliderTest, GetAreaIsIndependentFromCenter)
+    {
+        constexpr Guch2D::Vect extent {4.0F, 6.0F};
+        const Guch2D::AABBCollider colliderA({0.0F, 0.0F}, extent);
+        const Guch2D::AABBCollider colliderB({1000.0F, -2000.0F}, extent);
+
+        EXPECT_FLOAT_EQ(colliderA.GetArea(), colliderB.GetArea());
+    }
+
+    TEST(AABBColliderTest, GetAreaIsZeroForInvalidExtentInput)
+    {
+        const Guch2D::AABBCollider nanExtentCollider({NAN, 1.0F});
+        const Guch2D::AABBCollider infiniteExtentCollider({INFINITY, 1.0F});
+
+        EXPECT_FLOAT_EQ(nanExtentCollider.GetArea(), 0.0F);
+        EXPECT_FLOAT_EQ(infiniteExtentCollider.GetArea(), 0.0F);
+    }
 }   // namespace

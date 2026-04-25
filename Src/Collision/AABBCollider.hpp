@@ -49,6 +49,11 @@ namespace Guch2D
             return {GetCenterLocal().x, GetCenterLocal().y - _extent.y};
         }
 
+        [[nodiscard]] float GetArea() const noexcept override
+        {
+            return std::abs((_extent.x + _extent.x) * (_extent.y + +_extent.y));
+        }
+
         void SetExtent(const Vect& extent) noexcept
         {
             if (!IsFinite(extent))

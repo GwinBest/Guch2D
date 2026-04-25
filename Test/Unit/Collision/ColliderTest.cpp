@@ -23,6 +23,8 @@ namespace
         {
             return GetCenterLocal();
         }
+
+        [[nodiscard]] float GetArea() const noexcept override { return 0.0f; }
     };
 
     TEST(ColliderTest, DefaultConstructor)

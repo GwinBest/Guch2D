@@ -32,6 +32,8 @@ namespace Guch2D
         [[nodiscard]] virtual Vect TopBorder() const noexcept = 0;
         [[nodiscard]] virtual Vect BottomBorder() const noexcept = 0;
 
+        [[nodiscard]] virtual float GetArea() const noexcept = 0;
+
         [[nodiscard]] ColliderType GetColliderType() const noexcept { return _type; }
 
         void SetColliderType(const ColliderType type) noexcept { _type = type; }
