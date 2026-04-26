@@ -384,7 +384,8 @@ namespace Guch2D
 
         // sort object to its left border
         std::ranges::sort(_objects, std::ranges::less {}, [](const auto& body) {
-            return body->GetColliderLeftBorderWorld().x;
+            return body ? body->GetColliderLeftBorderWorld().x
+                        : -std::numeric_limits<float>::infinity();
         });
 
         std::vector<Collision> possibleCollisions;
