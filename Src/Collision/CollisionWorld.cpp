@@ -8,6 +8,7 @@
 #include <ranges>
 #include <source_location>
 #include <unordered_map>
+#include <utility>
 
 #include "Collision/AABBCollider.hpp"
 #include "Collision/CircleCollider.hpp"
@@ -16,6 +17,92 @@
 
 namespace
 {
+    using SpatialBucket = std::vector<Guch2D::CollisionWorld::ObjectType>;
+    using SpatialGridMap = std::unordered_map<size_t, SpatialBucket>;
+    constexpr size_t SpatialHashingCalculateHash(int64_t cellX, int64_t cellY) noexcept;
+
+    [[nodiscard]] std::pair<int64_t, int64_t>
+        GetSpatialCellFromPosition(const Guch2D::Vect& position,
+                                   const float cellSizeX,
+                                   const float cellSizeY)
+    {
+        return {
+            static_cast<int64_t>(std::floor(position.x / cellSizeX)),
+            static_cast<int64_t>(std::floor(position.y / cellSizeY)),
+        };
+    }
+
+    [[nodiscard]] std::pair<int64_t, int64_t>
+        GetSpatialCell(const Guch2D::CollisionWorld::ObjectType& object,
+                       const float cellSizeX,
+                       const float cellSizeY)
+    {
+        return GetSpatialCellFromPosition(object->GetPosition(), cellSizeX, cellSizeY);
+    }
+
+    void AppendSameBucketCollisions(const SpatialBucket& bucket,
+                                    std::vector<Guch2D::Collision>& possibleCollisions)
+    {
+        for (size_t i = 0; i < bucket.size(); ++i)
+        {
+            for (size_t j = i + 1; j < bucket.size(); ++j)
+            {
+                if (bucket.at(i) == bucket.at(j))
+                    continue;
+
+                possibleCollisions.emplace_back(bucket.at(i), bucket.at(j));
+            }
+        }
+    }
+
+    void AppendCrossBucketCollisions(const SpatialBucket& bucketA,
+                                     const SpatialBucket& bucketB,
+                                     std::vector<Guch2D::Collision>& possibleCollisions)
+    {
+        for (const auto& objectA : bucketA)
+        {
+            for (const auto& objectB : bucketB)
+            {
+                if (objectA == objectB)
+                    continue;
+
+                possibleCollisions.emplace_back(objectA, objectB);
+            }
+        }
+    }
+
+    void AppendNeighborBucketCollisions(const SpatialGridMap& gridMap,
+                                        const SpatialBucket& bucket,
+                                        const int64_t cellX,
+                                        const int64_t cellY,
+                                        std::vector<Guch2D::Collision>& possibleCollisions)
+    {
+        static constexpr std::array<std::pair<int64_t, int64_t>, 9> NeighborOffsets = {
+            {
+             {-1, -1},
+             {-1, 0},
+             {-1, 1},
+             {0, -1},
+             {0, 0},
+             {0, 1},
+             {1, -1},
+             {1, 0},
+             {1, 1},
+             }
+        };
+
+        for (const auto& [dx, dy] : NeighborOffsets)
+        {
+            const size_t neighborHash = SpatialHashingCalculateHash(cellX + dx, cellY + dy);
+            auto iterator = gridMap.find(neighborHash);
+
+            if (iterator == gridMap.end())
+                continue;
+
+            AppendCrossBucketCollisions(bucket, iterator->second, possibleCollisions);
+        }
+    }
+
     [[nodiscard]] std::array<const Guch2D::CollisionBody*, 2>
         GetCanonicalCollisionPair(const Guch2D::Collision& collision)
     {
@@ -431,20 +518,15 @@ namespace Guch2D
     std::vector<Collision> CollisionWorld::SpatialHashing() const
     {
         // Cell size in meters (m)
-        static constexpr size_t CellSizeX = 4;
-        static constexpr size_t CellSizeY = 4;
+        static constexpr float CellSizeX = 4.0F;
+        static constexpr float CellSizeY = 4.0F;
 
-        std::unordered_map<size_t, std::vector<ObjectType>> gridMap;
+        SpatialGridMap gridMap;
 
         for (const auto& object : _objects)
         {
-            const auto cellX = static_cast<int64_t>(
-                std::floor(object->GetPosition().x / CellSizeX));
-            const auto cellY = static_cast<int64_t>(
-                std::floor(object->GetPosition().y / CellSizeY));
-
-            size_t hash = SpatialHashingCalculateHash(cellX, cellY);
-
+            const auto [cellX, cellY] = GetSpatialCell(object, CellSizeX, CellSizeY);
+            const size_t hash = SpatialHashingCalculateHash(cellX, cellY);
             gridMap[hash].emplace_back(object);
         }
 
@@ -452,47 +534,13 @@ namespace Guch2D
 
         for (const auto& bucket : gridMap | std::views::values)
         {
-            // Possible collisions from one cell
-            for (size_t i = 0; i < bucket.size(); ++i)
-            {
-                for (size_t j = i + 1; j < bucket.size(); ++j)
-                {
-                    if (bucket.at(i) == bucket.at(j))
-                        continue;
+            if (bucket.empty())
+                continue;
 
-                    possibleCollisions.emplace_back(bucket.at(i), bucket.at(j));
-                }
-            }
+            AppendSameBucketCollisions(bucket, possibleCollisions);
 
-            const auto cellX = static_cast<int64_t>(
-                std::floor(bucket.front()->GetPosition().x / CellSizeX));
-            const auto cellY = static_cast<int64_t>(
-                std::floor(bucket.front()->GetPosition().y / CellSizeY));
-
-            // Possible collisions from neighbor cells
-            for (int8_t dx = -1; dx <= 1; ++dx)
-            {
-                for (int8_t dy = -1; dy <= 1; ++dy)
-                {
-                    size_t neighborHash = SpatialHashingCalculateHash(cellX + dx, cellY + dy);
-
-                    auto it = gridMap.find(neighborHash);
-                    if (it != gridMap.end())
-                    {
-                        const auto& neighborBucket = it->second;
-                        for (auto& objA : bucket)
-                        {
-                            for (auto& objB : neighborBucket)
-                            {
-                                if (objA == objB)
-                                    continue;
-
-                                possibleCollisions.emplace_back(objA, objB);
-                            }
-                        }
-                    }
-                }
-            }
+            const auto [cellX, cellY] = GetSpatialCell(bucket.front(), CellSizeX, CellSizeY);
+            AppendNeighborBucketCollisions(gridMap, bucket, cellX, cellY, possibleCollisions);
         }
 
         // Sort vector to remove duplicated collisions
