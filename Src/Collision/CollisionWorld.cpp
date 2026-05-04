@@ -314,8 +314,7 @@ namespace
     {
         constexpr auto hashValueX = 73856093;
         constexpr auto hashValueY = 19349663;
-        return static_cast<size_t>(static_cast<size_t>(cellX * hashValueX)
-                                   ^ static_cast<size_t>(cellY * hashValueY));
+        return static_cast<size_t>(cellX * hashValueX) ^ static_cast<size_t>(cellY * hashValueY);
     }
 }   // namespace
 
