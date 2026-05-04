@@ -5,7 +5,9 @@
 #include <functional>
 #include <limits>
 #include <print>
+#include <ranges>
 #include <source_location>
+#include <unordered_map>
 
 #include "Collision/AABBCollider.hpp"
 #include "Collision/CircleCollider.hpp"
@@ -14,6 +16,18 @@
 
 namespace
 {
+    [[nodiscard]] std::array<const Guch2D::CollisionBody*, 2>
+        GetCanonicalCollisionPair(const Guch2D::Collision& collision)
+    {
+        const auto* bodyA = collision.BodyA.lock().get();
+        const auto* bodyB = collision.BodyB.lock().get();
+
+        if (bodyB < bodyA)
+            std::swap(bodyA, bodyB);
+
+        return {bodyA, bodyB};
+    }
+
     [[nodiscard]] Guch2D::CollisionPoints
         CheckCollisionCircleVsCircle(const Guch2D::CollisionWorld::ObjectType& bodyA,
                                      const Guch2D::CollisionWorld::ObjectType& bodyB)
@@ -207,6 +221,12 @@ namespace
 
         return (lhsA == rhsA && lhsB == rhsB) || (lhsA == rhsB && lhsB == rhsA);
     }
+
+    constexpr size_t SpatialHashingCalculateHash(const int64_t cellX, const int64_t cellY) noexcept
+    {
+        return static_cast<size_t>(static_cast<size_t>(cellX * 73856093)
+                                   ^ static_cast<size_t>(cellY * 19349663));
+    }
 }   // namespace
 
 namespace Guch2D
@@ -233,6 +253,10 @@ namespace Guch2D
         case BroadPhaseType::SweepAndPrune:
         {
             return SweepAndPrune();
+        }
+        case BroadPhaseType::SpatialHashing:
+        {
+            return SpatialHashing();
         }
         default:
         {
@@ -400,6 +424,87 @@ namespace Guch2D
                 possibleCollisions.emplace_back(_objects.at(i), _objects.at(j));
             }
         }
+
+        return possibleCollisions;
+    }
+
+    std::vector<Collision> CollisionWorld::SpatialHashing() const
+    {
+        // Cell size in meters (m)
+        static constexpr size_t CellSizeX = 4;
+        static constexpr size_t CellSizeY = 4;
+
+        std::unordered_map<size_t, std::vector<ObjectType>> gridMap;
+
+        for (const auto& object : _objects)
+        {
+            const auto cellX = static_cast<int64_t>(
+                std::floor(object->GetPosition().x / CellSizeX));
+            const auto cellY = static_cast<int64_t>(
+                std::floor(object->GetPosition().y / CellSizeY));
+
+            size_t hash = SpatialHashingCalculateHash(cellX, cellY);
+
+            gridMap[hash].emplace_back(object);
+        }
+
+        std::vector<Collision> possibleCollisions;
+
+        for (const auto& bucket : gridMap | std::views::values)
+        {
+            // Possible collisions from one cell
+            for (size_t i = 0; i < bucket.size(); ++i)
+            {
+                for (size_t j = i + 1; j < bucket.size(); ++j)
+                {
+                    if (bucket.at(i) == bucket.at(j))
+                        continue;
+
+                    possibleCollisions.emplace_back(bucket.at(i), bucket.at(j));
+                }
+            }
+
+            const auto cellX = static_cast<int64_t>(
+                std::floor(bucket.front()->GetPosition().x / CellSizeX));
+            const auto cellY = static_cast<int64_t>(
+                std::floor(bucket.front()->GetPosition().y / CellSizeY));
+
+            // Possible collisions from neighbor cells
+            for (int8_t dx = -1; dx <= 1; ++dx)
+            {
+                for (int8_t dy = -1; dy <= 1; ++dy)
+                {
+                    size_t neighborHash = SpatialHashingCalculateHash(cellX + dx, cellY + dy);
+
+                    auto it = gridMap.find(neighborHash);
+                    if (it != gridMap.end())
+                    {
+                        const auto& neighborBucket = it->second;
+                        for (auto& objA : bucket)
+                        {
+                            for (auto& objB : neighborBucket)
+                            {
+                                if (objA == objB)
+                                    continue;
+
+                                possibleCollisions.emplace_back(objA, objB);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Sort vector to remove duplicated collisions
+        std::ranges::sort(possibleCollisions, std::ranges::less {}, [](const Collision& collision) {
+            return GetCanonicalCollisionPair(collision);
+        });
+
+        const auto duplicatesRange = std::ranges::unique(
+            possibleCollisions,
+            std::ranges::equal_to {},
+            [](const Collision& collision) { return GetCanonicalCollisionPair(collision); });
+        possibleCollisions.erase(duplicatesRange.begin(), duplicatesRange.end());
 
         return possibleCollisions;
     }

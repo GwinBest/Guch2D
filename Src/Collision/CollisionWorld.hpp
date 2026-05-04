@@ -14,6 +14,7 @@ namespace Guch2D
     enum class BroadPhaseType : std::uint8_t
     {
         SweepAndPrune,
+        SpatialHashing,
     };
 
     class CollisionWorld
@@ -109,6 +110,8 @@ namespace Guch2D
 
     private:
         std::vector<Collision> SweepAndPrune();
+
+        std::vector<Collision> SpatialHashing() const;
 
     public:
         static constexpr float DefaultTimeStep = 1.0F / 60.0F;
