@@ -138,6 +138,61 @@ namespace
         EXPECT_FLOAT_EQ(world.GetTimeStep(), Guch2D::CollisionWorld::DefaultTimeStep);
     }
 
+    TEST(CollisionWorldTest, GetBroadPhaseTypeDefaultIsSweepAndPrune)
+    {
+        const Guch2D::CollisionWorld world;
+        EXPECT_EQ(world.GetBroadPhaseType(), Guch2D::BroadPhaseType::SweepAndPrune);
+    }
+
+    TEST(CollisionWorldTest, SetBroadPhaseTypeSpatialHashing)
+    {
+        Guch2D::CollisionWorld world;
+        world.SetBroadPhaseType(Guch2D::BroadPhaseType::SpatialHashing);
+        EXPECT_EQ(world.GetBroadPhaseType(), Guch2D::BroadPhaseType::SpatialHashing);
+    }
+
+    TEST(CollisionWorldTest, StepTwoCirclesWithSpatialHashingDetectsCollision)
+    {
+        Guch2D::CollisionWorld world;
+        world.SetBroadPhaseType(Guch2D::BroadPhaseType::SpatialHashing);
+
+        const auto bodyA = MakeCircleBody({0.0F, 0.0F}, 2.0F);
+        const auto bodyB = MakeCircleBody({3.0F, 0.0F}, 2.0F);
+
+        bool onBeginOverlapCalledA = false;
+        bool onBeginOverlapCalledB = false;
+        bodyA->BindOnBeginOverlap([&](const Guch2D::Collision&) { onBeginOverlapCalledA = true; });
+        bodyB->BindOnBeginOverlap([&](const Guch2D::Collision&) { onBeginOverlapCalledB = true; });
+
+        world.AddObject(bodyA);
+        world.AddObject(bodyB);
+        world.Step();
+
+        EXPECT_TRUE(onBeginOverlapCalledA);
+        EXPECT_TRUE(onBeginOverlapCalledB);
+    }
+
+    TEST(CollisionWorldTest, SpatialHashingDeduplicatesCollisionPairAcrossNeighborCells)
+    {
+        Guch2D::CollisionWorld world;
+        world.SetBroadPhaseType(Guch2D::BroadPhaseType::SpatialHashing);
+
+        const auto bodyA = MakeCircleBody({3.9F, 0.0F}, 1.0F);
+        const auto bodyB = MakeCircleBody({4.1F, 0.0F}, 1.0F);
+
+        std::uint8_t onBeginOverlapCalledACount = 0;
+        std::uint8_t onBeginOverlapCalledBCount = 0;
+        bodyA->BindOnBeginOverlap([&](const Guch2D::Collision&) { ++onBeginOverlapCalledACount; });
+        bodyB->BindOnBeginOverlap([&](const Guch2D::Collision&) { ++onBeginOverlapCalledBCount; });
+
+        world.AddObject(bodyA);
+        world.AddObject(bodyB);
+        world.Step();
+
+        EXPECT_EQ(onBeginOverlapCalledACount, 1);
+        EXPECT_EQ(onBeginOverlapCalledBCount, 1);
+    }
+
     TEST(CollisionWorldTest, StepNoObjects)
     {
         Guch2D::CollisionWorld world;

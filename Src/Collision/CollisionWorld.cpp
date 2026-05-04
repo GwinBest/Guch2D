@@ -5,7 +5,10 @@
 #include <functional>
 #include <limits>
 #include <print>
+#include <ranges>
 #include <source_location>
+#include <unordered_map>
+#include <utility>
 
 #include "Collision/AABBCollider.hpp"
 #include "Collision/CircleCollider.hpp"
@@ -14,9 +17,108 @@
 
 namespace
 {
+    using SpatialBucket = std::vector<Guch2D::CollisionWorld::ObjectType>;
+    using SpatialGridMap = std::unordered_map<size_t, SpatialBucket>;
+    constexpr size_t SpatialHashingCalculateHash(int64_t cellX, int64_t cellY) noexcept;
+
+    [[nodiscard]] std::pair<int64_t, int64_t>
+        GetSpatialCellFromPosition(const Guch2D::Vect& position,
+                                   const float cellSizeX,
+                                   const float cellSizeY)
+    {
+        return {
+            static_cast<int64_t>(std::floor(position.x / cellSizeX)),
+            static_cast<int64_t>(std::floor(position.y / cellSizeY)),
+        };
+    }
+
+    [[nodiscard]] std::pair<int64_t, int64_t>
+        GetSpatialCell(const Guch2D::CollisionWorld::ObjectType& object,
+                       const float cellSizeX,
+                       const float cellSizeY)
+    {
+        return GetSpatialCellFromPosition(object->GetPosition(), cellSizeX, cellSizeY);
+    }
+
+    void AppendSameBucketCollisions(const SpatialBucket& bucket,
+                                    std::vector<Guch2D::Collision>& possibleCollisions)
+    {
+        for (size_t i = 0; i < bucket.size(); ++i)
+        {
+            for (size_t j = i + 1; j < bucket.size(); ++j)
+            {
+                if (bucket.at(i) == bucket.at(j))
+                    continue;
+
+                possibleCollisions.emplace_back(bucket.at(i), bucket.at(j));
+            }
+        }
+    }
+
+    void AppendCrossBucketCollisions(const SpatialBucket& bucketA,
+                                     const SpatialBucket& bucketB,
+                                     std::vector<Guch2D::Collision>& possibleCollisions)
+    {
+        for (const auto& objectA : bucketA)
+        {
+            for (const auto& objectB : bucketB)
+            {
+                if (objectA == objectB)
+                    continue;
+
+                possibleCollisions.emplace_back(objectA, objectB);
+            }
+        }
+    }
+
+    void AppendNeighborBucketCollisions(const SpatialGridMap& gridMap,
+                                        const SpatialBucket& bucket,
+                                        const int64_t cellX,
+                                        const int64_t cellY,
+                                        std::vector<Guch2D::Collision>& possibleCollisions)
+    {
+        static constexpr std::array<std::pair<int64_t, int64_t>, 9> NeighborOffsets = {
+            {
+             {-1, -1},
+             {-1, 0},
+             {-1, 1},
+             {0, -1},
+             {0, 0},
+             {0, 1},
+             {1, -1},
+             {1, 0},
+             {1, 1},
+             }
+        };
+
+        for (const auto& [dxOffset, dyOffset] : NeighborOffsets)
+        {
+            const size_t neighborHash = SpatialHashingCalculateHash(cellX + dxOffset,
+                                                                    cellY + dyOffset);
+            auto iterator = gridMap.find(neighborHash);
+
+            if (iterator == gridMap.end())
+                continue;
+
+            AppendCrossBucketCollisions(bucket, iterator->second, possibleCollisions);
+        }
+    }
+
+    [[nodiscard]] std::array<const Guch2D::CollisionBody*, 2>
+        GetCanonicalCollisionPair(const Guch2D::Collision& collision)
+    {
+        const auto* bodyA = collision.BodyA.lock().get();
+        const auto* bodyB = collision.BodyB.lock().get();
+
+        if (bodyB < bodyA)
+            std::swap(bodyA, bodyB);
+
+        return {bodyA, bodyB};
+    }
+
     [[nodiscard]] Guch2D::CollisionPoints
-        CheckCollisionCircleVsCircle(const std::shared_ptr<Guch2D::CollisionBody>& bodyA,
-                                     const std::shared_ptr<Guch2D::CollisionBody>& bodyB)
+        CheckCollisionCircleVsCircle(const Guch2D::CollisionWorld::ObjectType& bodyA,
+                                     const Guch2D::CollisionWorld::ObjectType& bodyB)
     {
         const auto centerA = bodyA->GetColliderCenterWorld();
         const auto centerB = bodyB->GetColliderCenterWorld();
@@ -51,8 +153,8 @@ namespace
     }
 
     [[nodiscard]] Guch2D::CollisionPoints
-        CheckCollisionAABBVsAABB(const std::shared_ptr<Guch2D::CollisionBody>& bodyA,
-                                 const std::shared_ptr<Guch2D::CollisionBody>& bodyB)
+        CheckCollisionAABBVsAABB(const Guch2D::CollisionWorld::ObjectType& bodyA,
+                                 const Guch2D::CollisionWorld::ObjectType& bodyB)
     {
         const auto centerA = bodyA->GetColliderCenterWorld();
         const auto centerB = bodyB->GetColliderCenterWorld();
@@ -115,8 +217,8 @@ namespace
     }
 
     [[nodiscard]] Guch2D::CollisionPoints
-        CheckCollisionAABBVsCircle(const std::shared_ptr<Guch2D::CollisionBody>& bodyA,
-                                   const std::shared_ptr<Guch2D::CollisionBody>& bodyB)
+        CheckCollisionAABBVsCircle(const Guch2D::CollisionWorld::ObjectType& bodyA,
+                                   const Guch2D::CollisionWorld::ObjectType& bodyB)
     {
         const auto centerA = bodyA->GetColliderCenterWorld();
         const auto centerB = bodyB->GetColliderCenterWorld();
@@ -207,6 +309,13 @@ namespace
 
         return (lhsA == rhsA && lhsB == rhsB) || (lhsA == rhsB && lhsB == rhsA);
     }
+
+    constexpr size_t SpatialHashingCalculateHash(const int64_t cellX, const int64_t cellY) noexcept
+    {
+        constexpr auto hashValueX = 73856093;
+        constexpr auto hashValueY = 19349663;
+        return static_cast<size_t>(cellX * hashValueX) ^ static_cast<size_t>(cellY * hashValueY);
+    }
 }   // namespace
 
 namespace Guch2D
@@ -233,6 +342,10 @@ namespace Guch2D
         case BroadPhaseType::SweepAndPrune:
         {
             return SweepAndPrune();
+        }
+        case BroadPhaseType::SpatialHashing:
+        {
+            return SpatialHashing();
         }
         default:
         {
@@ -314,12 +427,11 @@ namespace Guch2D
         }
     }
 
-    CollisionPoints CollisionWorld::CheckCollisions(std::shared_ptr<CollisionBody> bodyA,
-                                                    std::shared_ptr<CollisionBody> bodyB)
+    CollisionPoints CollisionWorld::CheckCollisions(ObjectType bodyA, ObjectType bodyB)
     {
         constexpr auto typeCount = static_cast<uint8_t>(ColliderType::Count);
 
-        using CollisionFunc = std::function<CollisionPoints(const std::shared_ptr<CollisionBody>&,
+        using CollisionFunc = std::function<CollisionPoints(const ObjectType&,
                                                             const std::shared_ptr<CollisionBody>&)>;
         using CollisionFuncMatrix = std::array<std::array<CollisionFunc, typeCount>, typeCount>;
 
@@ -384,7 +496,8 @@ namespace Guch2D
 
         // sort object to its left border
         std::ranges::sort(_objects, std::ranges::less {}, [](const auto& body) {
-            return body->GetColliderLeftBorderWorld().x;
+            return body ? body->GetColliderLeftBorderWorld().x
+                        : -std::numeric_limits<float>::infinity();
         });
 
         std::vector<Collision> possibleCollisions;
@@ -400,6 +513,48 @@ namespace Guch2D
                 possibleCollisions.emplace_back(_objects.at(i), _objects.at(j));
             }
         }
+
+        return possibleCollisions;
+    }
+
+    std::vector<Collision> CollisionWorld::SpatialHashing() const
+    {
+        // Cell size in meters (m)
+        static constexpr float CellSizeX = 4.0F;
+        static constexpr float CellSizeY = 4.0F;
+
+        SpatialGridMap gridMap;
+
+        for (const auto& object : _objects)
+        {
+            const auto [cellX, cellY] = GetSpatialCell(object, CellSizeX, CellSizeY);
+            const size_t hash = SpatialHashingCalculateHash(cellX, cellY);
+            gridMap[hash].emplace_back(object);
+        }
+
+        std::vector<Collision> possibleCollisions;
+
+        for (const auto& bucket : gridMap | std::views::values)
+        {
+            if (bucket.empty())
+                continue;
+
+            AppendSameBucketCollisions(bucket, possibleCollisions);
+
+            const auto [cellX, cellY] = GetSpatialCell(bucket.front(), CellSizeX, CellSizeY);
+            AppendNeighborBucketCollisions(gridMap, bucket, cellX, cellY, possibleCollisions);
+        }
+
+        // Sort vector to remove duplicated collisions
+        std::ranges::sort(possibleCollisions, std::ranges::less {}, [](const Collision& collision) {
+            return GetCanonicalCollisionPair(collision);
+        });
+
+        const auto duplicatesRange = std::ranges::unique(
+            possibleCollisions,
+            std::ranges::equal_to {},
+            [](const Collision& collision) { return GetCanonicalCollisionPair(collision); });
+        possibleCollisions.erase(duplicatesRange.begin(), duplicatesRange.end());
 
         return possibleCollisions;
     }

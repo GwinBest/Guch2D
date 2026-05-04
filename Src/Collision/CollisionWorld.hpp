@@ -14,10 +14,14 @@ namespace Guch2D
     enum class BroadPhaseType : std::uint8_t
     {
         SweepAndPrune,
+        SpatialHashing,
     };
 
     class CollisionWorld
     {
+    public:
+        using ObjectType = std::shared_ptr<CollisionBody>;
+
     public:
         CollisionWorld() noexcept = default;
         CollisionWorld(const CollisionWorld&) = default;
@@ -28,7 +32,7 @@ namespace Guch2D
 
         virtual void Step();
 
-        void AddObject(const std::shared_ptr<CollisionBody>& object)
+        void AddObject(const ObjectType& object)
         {
             if (!object)
                 return;
@@ -40,7 +44,7 @@ namespace Guch2D
             }
         }
 
-        void RemoveObject(const std::shared_ptr<CollisionBody>& object)
+        void RemoveObject(const ObjectType& object)
         {
             if (!object)
                 return;
@@ -102,17 +106,18 @@ namespace Guch2D
 
         void SolveCollisions() const;
 
-        [[nodiscard]] static CollisionPoints CheckCollisions(std::shared_ptr<CollisionBody> bodyA,
-                                                             std::shared_ptr<CollisionBody> bodyB);
+        [[nodiscard]] static CollisionPoints CheckCollisions(ObjectType bodyA, ObjectType bodyB);
 
     private:
         std::vector<Collision> SweepAndPrune();
+
+        std::vector<Collision> SpatialHashing() const;
 
     public:
         static constexpr float DefaultTimeStep = 1.0F / 60.0F;
 
     protected:
-        std::vector<std::shared_ptr<CollisionBody>> _objects;
+        std::vector<ObjectType> _objects;
         std::vector<std::shared_ptr<Solver>> _solvers;
 
         float _timeStep = DefaultTimeStep;
