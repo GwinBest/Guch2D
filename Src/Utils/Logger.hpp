@@ -62,5 +62,4 @@ namespace Guch2D
         std::println("{}[Error] {}: {}{}", Red, loc.function_name(), msg, ResetColor);
 #endif
     }
-
 }   // namespace Guch2D
