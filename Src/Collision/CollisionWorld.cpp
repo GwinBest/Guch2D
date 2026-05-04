@@ -91,9 +91,10 @@ namespace
              }
         };
 
-        for (const auto& [dx, dy] : NeighborOffsets)
+        for (const auto& [dxOffset, dyOffset] : NeighborOffsets)
         {
-            const size_t neighborHash = SpatialHashingCalculateHash(cellX + dx, cellY + dy);
+            const size_t neighborHash = SpatialHashingCalculateHash(cellX + dxOffset,
+                                                                    cellY + dyOffset);
             auto iterator = gridMap.find(neighborHash);
 
             if (iterator == gridMap.end())
@@ -311,8 +312,10 @@ namespace
 
     constexpr size_t SpatialHashingCalculateHash(const int64_t cellX, const int64_t cellY) noexcept
     {
-        return static_cast<size_t>(static_cast<size_t>(cellX * 73856093)
-                                   ^ static_cast<size_t>(cellY * 19349663));
+        constexpr auto hashValueX = 73856093;
+        constexpr auto hashValueY = 19349663;
+        return static_cast<size_t>(static_cast<size_t>(cellX * hashValueX)
+                                   ^ static_cast<size_t>(cellY * hashValueY));
     }
 }   // namespace
 
