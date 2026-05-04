@@ -15,8 +15,8 @@
 namespace
 {
     [[nodiscard]] Guch2D::CollisionPoints
-        CheckCollisionCircleVsCircle(const std::shared_ptr<Guch2D::CollisionBody>& bodyA,
-                                     const std::shared_ptr<Guch2D::CollisionBody>& bodyB)
+        CheckCollisionCircleVsCircle(const Guch2D::CollisionWorld::ObjectType& bodyA,
+                                     const Guch2D::CollisionWorld::ObjectType& bodyB)
     {
         const auto centerA = bodyA->GetColliderCenterWorld();
         const auto centerB = bodyB->GetColliderCenterWorld();
@@ -51,8 +51,8 @@ namespace
     }
 
     [[nodiscard]] Guch2D::CollisionPoints
-        CheckCollisionAABBVsAABB(const std::shared_ptr<Guch2D::CollisionBody>& bodyA,
-                                 const std::shared_ptr<Guch2D::CollisionBody>& bodyB)
+        CheckCollisionAABBVsAABB(const Guch2D::CollisionWorld::ObjectType& bodyA,
+                                 const Guch2D::CollisionWorld::ObjectType& bodyB)
     {
         const auto centerA = bodyA->GetColliderCenterWorld();
         const auto centerB = bodyB->GetColliderCenterWorld();
@@ -115,8 +115,8 @@ namespace
     }
 
     [[nodiscard]] Guch2D::CollisionPoints
-        CheckCollisionAABBVsCircle(const std::shared_ptr<Guch2D::CollisionBody>& bodyA,
-                                   const std::shared_ptr<Guch2D::CollisionBody>& bodyB)
+        CheckCollisionAABBVsCircle(const Guch2D::CollisionWorld::ObjectType& bodyA,
+                                   const Guch2D::CollisionWorld::ObjectType& bodyB)
     {
         const auto centerA = bodyA->GetColliderCenterWorld();
         const auto centerB = bodyB->GetColliderCenterWorld();
@@ -314,12 +314,11 @@ namespace Guch2D
         }
     }
 
-    CollisionPoints CollisionWorld::CheckCollisions(std::shared_ptr<CollisionBody> bodyA,
-                                                    std::shared_ptr<CollisionBody> bodyB)
+    CollisionPoints CollisionWorld::CheckCollisions(ObjectType bodyA, ObjectType bodyB)
     {
         constexpr auto typeCount = static_cast<uint8_t>(ColliderType::Count);
 
-        using CollisionFunc = std::function<CollisionPoints(const std::shared_ptr<CollisionBody>&,
+        using CollisionFunc = std::function<CollisionPoints(const ObjectType&,
                                                             const std::shared_ptr<CollisionBody>&)>;
         using CollisionFuncMatrix = std::array<std::array<CollisionFunc, typeCount>, typeCount>;
 
