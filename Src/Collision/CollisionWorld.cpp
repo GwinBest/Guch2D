@@ -431,8 +431,7 @@ namespace Guch2D
     {
         constexpr auto typeCount = static_cast<uint8_t>(ColliderType::Count);
 
-        using CollisionFunc = std::function<CollisionPoints(const ObjectType&,
-                                                            const std::shared_ptr<CollisionBody>&)>;
+        using CollisionFunc = std::function<CollisionPoints(const ObjectType&, const ObjectType&)>;
         using CollisionFuncMatrix = std::array<std::array<CollisionFunc, typeCount>, typeCount>;
 
         static const CollisionFuncMatrix CollisionCheckMatrix = {
