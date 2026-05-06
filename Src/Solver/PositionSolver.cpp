@@ -1,11 +1,11 @@
-#include "Solver/PenetrationSolver.hpp"
+#include "Solver/PositionSolver.hpp"
 
 #include "Collision/CollisionBody.hpp"
 #include "Dynamics/RigidBody.hpp"
 
 namespace Guch2D
 {
-    void PenetrationSolver::Solve(const std::vector<Collision>& collisions)
+    void PositionSolver::Solve(const std::vector<Collision>& collisions)
     {
         for (const auto& [BodyA, BodyB, Points] : collisions)
         {

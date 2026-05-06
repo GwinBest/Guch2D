@@ -8,7 +8,7 @@
 #include "Dynamics/DynamicRigidBody.hpp"
 #include "Dynamics/KinematicBody.hpp"
 #include "Dynamics/StaticRigidBody.hpp"
-#include "Solver/PenetrationSolver.hpp"
+#include "Solver/PositionSolver.hpp"
 
 namespace
 {
@@ -881,7 +881,7 @@ namespace
     TEST(CollisionWorldTest, AddSolver)
     {
         Guch2D::CollisionWorld world;
-        const auto solver = std::make_shared<Guch2D::PenetrationSolver>();
+        const auto solver = std::make_shared<Guch2D::PositionSolver>();
         world.AddSolver(solver);
         EXPECT_EQ(world.GetSolversCount(), 1U);
     }
@@ -889,7 +889,7 @@ namespace
     TEST(CollisionWorldTest, AddDuplicateSolver)
     {
         Guch2D::CollisionWorld world;
-        const auto solver = std::make_shared<Guch2D::PenetrationSolver>();
+        const auto solver = std::make_shared<Guch2D::PositionSolver>();
         world.AddSolver(solver);
         world.AddSolver(solver);
         EXPECT_EQ(world.GetSolversCount(), 1U);
@@ -898,7 +898,7 @@ namespace
     TEST(CollisonWorldTest, AddSolverNullptr)
     {
         Guch2D::CollisionWorld world;
-        const std::shared_ptr<Guch2D::PenetrationSolver> solver = nullptr;
+        const std::shared_ptr<Guch2D::PositionSolver> solver = nullptr;
         world.AddSolver(solver);
         EXPECT_EQ(world.GetSolversCount(), 0U);
     }
@@ -906,7 +906,7 @@ namespace
     TEST(CollisionWorldTest, RemoveSolver)
     {
         Guch2D::CollisionWorld world;
-        const auto solver = std::make_shared<Guch2D::PenetrationSolver>();
+        const auto solver = std::make_shared<Guch2D::PositionSolver>();
         world.AddSolver(solver);
         world.RemoveSolver(solver);
         EXPECT_EQ(world.GetSolversCount(), 0U);
@@ -915,7 +915,7 @@ namespace
     TEST(CollisionWorldTest, RemoveDuplicateSolver)
     {
         Guch2D::CollisionWorld world;
-        const auto solver = std::make_shared<Guch2D::PenetrationSolver>();
+        const auto solver = std::make_shared<Guch2D::PositionSolver>();
         world.AddSolver(solver);
         world.RemoveSolver(solver);
         world.RemoveSolver(solver);
@@ -925,7 +925,7 @@ namespace
     TEST(CollisionWorldTest, RemoveSolverNullptr)
     {
         Guch2D::CollisionWorld world;
-        const std::shared_ptr<Guch2D::PenetrationSolver> solver = nullptr;
+        const std::shared_ptr<Guch2D::PositionSolver> solver = nullptr;
         world.AddSolver(solver);
         world.RemoveSolver(solver);
         EXPECT_EQ(world.GetSolversCount(), 0U);
@@ -934,7 +934,7 @@ namespace
     TEST(CollisionWorldTest, StepTwoCirclesWithAddedPenetrationSolverResolvesPositions)
     {
         Guch2D::CollisionWorld world;
-        world.AddSolver(std::make_shared<Guch2D::PenetrationSolver>());
+        world.AddSolver(std::make_shared<Guch2D::PositionSolver>());
 
         const auto bodyA = std::make_shared<TestCollisionBody>();
         bodyA->SetPosition({0.0F, 0.0F});
@@ -986,7 +986,7 @@ namespace
     TEST(CollisionWorldTest, StepTwoCirclesSamePositionWithAddedPenetrationSolverResolvesPositions)
     {
         Guch2D::CollisionWorld world;
-        world.AddSolver(std::make_shared<Guch2D::PenetrationSolver>());
+        world.AddSolver(std::make_shared<Guch2D::PositionSolver>());
 
         const auto bodyA = MakeDynamicCircleRigidBody({1.0F, 1.0F}, 2.0F, 1.0F);
         const auto bodyB = MakeDynamicCircleRigidBody({1.0F, 1.0F}, 2.0F, 1.0F);
@@ -1032,7 +1032,7 @@ namespace
          StepOverlappingCirclesStaticVsStaticWithAddedPenetrationSolverResolvesPositions)
     {
         Guch2D::CollisionWorld world;
-        world.AddSolver(std::make_shared<Guch2D::PenetrationSolver>());
+        world.AddSolver(std::make_shared<Guch2D::PositionSolver>());
 
         const auto bodyA = MakeStaticCircleRigidBody({0.0F, 0.0F}, 2.0F);
         const auto bodyB = MakeStaticCircleRigidBody({3.0F, 0.0F}, 2.0F);
@@ -1051,7 +1051,7 @@ namespace
          StepOverlappingCirclesStaticVsKinematicWithAddedPenetrationSolverResolvesPositions)
     {
         Guch2D::CollisionWorld world;
-        world.AddSolver(std::make_shared<Guch2D::PenetrationSolver>());
+        world.AddSolver(std::make_shared<Guch2D::PositionSolver>());
 
         const auto bodyA = MakeStaticCircleRigidBody({0.0F, 0.0F}, 2.0F);
         const auto bodyB = MakeKinematicCircleRigidBody({3.0F, 0.0F}, 2.0F);
@@ -1070,7 +1070,7 @@ namespace
          StepOverlappingCirclesStaticVsDynamicWithAddedPenetrationSolverResolvesPositions)
     {
         Guch2D::CollisionWorld world;
-        world.AddSolver(std::make_shared<Guch2D::PenetrationSolver>());
+        world.AddSolver(std::make_shared<Guch2D::PositionSolver>());
 
         const auto bodyA = MakeStaticCircleRigidBody({0.0F, 0.0F}, 2.0F);
         const auto bodyB = MakeDynamicCircleRigidBody({3.0F, 0.0F}, 2.0F, 1.0F);
@@ -1089,7 +1089,7 @@ namespace
          StepOverlappingCirclesKinematicVsDynamicWithAddedPenetrationSolverResolvesPositions)
     {
         Guch2D::CollisionWorld world;
-        world.AddSolver(std::make_shared<Guch2D::PenetrationSolver>());
+        world.AddSolver(std::make_shared<Guch2D::PositionSolver>());
 
         const auto bodyA = MakeKinematicCircleRigidBody({0.0F, 0.0F}, 2.0F);
         const auto bodyB = MakeDynamicCircleRigidBody({3.0F, 0.0F}, 2.0F, 1.0F);
@@ -1108,7 +1108,7 @@ namespace
          StepOverlappingCirclesKinematicVsKinematicWithAddedPenetrationSolverResolvesPositions)
     {
         Guch2D::CollisionWorld world;
-        world.AddSolver(std::make_shared<Guch2D::PenetrationSolver>());
+        world.AddSolver(std::make_shared<Guch2D::PositionSolver>());
 
         const auto bodyA = MakeKinematicCircleRigidBody({0.0F, 0.0F}, 2.0F);
         const auto bodyB = MakeKinematicCircleRigidBody({3.0F, 0.0F}, 2.0F);
@@ -1127,7 +1127,7 @@ namespace
          StepOverlappingCirclesDynamicVsDynamicWithAddedPenetrationSolverResolvesPositions)
     {
         Guch2D::CollisionWorld world;
-        world.AddSolver(std::make_shared<Guch2D::PenetrationSolver>());
+        world.AddSolver(std::make_shared<Guch2D::PositionSolver>());
 
         const auto bodyA = MakeDynamicCircleRigidBody({0.0F, 0.0F}, 2.0F, 1.0F);
         const auto bodyB = MakeDynamicCircleRigidBody({3.0F, 0.0F}, 2.0F, 1.0F);
