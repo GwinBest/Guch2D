@@ -208,6 +208,7 @@ public:
         _accumulator = 0.0f;
         _spawnShape = SpawnShape::Circle;
         _spawnMass = BallMass;
+        _spawnBounciness = DefaultSpawnBounciness;
         _spawnCircleRadius = BallRadiusPixels / _pixelsPerMeter;
         _spawnAABBExtent = {0.12f, 0.12f};
 
@@ -226,6 +227,8 @@ public:
             case sf::Keyboard::Key::Tab: ToggleSpawnShape(); break;
             case sf::Keyboard::Key::Q:   AdjustSpawnMass(MassStep); break;
             case sf::Keyboard::Key::A:   AdjustSpawnMass(-MassStep); break;
+            case sf::Keyboard::Key::Z:   AdjustSpawnBounciness(BouncinessStep); break;
+            case sf::Keyboard::Key::X:   AdjustSpawnBounciness(-BouncinessStep); break;
             case sf::Keyboard::Key::W:   AdjustSpawnPrimarySize(SizeStep); break;
             case sf::Keyboard::Key::S:   AdjustSpawnPrimarySize(-SizeStep); break;
             case sf::Keyboard::Key::E:   AdjustSpawnAABBHeight(SizeStep); break;
@@ -318,12 +321,14 @@ public:
         lines.emplace_back("LEFT MOUSE DRAG: SPAWN BODY");
         lines.emplace_back("TAB: TOGGLE SPAWN TYPE");
         lines.emplace_back("Q/A: MASS UP/DOWN");
+        lines.emplace_back("Z/X: BOUNCINESS UP/DOWN");
         lines.emplace_back("W/S: WIDTH OR RADIUS UP/DOWN");
         lines.emplace_back("E/D: AABB HEIGHT UP/DOWN");
         lines.emplace_back("C: CLEAR DYNAMIC BODIES");
         lines.emplace_back("R: RESET DEMO");
         lines.emplace_back("SPAWN: " + std::string(SpawnShapeName()));
         lines.emplace_back("MASS: " + std::to_string(_spawnMass));
+        lines.emplace_back("BOUNCINESS: " + std::to_string(_spawnBounciness));
         lines.emplace_back("BALL RADIUS: " + std::to_string(_spawnCircleRadius));
         lines.emplace_back("AABB X: " + std::to_string(_spawnAABBExtent.x));
         lines.emplace_back("AABB Y: " + std::to_string(_spawnAABBExtent.y));
@@ -359,6 +364,7 @@ private:
 
         auto body = std::make_shared<Guch2D::StaticRigidBody>(position);
         body->SetCollider(collider);
+        body->SetBounciness(1.0f);
         return {body, extent};
     }
 
@@ -421,6 +427,18 @@ private:
         _spawnMass = std::clamp(_spawnMass + delta, MinSpawnMass, MaxSpawnMass);
     }
 
+    void AdjustSpawnBounciness(const float delta)
+    {
+        _spawnBounciness = std::clamp(_spawnBounciness + delta,
+                                      MinSpawnBounciness,
+                                      MaxSpawnBounciness);
+
+        for (const auto& dynamicBody : _dynamicBodies)
+        {
+            dynamicBody.body->SetBounciness(_spawnBounciness);
+        }
+    }
+
     void AdjustSpawnPrimarySize(const float delta)
     {
         if (_spawnShape == SpawnShape::Circle)
@@ -461,6 +479,7 @@ private:
 
         auto body = std::make_shared<Guch2D::DynamicRigidBody>(position, _spawnMass);
         body->SetCollider(collider);
+        body->SetBounciness(_spawnBounciness);
         body->SetVelocity(launchVelocity);
 
         _world.AddObject(body);
@@ -479,6 +498,7 @@ private:
 
         auto body = std::make_shared<Guch2D::DynamicRigidBody>(position, _spawnMass);
         body->SetCollider(collider);
+        body->SetBounciness(_spawnBounciness);
         body->SetVelocity(launchVelocity);
 
         _world.AddObject(body);
@@ -529,6 +549,10 @@ private:
     static constexpr float MinSpawnMass = 0.1f;
     static constexpr float MaxSpawnMass = 100.0f;
     static constexpr float MassStep = 0.5f;
+    static constexpr float MinSpawnBounciness = 0.0f;
+    static constexpr float MaxSpawnBounciness = 1.0f;
+    static constexpr float DefaultSpawnBounciness = 0.5f;
+    static constexpr float BouncinessStep = 0.05f;
     static constexpr float MinSpawnRadius = 0.04f;
     static constexpr float MaxSpawnRadius = 0.8f;
     static constexpr float MinSpawnExtent = 0.04f;
@@ -545,6 +569,7 @@ private:
     sf::Vector2f _dragCurrentScreen = {0.0f, 0.0f};
     SpawnShape _spawnShape = SpawnShape::Circle;
     float _spawnMass = BallMass;
+    float _spawnBounciness = DefaultSpawnBounciness;
     float _spawnCircleRadius = BallRadiusPixels / PixelsPerMeter;
     Guch2D::Vect _spawnAABBExtent = {0.12f, 0.12f};
     float _accumulator = 0.0f;
