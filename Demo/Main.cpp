@@ -16,8 +16,10 @@
 #include "Dynamics/DynamicRigidBody.hpp"
 #include "Dynamics/DynamicWorld.hpp"
 #include "Dynamics/KinematicBody.hpp"
+#include "Dynamics/StaticRigidBody.hpp"
 #include "Font.hpp"
 #include "Math/Vector.hpp"
+#include "Solver/VelocitySolver.hpp"
 #include "Utils.hpp"
 
 namespace
@@ -186,6 +188,362 @@ private:
     Guch2D::Vect _dragStartWorld = {0.0f, 0.0f};
     sf::Vector2f _dragStartScreen = {0.0f, 0.0f};
     sf::Vector2f _dragCurrentScreen = {0.0f, 0.0f};
+    float _accumulator = 0.0f;
+};
+
+class BoundedDynamicsDemo final : public DemoBase
+{
+public:
+    explicit BoundedDynamicsDemo(const float pixelsPerMeter)
+        : _pixelsPerMeter(pixelsPerMeter)
+    {}
+
+    [[nodiscard]] const char* Name() const noexcept override { return "DYNAMICS BOUNDS"; }
+
+    void Reset(sf::RenderWindow& window) override
+    {
+        _dynamicBodies.clear();
+        _staticBodies.clear();
+        _dragging = false;
+        _accumulator = 0.0f;
+        _spawnShape = SpawnShape::Circle;
+        _spawnMass = BallMass;
+        _spawnCircleRadius = BallRadiusPixels / _pixelsPerMeter;
+        _spawnAABBExtent = {0.12f, 0.12f};
+
+        BuildStaticBounds(window);
+        RebuildWorld();
+    }
+
+    void HandleEvent(const sf::Event& event, sf::RenderWindow& window) override
+    {
+        if (const auto* keyPressed = event.getIf<sf::Event::KeyPressed>())
+        {
+            switch (keyPressed->code)
+            {
+            case sf::Keyboard::Key::C:   ClearDynamicBodies(); break;
+            case sf::Keyboard::Key::R:   Reset(window); break;
+            case sf::Keyboard::Key::Tab: ToggleSpawnShape(); break;
+            case sf::Keyboard::Key::Q:   AdjustSpawnMass(MassStep); break;
+            case sf::Keyboard::Key::A:   AdjustSpawnMass(-MassStep); break;
+            case sf::Keyboard::Key::W:   AdjustSpawnPrimarySize(SizeStep); break;
+            case sf::Keyboard::Key::S:   AdjustSpawnPrimarySize(-SizeStep); break;
+            case sf::Keyboard::Key::E:   AdjustSpawnAABBHeight(SizeStep); break;
+            case sf::Keyboard::Key::D:   AdjustSpawnAABBHeight(-SizeStep); break;
+            default:                     break;
+            }
+        }
+
+        if (const auto* mousePressed = event.getIf<sf::Event::MouseButtonPressed>())
+        {
+            if (mousePressed->button == sf::Mouse::Button::Left)
+            {
+                _dragging = true;
+                _dragStartScreen = ToVector2f(mousePressed->position);
+                _dragCurrentScreen = _dragStartScreen;
+                _dragStartWorld = ScreenToWorld(mousePressed->position, _pixelsPerMeter);
+            }
+        }
+
+        if (const auto* mouseReleased = event.getIf<sf::Event::MouseButtonReleased>())
+        {
+            if (mouseReleased->button == sf::Mouse::Button::Left && _dragging)
+            {
+                _dragging = false;
+                SpawnBody(mouseReleased->position);
+            }
+        }
+    }
+
+    void Update(sf::RenderWindow& window, const float dt) override
+    {
+        if (_dragging)
+        {
+            _dragCurrentScreen = ToVector2f(sf::Mouse::getPosition(window));
+        }
+
+        _accumulator += dt;
+        const float step = _world.GetTimeStep();
+        while (_accumulator >= step)
+        {
+            _world.Step();
+            _accumulator -= step;
+        }
+    }
+
+    void Render(sf::RenderWindow& window) override
+    {
+        for (const auto& staticBody : _staticBodies)
+        {
+            DrawAABB(window,
+                     staticBody.body->GetColliderCenterWorld(),
+                     staticBody.extent,
+                     sf::Color(110, 110, 110, 220),
+                     sf::Color(170, 170, 170, 255),
+                     1.0f);
+        }
+
+        for (const auto& body : _dynamicBodies)
+        {
+            if (body.shape == SpawnShape::Circle)
+            {
+                DrawCircle(window,
+                           body.body->GetColliderCenterWorld(),
+                           body.radius,
+                           sf::Color(70, 220, 120, 180),
+                           sf::Color(255, 255, 255, 220),
+                           1.0f);
+                continue;
+            }
+
+            DrawAABB(window,
+                     body.body->GetColliderCenterWorld(),
+                     body.extent,
+                     sf::Color(80, 170, 255, 180),
+                     sf::Color(255, 255, 255, 220),
+                     1.0f);
+        }
+
+        if (_dragging)
+        {
+            sf::VertexArray line(sf::PrimitiveType::Lines, 2);
+            line[0] = sf::Vertex(_dragStartScreen, sf::Color(255, 216, 0));
+            line[1] = sf::Vertex(_dragCurrentScreen, sf::Color(255, 216, 0));
+            window.draw(line);
+        }
+    }
+
+    void BuildOverlay(std::vector<std::string>& lines) const override
+    {
+        lines.emplace_back("LEFT MOUSE DRAG: SPAWN BODY");
+        lines.emplace_back("TAB: TOGGLE SPAWN TYPE");
+        lines.emplace_back("Q/A: MASS UP/DOWN");
+        lines.emplace_back("W/S: WIDTH OR RADIUS UP/DOWN");
+        lines.emplace_back("E/D: AABB HEIGHT UP/DOWN");
+        lines.emplace_back("C: CLEAR DYNAMIC BODIES");
+        lines.emplace_back("R: RESET DEMO");
+        lines.emplace_back("SPAWN: " + std::string(SpawnShapeName()));
+        lines.emplace_back("MASS: " + std::to_string(_spawnMass));
+        lines.emplace_back("BALL RADIUS: " + std::to_string(_spawnCircleRadius));
+        lines.emplace_back("AABB X: " + std::to_string(_spawnAABBExtent.x));
+        lines.emplace_back("AABB Y: " + std::to_string(_spawnAABBExtent.y));
+        lines.emplace_back("DYNAMIC BODIES: " + std::to_string(_dynamicBodies.size()));
+    }
+
+private:
+    enum class SpawnShape : std::uint8_t
+    {
+        Circle,
+        AABB,
+    };
+
+    struct DynamicBodyVisual
+    {
+        std::shared_ptr<Guch2D::DynamicRigidBody> body;
+        SpawnShape shape = SpawnShape::Circle;
+        float radius = 0.0f;
+        Guch2D::Vect extent = {0.0f, 0.0f};
+    };
+
+    struct StaticBodyVisual
+    {
+        std::shared_ptr<Guch2D::StaticRigidBody> body;
+        Guch2D::Vect extent = {0.0f, 0.0f};
+    };
+
+    [[nodiscard]] StaticBodyVisual CreateStaticAABB(const Guch2D::Vect& position,
+                                                    const Guch2D::Vect& extent) const
+    {
+        auto collider = std::make_shared<Guch2D::AABBCollider>();
+        collider->SetExtent(extent);
+
+        auto body = std::make_shared<Guch2D::StaticRigidBody>(position);
+        body->SetCollider(collider);
+        return {body, extent};
+    }
+
+    void BuildStaticBounds(const sf::RenderWindow& window)
+    {
+        const auto size = window.getSize();
+        const float worldWidth = static_cast<float>(size.x) / _pixelsPerMeter;
+        const float worldHeight = static_cast<float>(size.y) / _pixelsPerMeter;
+
+        constexpr float wallThickness = 0.28f;
+        constexpr float floorThickness = 0.28f;
+
+        const float halfWallThickness = wallThickness * 0.5f;
+        const float halfFloorThickness = floorThickness * 0.5f;
+
+        _staticBodies.push_back(
+            CreateStaticAABB({worldWidth * 0.5f, worldHeight - halfFloorThickness},
+                             {worldWidth * 0.5f, halfFloorThickness}));
+        _staticBodies.push_back(CreateStaticAABB({halfWallThickness, worldHeight * 0.5f},
+                                                 {halfWallThickness, worldHeight * 0.5f}));
+        _staticBodies.push_back(
+            CreateStaticAABB({worldWidth - halfWallThickness, worldHeight * 0.5f},
+                             {halfWallThickness, worldHeight * 0.5f}));
+    }
+
+    void RebuildWorld()
+    {
+        _world = Guch2D::DynamicWorld();
+        _world.AddSolver(std::make_shared<Guch2D::PositionSolver>());
+        _world.AddSolver(std::make_shared<Guch2D::VelocitySolver>());
+
+        for (const auto& staticBody : _staticBodies)
+        {
+            _world.AddObject(staticBody.body);
+        }
+
+        for (const auto& dynamicBody : _dynamicBodies)
+        {
+            _world.AddObject(dynamicBody.body);
+        }
+    }
+
+    void ClearDynamicBodies()
+    {
+        _dynamicBodies.clear();
+        _accumulator = 0.0f;
+        RebuildWorld();
+    }
+
+    void ToggleSpawnShape()
+    {
+        _spawnShape = (_spawnShape == SpawnShape::Circle) ? SpawnShape::AABB : SpawnShape::Circle;
+    }
+
+    void AdjustSpawnMass(const float delta)
+    {
+        _spawnMass = std::clamp(_spawnMass + delta, MinSpawnMass, MaxSpawnMass);
+    }
+
+    void AdjustSpawnPrimarySize(const float delta)
+    {
+        if (_spawnShape == SpawnShape::Circle)
+        {
+            _spawnCircleRadius = std::clamp(_spawnCircleRadius + delta,
+                                            MinSpawnRadius,
+                                            MaxSpawnRadius);
+            return;
+        }
+
+        _spawnAABBExtent.x = std::clamp(_spawnAABBExtent.x + delta, MinSpawnExtent, MaxSpawnExtent);
+    }
+
+    void AdjustSpawnAABBHeight(const float delta)
+    {
+        _spawnAABBExtent.y = std::clamp(_spawnAABBExtent.y + delta, MinSpawnExtent, MaxSpawnExtent);
+    }
+
+    void SpawnBody(const sf::Vector2i& releasePosition)
+    {
+        const auto releaseWorld = ScreenToWorld(releasePosition, _pixelsPerMeter);
+        const auto launchVector = _dragStartWorld - releaseWorld;
+        const auto launchVelocity = launchVector * LaunchStrength;
+
+        if (_spawnShape == SpawnShape::Circle)
+        {
+            SpawnCircle(_dragStartWorld, launchVelocity);
+            return;
+        }
+
+        SpawnAABB(_dragStartWorld, launchVelocity);
+    }
+
+    void SpawnCircle(const Guch2D::Vect& position, const Guch2D::Vect& launchVelocity)
+    {
+        auto collider = std::make_shared<Guch2D::CircleCollider>();
+        collider->SetRadius(_spawnCircleRadius);
+
+        auto body = std::make_shared<Guch2D::DynamicRigidBody>(position, _spawnMass);
+        body->SetCollider(collider);
+        body->SetVelocity(launchVelocity);
+
+        _world.AddObject(body);
+        _dynamicBodies.push_back({
+            body,
+            SpawnShape::Circle,
+            _spawnCircleRadius,
+            {0.0f, 0.0f}
+        });
+    }
+
+    void SpawnAABB(const Guch2D::Vect& position, const Guch2D::Vect& launchVelocity)
+    {
+        auto collider = std::make_shared<Guch2D::AABBCollider>();
+        collider->SetExtent(_spawnAABBExtent);
+
+        auto body = std::make_shared<Guch2D::DynamicRigidBody>(position, _spawnMass);
+        body->SetCollider(collider);
+        body->SetVelocity(launchVelocity);
+
+        _world.AddObject(body);
+        _dynamicBodies.push_back({body, SpawnShape::AABB, 0.0f, _spawnAABBExtent});
+    }
+
+    void DrawCircle(sf::RenderWindow& window,
+                    const Guch2D::Vect& center,
+                    const float radius,
+                    const sf::Color fill,
+                    const sf::Color outline,
+                    const float outlineThickness) const
+    {
+        const float radiusPixels = radius * _pixelsPerMeter;
+        sf::CircleShape shape(radiusPixels);
+        shape.setOrigin({radiusPixels, radiusPixels});
+        shape.setPosition(WorldToScreen(center, _pixelsPerMeter));
+        shape.setFillColor(fill);
+        shape.setOutlineColor(outline);
+        shape.setOutlineThickness(outlineThickness);
+        window.draw(shape);
+    }
+
+    void DrawAABB(sf::RenderWindow& window,
+                  const Guch2D::Vect& center,
+                  const Guch2D::Vect& extent,
+                  const sf::Color fill,
+                  const sf::Color outline,
+                  const float outlineThickness) const
+    {
+        const sf::Vector2f halfExtentPixels = {extent.x * _pixelsPerMeter,
+                                               extent.y * _pixelsPerMeter};
+
+        sf::RectangleShape shape(halfExtentPixels * 2.0f);
+        shape.setOrigin(halfExtentPixels);
+        shape.setPosition(WorldToScreen(center, _pixelsPerMeter));
+        shape.setFillColor(fill);
+        shape.setOutlineColor(outline);
+        shape.setOutlineThickness(outlineThickness);
+        window.draw(shape);
+    }
+
+    [[nodiscard]] const char* SpawnShapeName() const noexcept
+    {
+        return _spawnShape == SpawnShape::Circle ? "BALL" : "AABB";
+    }
+
+    static constexpr float MinSpawnMass = 0.1f;
+    static constexpr float MaxSpawnMass = 100.0f;
+    static constexpr float MassStep = 0.5f;
+    static constexpr float MinSpawnRadius = 0.04f;
+    static constexpr float MaxSpawnRadius = 0.8f;
+    static constexpr float MinSpawnExtent = 0.04f;
+    static constexpr float MaxSpawnExtent = 0.8f;
+    static constexpr float SizeStep = 0.02f;
+
+    float _pixelsPerMeter = PixelsPerMeter;
+    Guch2D::DynamicWorld _world;
+    std::vector<DynamicBodyVisual> _dynamicBodies;
+    std::vector<StaticBodyVisual> _staticBodies;
+    bool _dragging = false;
+    Guch2D::Vect _dragStartWorld = {0.0f, 0.0f};
+    sf::Vector2f _dragStartScreen = {0.0f, 0.0f};
+    sf::Vector2f _dragCurrentScreen = {0.0f, 0.0f};
+    SpawnShape _spawnShape = SpawnShape::Circle;
+    float _spawnMass = BallMass;
+    float _spawnCircleRadius = BallRadiusPixels / PixelsPerMeter;
+    Guch2D::Vect _spawnAABBExtent = {0.12f, 0.12f};
     float _accumulator = 0.0f;
 };
 
@@ -755,6 +1113,7 @@ int main()
 
     DemoManager demos;
     demos.Add(std::make_unique<DynamicsDemo>(PixelsPerMeter));
+    demos.Add(std::make_unique<BoundedDynamicsDemo>(PixelsPerMeter));
     demos.Add(std::make_unique<CircleColliderDemo>(PixelsPerMeter));
     demos.ResetActive(window);
     demos.UpdateTitle(window);
