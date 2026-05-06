@@ -13,16 +13,12 @@ namespace Guch2D
             : RigidBody(position)
         {}
 
-        KinematicBody(const Vect& position, const float mass) noexcept
-            : RigidBody(position, mass)
-        {}
-
         KinematicBody(const KinematicBody&) = default;
         KinematicBody(KinematicBody&&) = default;
         KinematicBody& operator=(const KinematicBody&) = default;
         KinematicBody& operator=(KinematicBody&&) = default;
         ~KinematicBody() override = default;
-        
+
         [[nodiscard]] const Vect& GetAcceleration() const noexcept { return _acceleration; }
 
         void SetAcceleration(const Vect& acceleration) noexcept

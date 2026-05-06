@@ -29,9 +29,7 @@ namespace
     TEST(KinematicBodyTest, PositionAndMassConstructor)
     {
         constexpr Guch2D::Vect position(2.0F, 4.0F);
-        constexpr float mass = 10.0F;
-        const Guch2D::KinematicBody body(position, mass);
-        EXPECT_EQ(body.GetMass(), mass);
+        const Guch2D::KinematicBody body(position);
         EXPECT_EQ(body.GetPosition(), position);
         EXPECT_EQ(body.GetCollider(), nullptr);
         EXPECT_EQ(body.GetAcceleration(), Guch2D::Vect(0.0F, 0.0F));
