@@ -183,4 +183,47 @@ namespace
         EXPECT_FLOAT_EQ(body.GetDensity(), 0.0F);
         EXPECT_FLOAT_EQ(body.GetMass(), 9.0F);
     }
+
+    TEST(RigidBodyTest, DefaultBouncinessIsZero)
+    {
+        const TestableRigidBody body;
+        EXPECT_FLOAT_EQ(body.GetBounciness(), 0.0F);
+    }
+
+    TEST(RigidBodyTest, SetBouncinessWithinRange)
+    {
+        TestableRigidBody body;
+        body.SetBounciness(0.65F);
+        EXPECT_FLOAT_EQ(body.GetBounciness(), 0.65F);
+    }
+
+    TEST(RigidBodyTest, SetBouncinessBelowRangeClampsToZero)
+    {
+        TestableRigidBody body;
+        body.SetBounciness(-0.25F);
+        EXPECT_FLOAT_EQ(body.GetBounciness(), 0.0F);
+    }
+
+    TEST(RigidBodyTest, SetBouncinessAboveRangeClampsToOne)
+    {
+        TestableRigidBody body;
+        body.SetBounciness(1.75F);
+        EXPECT_FLOAT_EQ(body.GetBounciness(), 1.0F);
+    }
+
+    TEST(RigidBodyTest, SetBouncinessNaNResetsToZero)
+    {
+        TestableRigidBody body;
+        body.SetBounciness(0.5F);
+        body.SetBounciness(NAN);
+        EXPECT_FLOAT_EQ(body.GetBounciness(), 0.0F);
+    }
+
+    TEST(RigidBodyTest, SetBouncinessInfinityResetsToZero)
+    {
+        TestableRigidBody body;
+        body.SetBounciness(0.5F);
+        body.SetBounciness(INFINITY);
+        EXPECT_FLOAT_EQ(body.GetBounciness(), 0.0F);
+    }
 }   // namespace

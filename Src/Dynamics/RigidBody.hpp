@@ -92,7 +92,7 @@ namespace Guch2D
         // Bounciness of the rigid body
         // Bounciness always stays between 0 and 1
         // A value of 0 indicates no bounce while a value of 1 indicates a perfect bounce with no
-        // loss of energy.
+        // loss of energy (if friction and linear damping is 0).
         float _bounciness = 0.0F;
 
         MassMode _massMode = MassMode::Manual;
