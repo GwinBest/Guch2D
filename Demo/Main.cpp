@@ -15,6 +15,7 @@
 #include "Collision/CollisionWorld.hpp"
 #include "Dynamics/DynamicRigidBody.hpp"
 #include "Dynamics/DynamicWorld.hpp"
+#include "Dynamics/KinematicBody.hpp"
 #include "Font.hpp"
 #include "Math/Vector.hpp"
 #include "Utils.hpp"
@@ -207,7 +208,7 @@ public:
         _spawnRadius = 0.25f;
         _probeRadius = 0.35f;
         _spawnAABBExtent = {0.3f, 0.2f};
-        _world = Guch2D::CollisionWorld();
+        _world = Guch2D::DynamicWorld();
 
         const auto size = window.getSize();
         const Guch2D::Vect center = {static_cast<float>(size.x) / _pixelsPerMeter * 0.5f,
@@ -358,7 +359,8 @@ private:
         auto collider = std::make_shared<Guch2D::CircleCollider>();
         collider->SetRadius(radius);
 
-        auto body = std::make_shared<Guch2D::CollisionBody>(position, collider);
+        auto body = std::make_shared<Guch2D::KinematicBody>(position);
+        body->SetCollider(collider);
         return {body, radius};
     }
 
@@ -367,7 +369,8 @@ private:
         auto collider = std::make_shared<Guch2D::AABBCollider>();
         collider->SetExtent(extent);
 
-        auto body = std::make_shared<Guch2D::CollisionBody>(position, collider);
+        auto body = std::make_shared<Guch2D::KinematicBody>(position);
+        body->SetCollider(collider);
         return {body, extent};
     }
 
@@ -404,7 +407,7 @@ private:
 
     void ResetWorldWithProbe()
     {
-        _world = Guch2D::CollisionWorld();
+        _world = Guch2D::DynamicWorld();
         _world.AddObject(_probe.body);
         _world.AddSolver(std::make_shared<Guch2D::PenetrationVectorSolver>());
     }
@@ -632,7 +635,7 @@ private:
     std::vector<AABBBodyPtr> _aabbs;
     std::vector<CollisionPair> _collisionPairs;
     CircleBody _probe;
-    Guch2D::CollisionWorld _world;
+    Guch2D::DynamicWorld _world;
     bool _draggingProbe = false;
     bool _spawnAABBMode = false;
     float _spawnRadius = 0.25f;
