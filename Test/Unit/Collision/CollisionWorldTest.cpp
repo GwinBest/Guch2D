@@ -931,7 +931,7 @@ namespace
         EXPECT_EQ(world.GetSolversCount(), 0U);
     }
 
-    TEST(CollisionWorldTest, StepTwoCirclesWithAddedPenetrationSolverResolvesPositions)
+    TEST(CollisionWorldTest, StepTwoCirclesWithAddedPositionSolverResolvesPositions)
     {
         Guch2D::CollisionWorld world;
         world.AddSolver(std::make_shared<Guch2D::PositionSolver>());
@@ -983,7 +983,7 @@ namespace
         EXPECT_FLOAT_EQ(bodyB->GetPosition().y, 0.0F);
     }
 
-    TEST(CollisionWorldTest, StepTwoCirclesSamePositionWithAddedPenetrationSolverResolvesPositions)
+    TEST(CollisionWorldTest, StepTwoCirclesSamePositionWithAddedPositionSolverResolvesPositions)
     {
         Guch2D::CollisionWorld world;
         world.AddSolver(std::make_shared<Guch2D::PositionSolver>());
@@ -1029,7 +1029,7 @@ namespace
     }
 
     TEST(CollisionWorldTest,
-         StepOverlappingCirclesStaticVsStaticWithAddedPenetrationSolverResolvesPositions)
+         StepOverlappingCirclesStaticVsStaticWithAddedPositionSolverResolvesPositions)
     {
         Guch2D::CollisionWorld world;
         world.AddSolver(std::make_shared<Guch2D::PositionSolver>());
@@ -1048,7 +1048,7 @@ namespace
     }
 
     TEST(CollisionWorldTest,
-         StepOverlappingCirclesStaticVsKinematicWithAddedPenetrationSolverResolvesPositions)
+         StepOverlappingCirclesStaticVsKinematicWithAddedPositionSolverResolvesPositions)
     {
         Guch2D::CollisionWorld world;
         world.AddSolver(std::make_shared<Guch2D::PositionSolver>());
@@ -1067,7 +1067,7 @@ namespace
     }
 
     TEST(CollisionWorldTest,
-         StepOverlappingCirclesStaticVsDynamicWithAddedPenetrationSolverResolvesPositions)
+         StepOverlappingCirclesStaticVsDynamicWithAddedPositionSolverResolvesPositions)
     {
         Guch2D::CollisionWorld world;
         world.AddSolver(std::make_shared<Guch2D::PositionSolver>());
@@ -1086,7 +1086,7 @@ namespace
     }
 
     TEST(CollisionWorldTest,
-         StepOverlappingCirclesKinematicVsDynamicWithAddedPenetrationSolverResolvesPositions)
+         StepOverlappingCirclesKinematicVsDynamicWithAddedPositionSolverResolvesPositions)
     {
         Guch2D::CollisionWorld world;
         world.AddSolver(std::make_shared<Guch2D::PositionSolver>());
@@ -1105,7 +1105,7 @@ namespace
     }
 
     TEST(CollisionWorldTest,
-         StepOverlappingCirclesKinematicVsKinematicWithAddedPenetrationSolverResolvesPositions)
+         StepOverlappingCirclesKinematicVsKinematicWithAddedPositionSolverResolvesPositions)
     {
         Guch2D::CollisionWorld world;
         world.AddSolver(std::make_shared<Guch2D::PositionSolver>());
@@ -1124,7 +1124,7 @@ namespace
     }
 
     TEST(CollisionWorldTest,
-         StepOverlappingCirclesDynamicVsDynamicWithAddedPenetrationSolverResolvesPositions)
+         StepOverlappingCirclesDynamicVsDynamicWithAddedPositionSolverResolvesPositions)
     {
         Guch2D::CollisionWorld world;
         world.AddSolver(std::make_shared<Guch2D::PositionSolver>());
