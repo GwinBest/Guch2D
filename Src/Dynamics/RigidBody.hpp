@@ -1,5 +1,7 @@
 #pragma once
 
+#include <algorithm>
+
 #include "Collision/CollisionBody.hpp"
 #include "Math/Vector.hpp"
 
@@ -63,6 +65,22 @@ namespace Guch2D
             _massMode = (_density > 0.0F) ? MassMode::FromDensity : MassMode::Manual;
         }
 
+        [[nodiscard]] float GetBounciness() const noexcept { return _bounciness; }
+
+        // Bounciness always stays between 0 and 1
+        // A value of 0 indicates no bounce while a value of 1 indicates a perfect bounce with no
+        // loss of energy.
+        void SetBounciness(const float bounciness) noexcept
+        {
+            if (!IsFinite(bounciness))
+            {
+                _bounciness = 0.0F;
+                return;
+            }
+
+            _bounciness = std::clamp(bounciness, 0.0F, 1.0F);
+        }
+
     private:
         // Mass of the rigid body, in kilograms (kg)
         // NOTE: Do not access this field directly, use GetMass() instead
@@ -70,6 +88,12 @@ namespace Guch2D
 
         // Density of the rigid body, in kilograms per square meter (kg/m^2)
         float _density = 0.0F;
+
+        // Bounciness of the rigid body
+        // Bounciness always stays between 0 and 1
+        // A value of 0 indicates no bounce while a value of 1 indicates a perfect bounce with no
+        // loss of energy.
+        float _bounciness = 0.0F;
 
         MassMode _massMode = MassMode::Manual;
     };

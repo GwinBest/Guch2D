@@ -1,5 +1,6 @@
 #include "VelocitySolver.hpp"
 
+#include <algorithm>
 #include <cstdint>
 
 #include "Collision/CollisionBody.hpp"
@@ -52,7 +53,9 @@ namespace
             if (invMassSum == 0.0F)
                 continue;
 
-            float impulseOfForce = (1.0F + 0.0F) * velocityAlongNormal;
+            const float bounciness = std::min(rigidBodyA->GetBounciness(),
+                                              rigidBodyB->GetBounciness());
+            float impulseOfForce = (1.0F + bounciness) * velocityAlongNormal;
             impulseOfForce /= invMassSum;
 
             const Guch2D::Vect impulse = Points.Normal * impulseOfForce;
