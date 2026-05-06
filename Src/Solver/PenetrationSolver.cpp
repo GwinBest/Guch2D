@@ -26,8 +26,8 @@ namespace Guch2D
             if (totalMass == 0.0F)
                 return;
 
-            const Vect correctionA = Points.Normal * Points.Depth * (massB / totalMass);
-            const Vect correctionB = Points.Normal * Points.Depth * (massA / totalMass);
+            const Vect correctionA = Points.Normal * Points.Depth * (massA / totalMass);
+            const Vect correctionB = Points.Normal * Points.Depth * (massB / totalMass);
 
             bodyA->UpdatePosition(correctionA);
             bodyB->UpdatePosition(-correctionB);

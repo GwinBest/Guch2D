@@ -5,6 +5,9 @@
 
 #include "Collision/AABBCollider.hpp"
 #include "Collision/CircleCollider.hpp"
+#include "Dynamics/DynamicRigidBody.hpp"
+#include "Dynamics/KinematicBody.hpp"
+#include "Dynamics/StaticRigidBody.hpp"
 #include "Solver/PenetrationSolver.hpp"
 
 namespace
@@ -48,6 +51,32 @@ namespace
         collider->SetCenterLocal(colliderCenter);
         body->SetCollider(collider);
 
+        return body;
+    }
+
+    [[nodiscard]] std::shared_ptr<Guch2D::StaticRigidBody>
+        MakeStaticCircleRigidBody(const Guch2D::Vect& position, const float radius)
+    {
+        const auto body = std::make_shared<Guch2D::StaticRigidBody>(position);
+        body->SetCollider(std::make_shared<Guch2D::CircleCollider>(radius));
+        return body;
+    }
+
+    [[nodiscard]] std::shared_ptr<Guch2D::KinematicBody>
+        MakeKinematicCircleRigidBody(const Guch2D::Vect& position, const float radius)
+    {
+        const auto body = std::make_shared<Guch2D::KinematicBody>(position);
+        body->SetCollider(std::make_shared<Guch2D::CircleCollider>(radius));
+        return body;
+    }
+
+    [[nodiscard]] std::shared_ptr<Guch2D::DynamicRigidBody>
+        MakeDynamicCircleRigidBody(const Guch2D::Vect& position,
+                                   const float radius,
+                                   const float mass = 1.0F)
+    {
+        const auto body = std::make_shared<Guch2D::DynamicRigidBody>(position, mass);
+        body->SetCollider(std::make_shared<Guch2D::CircleCollider>(radius));
         return body;
     }
 
@@ -959,15 +988,8 @@ namespace
         Guch2D::CollisionWorld world;
         world.AddSolver(std::make_shared<Guch2D::PenetrationSolver>());
 
-        const auto bodyA = std::make_shared<TestCollisionBody>();
-        bodyA->SetPosition({1.0F, 1.0F});
-        bodyA->SetCollider(std::make_shared<Guch2D::CircleCollider>());
-        std::dynamic_pointer_cast<Guch2D::CircleCollider>(bodyA->GetCollider())->SetRadius(2.0F);
-
-        const auto bodyB = std::make_shared<TestCollisionBody>();
-        bodyB->SetPosition({1.0F, 1.0F});
-        bodyB->SetCollider(std::make_shared<Guch2D::CircleCollider>());
-        std::dynamic_pointer_cast<Guch2D::CircleCollider>(bodyB->GetCollider())->SetRadius(2.0F);
+        const auto bodyA = MakeDynamicCircleRigidBody({1.0F, 1.0F}, 2.0F, 1.0F);
+        const auto bodyB = MakeDynamicCircleRigidBody({1.0F, 1.0F}, 2.0F, 1.0F);
 
         std::uint8_t onBeginOverlapCalledACount = 0;
         std::uint8_t onEndOverlapCalledACount = 0;
@@ -988,8 +1010,8 @@ namespace
         EXPECT_EQ(onBeginOverlapCalledBCount, 1);
         EXPECT_EQ(onEndOverlapCalledBCount, 0);
 
-        EXPECT_TRUE((bodyA->GetPosition().x == -1.0F && bodyB->GetPosition().x == 3.0F)
-                    || (bodyA->GetPosition().x == 3.0F && bodyB->GetPosition().x == -1.0F));
+        EXPECT_FLOAT_EQ(bodyA->GetPosition().x + bodyB->GetPosition().x, 2.0F);
+        EXPECT_NEAR(std::abs(bodyA->GetPosition().x - bodyB->GetPosition().x), 4.0F, 1.0e-5F);
         EXPECT_FLOAT_EQ(bodyA->GetPosition().y, 1.0F);
         EXPECT_FLOAT_EQ(bodyB->GetPosition().y, 1.0F);
 
@@ -1000,9 +1022,123 @@ namespace
         EXPECT_EQ(onBeginOverlapCalledBCount, 1);
         EXPECT_EQ(onEndOverlapCalledBCount, 0);
 
-        EXPECT_TRUE((bodyA->GetPosition().x == -1.0F && bodyB->GetPosition().x == 3.0F)
-                    || (bodyA->GetPosition().x == 3.0F && bodyB->GetPosition().x == -1.0F));
+        EXPECT_FLOAT_EQ(bodyA->GetPosition().x + bodyB->GetPosition().x, 2.0F);
+        EXPECT_NEAR(std::abs(bodyA->GetPosition().x - bodyB->GetPosition().x), 4.0F, 1.0e-5F);
         EXPECT_FLOAT_EQ(bodyA->GetPosition().y, 1.0F);
         EXPECT_FLOAT_EQ(bodyB->GetPosition().y, 1.0F);
+    }
+
+    TEST(CollisionWorldTest,
+         StepOverlappingCirclesStaticVsStaticWithAddedPenetrationSolverResolvesPositions)
+    {
+        Guch2D::CollisionWorld world;
+        world.AddSolver(std::make_shared<Guch2D::PenetrationSolver>());
+
+        const auto bodyA = MakeStaticCircleRigidBody({0.0F, 0.0F}, 2.0F);
+        const auto bodyB = MakeStaticCircleRigidBody({3.0F, 0.0F}, 2.0F);
+
+        world.AddObject(bodyA);
+        world.AddObject(bodyB);
+        world.Step();
+
+        EXPECT_FLOAT_EQ(bodyA->GetPosition().x, 0.0F);
+        EXPECT_FLOAT_EQ(bodyA->GetPosition().y, 0.0F);
+        EXPECT_FLOAT_EQ(bodyB->GetPosition().x, 3.0F);
+        EXPECT_FLOAT_EQ(bodyB->GetPosition().y, 0.0F);
+    }
+
+    TEST(CollisionWorldTest,
+         StepOverlappingCirclesStaticVsKinematicWithAddedPenetrationSolverResolvesPositions)
+    {
+        Guch2D::CollisionWorld world;
+        world.AddSolver(std::make_shared<Guch2D::PenetrationSolver>());
+
+        const auto bodyA = MakeStaticCircleRigidBody({0.0F, 0.0F}, 2.0F);
+        const auto bodyB = MakeKinematicCircleRigidBody({3.0F, 0.0F}, 2.0F);
+
+        world.AddObject(bodyA);
+        world.AddObject(bodyB);
+        world.Step();
+
+        EXPECT_FLOAT_EQ(bodyA->GetPosition().x, 0.0F);
+        EXPECT_FLOAT_EQ(bodyA->GetPosition().y, 0.0F);
+        EXPECT_FLOAT_EQ(bodyB->GetPosition().x, 3.0F);
+        EXPECT_FLOAT_EQ(bodyB->GetPosition().y, 0.0F);
+    }
+
+    TEST(CollisionWorldTest,
+         StepOverlappingCirclesStaticVsDynamicWithAddedPenetrationSolverResolvesPositions)
+    {
+        Guch2D::CollisionWorld world;
+        world.AddSolver(std::make_shared<Guch2D::PenetrationSolver>());
+
+        const auto bodyA = MakeStaticCircleRigidBody({0.0F, 0.0F}, 2.0F);
+        const auto bodyB = MakeDynamicCircleRigidBody({3.0F, 0.0F}, 2.0F, 1.0F);
+
+        world.AddObject(bodyA);
+        world.AddObject(bodyB);
+        world.Step();
+
+        EXPECT_FLOAT_EQ(bodyA->GetPosition().x, 0.0F);
+        EXPECT_FLOAT_EQ(bodyA->GetPosition().y, 0.0F);
+        EXPECT_FLOAT_EQ(bodyB->GetPosition().x, 4.0F);
+        EXPECT_FLOAT_EQ(bodyB->GetPosition().y, 0.0F);
+    }
+
+    TEST(CollisionWorldTest,
+         StepOverlappingCirclesKinematicVsDynamicWithAddedPenetrationSolverResolvesPositions)
+    {
+        Guch2D::CollisionWorld world;
+        world.AddSolver(std::make_shared<Guch2D::PenetrationSolver>());
+
+        const auto bodyA = MakeKinematicCircleRigidBody({0.0F, 0.0F}, 2.0F);
+        const auto bodyB = MakeDynamicCircleRigidBody({3.0F, 0.0F}, 2.0F, 1.0F);
+
+        world.AddObject(bodyA);
+        world.AddObject(bodyB);
+        world.Step();
+
+        EXPECT_FLOAT_EQ(bodyA->GetPosition().x, 0.0F);
+        EXPECT_FLOAT_EQ(bodyA->GetPosition().y, 0.0F);
+        EXPECT_FLOAT_EQ(bodyB->GetPosition().x, 4.0F);
+        EXPECT_FLOAT_EQ(bodyB->GetPosition().y, 0.0F);
+    }
+
+    TEST(CollisionWorldTest,
+         StepOverlappingCirclesKinematicVsKinematicWithAddedPenetrationSolverResolvesPositions)
+    {
+        Guch2D::CollisionWorld world;
+        world.AddSolver(std::make_shared<Guch2D::PenetrationSolver>());
+
+        const auto bodyA = MakeKinematicCircleRigidBody({0.0F, 0.0F}, 2.0F);
+        const auto bodyB = MakeKinematicCircleRigidBody({3.0F, 0.0F}, 2.0F);
+
+        world.AddObject(bodyA);
+        world.AddObject(bodyB);
+        world.Step();
+
+        EXPECT_FLOAT_EQ(bodyA->GetPosition().x, 0.0F);
+        EXPECT_FLOAT_EQ(bodyA->GetPosition().y, 0.0F);
+        EXPECT_FLOAT_EQ(bodyB->GetPosition().x, 3.0F);
+        EXPECT_FLOAT_EQ(bodyB->GetPosition().y, 0.0F);
+    }
+
+    TEST(CollisionWorldTest,
+         StepOverlappingCirclesDynamicVsDynamicWithAddedPenetrationSolverResolvesPositions)
+    {
+        Guch2D::CollisionWorld world;
+        world.AddSolver(std::make_shared<Guch2D::PenetrationSolver>());
+
+        const auto bodyA = MakeDynamicCircleRigidBody({0.0F, 0.0F}, 2.0F, 1.0F);
+        const auto bodyB = MakeDynamicCircleRigidBody({3.0F, 0.0F}, 2.0F, 1.0F);
+
+        world.AddObject(bodyA);
+        world.AddObject(bodyB);
+        world.Step();
+
+        EXPECT_FLOAT_EQ(bodyA->GetPosition().x, -0.5F);
+        EXPECT_FLOAT_EQ(bodyA->GetPosition().y, 0.0F);
+        EXPECT_FLOAT_EQ(bodyB->GetPosition().x, 3.5F);
+        EXPECT_FLOAT_EQ(bodyB->GetPosition().y, 0.0F);
     }
 }   // namespace
