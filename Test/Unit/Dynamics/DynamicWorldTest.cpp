@@ -67,7 +67,7 @@ namespace
 
         EXPECT_EQ(body->GetAcceleration(), Guch2D::Vect(6.0F, -2.0F));
         EXPECT_EQ(body->GetVelocity(), Guch2D::Vect(6.0F, -2.0F));
-        EXPECT_EQ(body->GetPosition(), Guch2D::Vect(7.0F, -3.0F));
+        EXPECT_EQ(body->GetPosition(), Guch2D::Vect(4.0F, -2.0F));
         EXPECT_EQ(body->GetForce(), Guch2D::Vect(0.0F, 0.0F));
     }
 
@@ -93,7 +93,7 @@ namespace
 
         EXPECT_EQ(body->GetAcceleration(), Guch2D::Vect(4.5F, 2.0F));
         EXPECT_EQ(body->GetVelocity(), Guch2D::Vect(9.5F, 8.0F));
-        EXPECT_EQ(body->GetPosition(), Guch2D::Vect(12.5F, 12.0F));
+        EXPECT_EQ(body->GetPosition(), Guch2D::Vect(10.25F, 11.0F));
         EXPECT_EQ(body->GetForce(), Guch2D::Vect(0.0F, 0.0F));
     }
 
