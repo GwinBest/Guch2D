@@ -107,6 +107,13 @@ namespace Guch2D
             _linearDamping = damping;
         }
 
+        [[nodiscard]] bool GetSimulatePhysics() const noexcept { return _simulatePhysics; }
+
+        void SetSimulatePhysics(const bool simulatePhysics) noexcept
+        {
+            _simulatePhysics = simulatePhysics;
+        }
+
     public:
         static constexpr Vect DefaultGravityScale = {1.0F, 1.0F};
         static constexpr Vect DefaultLinearDamping = {0.0F, 0.1F};
@@ -128,5 +135,7 @@ namespace Guch2D
         // This is used to simulate air resistance
         // Default values are 0.0F for x and 0.1F for y
         Vect _linearDamping = DefaultLinearDamping;
+
+        bool _simulatePhysics = true;
     };
 }   // namespace Guch2D

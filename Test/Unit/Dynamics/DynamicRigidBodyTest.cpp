@@ -331,4 +331,24 @@ namespace
         body.SetLinearDamping({INFINITY, 0.1F});
         EXPECT_EQ(body.GetLinearDamping(), Guch2D::DynamicRigidBody::DefaultLinearDamping);
     }
+
+    TEST(DynamicRigidBodyTest, DefaultSimulatePhysicsTrue)
+    {
+        Guch2D::DynamicRigidBody body;
+        EXPECT_TRUE(body.GetSimulatePhysics());
+    }
+
+    TEST(DynamicRigidBodyTest, SetSimulatePhysicsTrue)
+    {
+        Guch2D::DynamicRigidBody body;
+        body.SetSimulatePhysics(true);
+        EXPECT_TRUE(body.GetSimulatePhysics());
+    }
+
+    TEST(DynamicRigidBodyTest, SetSimulatePhysicsFalse)
+    {
+        Guch2D::DynamicRigidBody body;
+        body.SetSimulatePhysics(false);
+        EXPECT_FALSE(body.GetSimulatePhysics());
+    }
 }   // namespace

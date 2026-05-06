@@ -359,7 +359,8 @@ private:
         auto collider = std::make_shared<Guch2D::CircleCollider>();
         collider->SetRadius(radius);
 
-        auto body = std::make_shared<Guch2D::KinematicBody>(position);
+        auto body = std::make_shared<Guch2D::DynamicRigidBody>(position, 2.0F);
+        body->SetSimulatePhysics(false);
         body->SetCollider(collider);
         return {body, radius};
     }
@@ -369,7 +370,8 @@ private:
         auto collider = std::make_shared<Guch2D::AABBCollider>();
         collider->SetExtent(extent);
 
-        auto body = std::make_shared<Guch2D::KinematicBody>(position);
+        auto body = std::make_shared<Guch2D::DynamicRigidBody>(position, 2.0F);
+        body->SetSimulatePhysics(false);
         body->SetCollider(collider);
         return {body, extent};
     }
