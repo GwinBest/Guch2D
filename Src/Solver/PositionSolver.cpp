@@ -24,7 +24,7 @@ namespace Guch2D
             const float totalMass = massA + massB;
 
             if (totalMass == 0.0F)
-                return;
+                continue;
 
             const Vect correctionA = Points.Normal * Points.Depth * (massA / totalMass);
             const Vect correctionB = Points.Normal * Points.Depth * (massB / totalMass);
