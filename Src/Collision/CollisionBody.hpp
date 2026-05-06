@@ -63,7 +63,7 @@ namespace Guch2D
         CollisionBody(CollisionBody&&) = default;
         CollisionBody& operator=(const CollisionBody&) = default;
         CollisionBody& operator=(CollisionBody&&) = default;
-        virtual ~CollisionBody() = default;
+        virtual ~CollisionBody() = 0;
 
         [[nodiscard]] const Vect& GetPosition() const noexcept { return _position; }
 
@@ -175,4 +175,6 @@ namespace Guch2D
         CollisionCallback _onBeginOverlap;
         CollisionCallback _onEndOverlap;
     };
+
+    inline CollisionBody::~CollisionBody() = default;
 }   // namespace Guch2D

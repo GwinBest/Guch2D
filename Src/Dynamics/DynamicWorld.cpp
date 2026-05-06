@@ -18,7 +18,8 @@ namespace Guch2D
     {
         for (const auto& object : _objects)
         {
-            if (const auto dynamicRigidBody = std::dynamic_pointer_cast<DynamicRigidBody>(object))
+            const auto dynamicRigidBody = std::dynamic_pointer_cast<DynamicRigidBody>(object);
+            if (dynamicRigidBody && dynamicRigidBody->GetSimulatePhysics())
             {
                 // Apply gravity scaled per-body
                 dynamicRigidBody->AddForce(dynamicRigidBody->GetMass()
@@ -31,7 +32,8 @@ namespace Guch2D
     {
         for (const auto& object : _objects)
         {
-            if (const auto dynamicRigidBody = std::dynamic_pointer_cast<DynamicRigidBody>(object))
+            const auto dynamicRigidBody = std::dynamic_pointer_cast<DynamicRigidBody>(object);
+            if (dynamicRigidBody && dynamicRigidBody->GetSimulatePhysics())
             {
                 const float mass = dynamicRigidBody->GetMass();
                 if (mass == 0.0F)
@@ -43,9 +45,14 @@ namespace Guch2D
 
                 dynamicRigidBody->SetAcceleration(dynamicRigidBody->GetForce() / mass);
 
-                dynamicRigidBody->AddVelocity(dynamicRigidBody->GetAcceleration() * _timeStep);
+                constexpr float halfStepFactor = 0.5F;
+                dynamicRigidBody->AddVelocity(dynamicRigidBody->GetAcceleration() * _timeStep
+                                              * halfStepFactor);
 
                 dynamicRigidBody->UpdatePosition(dynamicRigidBody->GetVelocity() * _timeStep);
+
+                dynamicRigidBody->AddVelocity(dynamicRigidBody->GetAcceleration() * _timeStep
+                                              * halfStepFactor);
 
                 ApplyLinearDamping(dynamicRigidBody);
 

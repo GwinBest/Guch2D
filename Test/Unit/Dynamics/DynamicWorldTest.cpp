@@ -67,8 +67,60 @@ namespace
 
         EXPECT_EQ(body->GetAcceleration(), Guch2D::Vect(6.0F, -2.0F));
         EXPECT_EQ(body->GetVelocity(), Guch2D::Vect(6.0F, -2.0F));
-        EXPECT_EQ(body->GetPosition(), Guch2D::Vect(7.0F, -3.0F));
+        EXPECT_EQ(body->GetPosition(), Guch2D::Vect(4.0F, -2.0F));
         EXPECT_EQ(body->GetForce(), Guch2D::Vect(0.0F, 0.0F));
+    }
+
+    TEST(DynamicWorldTest, StepIntegratesBodyWhenSimulatePhysicsTrue)
+    {
+        Guch2D::DynamicWorld world;
+        world.SetTimeStep(1.0F);
+        world.SetGravity({1.0F, -2.0F});
+
+        const auto body = std::make_shared<Guch2D::DynamicRigidBody>();
+        body->SetSimulatePhysics(true);
+        body->SetMass(2.0F);
+        body->SetPosition({3.0F, 4.0F});
+        body->SetVelocity({5.0F, 6.0F});
+        body->SetAcceleration({0.0F, 0.0F});
+        body->SetForce({7.0F, 8.0F});
+        body->SetGravityScale({1.0F, 1.0F});
+        body->SetLinearDamping({0.0F, 0.0F});
+
+        world.AddObject(body);
+
+        world.Step();
+
+        EXPECT_EQ(body->GetAcceleration(), Guch2D::Vect(4.5F, 2.0F));
+        EXPECT_EQ(body->GetVelocity(), Guch2D::Vect(9.5F, 8.0F));
+        EXPECT_EQ(body->GetPosition(), Guch2D::Vect(10.25F, 11.0F));
+        EXPECT_EQ(body->GetForce(), Guch2D::Vect(0.0F, 0.0F));
+    }
+
+    TEST(DynamicWorldTest, StepSkipsBodyWhenSimulatePhysicsFalse)
+    {
+        Guch2D::DynamicWorld world;
+        world.SetTimeStep(1.0F);
+        world.SetGravity({1.0F, -2.0F});
+
+        const auto body = std::make_shared<Guch2D::DynamicRigidBody>();
+        body->SetSimulatePhysics(false);
+        body->SetMass(2.0F);
+        body->SetPosition({3.0F, 4.0F});
+        body->SetVelocity({5.0F, 6.0F});
+        body->SetAcceleration({1.0F, 2.0F});
+        body->SetForce({7.0F, 8.0F});
+        body->SetGravityScale({1.0F, 1.0F});
+        body->SetLinearDamping({0.0F, 0.0F});
+
+        world.AddObject(body);
+
+        world.Step();
+
+        EXPECT_EQ(body->GetAcceleration(), Guch2D::Vect(1.0F, 2.0F));
+        EXPECT_EQ(body->GetVelocity(), Guch2D::Vect(5.0F, 6.0F));
+        EXPECT_EQ(body->GetPosition(), Guch2D::Vect(3.0F, 4.0F));
+        EXPECT_EQ(body->GetForce(), Guch2D::Vect(7.0F, 8.0F));
     }
 
     TEST(DynamicWorldTest, StepSkipsIntegrationForZeroMass)

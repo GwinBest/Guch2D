@@ -12,7 +12,7 @@
 
 #include "Collision/AABBCollider.hpp"
 #include "Collision/CircleCollider.hpp"
-#include "Solver/PenetrationVectorSolver.hpp"
+#include "Solver/PositionSolver.hpp"
 #include "Utils/Logger.hpp"
 
 namespace

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "glm/detail/func_geometric.inl"
+
 #include <cmath>
 #include <glm/vec2.hpp>
 
@@ -37,5 +39,10 @@ namespace Guch2D
         }
 
         return {vect.x / length, vect.y / length};   // NOLINT(*-pro-type-union-access)
+    }
+
+    [[nodiscard]] inline float VectDot(const Vect& vect1, const Vect& vect2) noexcept
+    {
+        return glm::dot(vect1, vect2);
     }
 }   // namespace Guch2D
