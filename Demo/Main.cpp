@@ -383,9 +383,8 @@ private:
         _staticBodies.push_back(
             CreateStaticAABB({worldWidth * 0.5f, worldHeight - halfFloorThickness},
                              {worldWidth * 0.5f, halfFloorThickness}));
-        _staticBodies.push_back(
-            CreateStaticAABB({worldWidth * 0.5f, halfFloorThickness},
-                             {worldWidth * 0.5f, halfFloorThickness}));
+        _staticBodies.push_back(CreateStaticAABB({worldWidth * 0.5f, halfFloorThickness},
+                                                 {worldWidth * 0.5f, halfFloorThickness}));
         _staticBodies.push_back(CreateStaticAABB({halfWallThickness, worldHeight * 0.5f},
                                                  {halfWallThickness, worldHeight * 0.5f}));
         _staticBodies.push_back(
