@@ -45,9 +45,13 @@ namespace Guch2D
 
                 dynamicRigidBody->SetAcceleration(dynamicRigidBody->GetForce() / mass);
 
-                dynamicRigidBody->AddVelocity(dynamicRigidBody->GetAcceleration() * _timeStep);
+                dynamicRigidBody->AddVelocity(dynamicRigidBody->GetAcceleration() * _timeStep
+                                              * 0.5F);
 
                 dynamicRigidBody->UpdatePosition(dynamicRigidBody->GetVelocity() * _timeStep);
+
+                dynamicRigidBody->AddVelocity(dynamicRigidBody->GetAcceleration() * _timeStep
+                                              * 0.5F);
 
                 ApplyLinearDamping(dynamicRigidBody);
 
