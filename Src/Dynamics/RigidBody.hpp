@@ -31,7 +31,7 @@ namespace Guch2D
         RigidBody(RigidBody&&) = default;
         RigidBody& operator=(const RigidBody&) = default;
         RigidBody& operator=(RigidBody&&) = default;
-        ~RigidBody() override = default;
+        ~RigidBody() override = 0;
 
         [[nodiscard]] float GetMass() const noexcept
         {
@@ -73,4 +73,6 @@ namespace Guch2D
 
         MassMode _massMode = MassMode::Manual;
     };
+
+    inline RigidBody::~RigidBody() = default;
 }   // namespace Guch2D
