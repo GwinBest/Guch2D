@@ -91,4 +91,32 @@ namespace
         EXPECT_FLOAT_EQ(normalized.x, 0.0F);
         EXPECT_FLOAT_EQ(normalized.y, 0.0F);
     }
+
+    TEST(VectorTest, VectDotPositive)
+    {
+        constexpr Guch2D::Vect vect1(1.0F, 2.0F);
+        constexpr Guch2D::Vect vect2(3.0F, 4.0F);
+        EXPECT_FLOAT_EQ(Guch2D::VectDot(vect1, vect2), 11.0F);
+    }
+
+    TEST(VectorTest, VectDotOrthogonal)
+    {
+        constexpr Guch2D::Vect vect1(1.0F, 0.0F);
+        constexpr Guch2D::Vect vect2(0.0F, 5.0F);
+        EXPECT_FLOAT_EQ(Guch2D::VectDot(vect1, vect2), 0.0F);
+    }
+
+    TEST(VectorTest, VectDotOppositeDirection)
+    {
+        constexpr Guch2D::Vect vect1(2.0F, -3.0F);
+        constexpr Guch2D::Vect vect2(-4.0F, 6.0F);
+        EXPECT_FLOAT_EQ(Guch2D::VectDot(vect1, vect2), -26.0F);
+    }
+
+    TEST(VectorTest, VectDotWithZeroVector)
+    {
+        constexpr Guch2D::Vect vect1(0.0F, 0.0F);
+        constexpr Guch2D::Vect vect2(4.0F, -7.0F);
+        EXPECT_FLOAT_EQ(Guch2D::VectDot(vect1, vect2), 0.0F);
+    }
 }   // namespace
