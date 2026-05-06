@@ -5,7 +5,7 @@
 #include <vector>
 
 #include "Collision/CollisionBody.hpp"
-#include "Solver/PenetrationVectorSolver.hpp"
+#include "Solver/PenetrationSolver.hpp"
 
 namespace Guch2D
 {

@@ -5,7 +5,7 @@
 
 #include "Collision/AABBCollider.hpp"
 #include "Collision/CircleCollider.hpp"
-#include "Solver/PenetrationVectorSolver.hpp"
+#include "Solver/PenetrationSolver.hpp"
 
 namespace
 {
@@ -852,7 +852,7 @@ namespace
     TEST(CollisionWorldTest, AddSolver)
     {
         Guch2D::CollisionWorld world;
-        const auto solver = std::make_shared<Guch2D::PenetrationVectorSolver>();
+        const auto solver = std::make_shared<Guch2D::PenetrationSolver>();
         world.AddSolver(solver);
         EXPECT_EQ(world.GetSolversCount(), 1U);
     }
@@ -860,7 +860,7 @@ namespace
     TEST(CollisionWorldTest, AddDuplicateSolver)
     {
         Guch2D::CollisionWorld world;
-        const auto solver = std::make_shared<Guch2D::PenetrationVectorSolver>();
+        const auto solver = std::make_shared<Guch2D::PenetrationSolver>();
         world.AddSolver(solver);
         world.AddSolver(solver);
         EXPECT_EQ(world.GetSolversCount(), 1U);
@@ -869,7 +869,7 @@ namespace
     TEST(CollisonWorldTest, AddSolverNullptr)
     {
         Guch2D::CollisionWorld world;
-        const std::shared_ptr<Guch2D::PenetrationVectorSolver> solver = nullptr;
+        const std::shared_ptr<Guch2D::PenetrationSolver> solver = nullptr;
         world.AddSolver(solver);
         EXPECT_EQ(world.GetSolversCount(), 0U);
     }
@@ -877,7 +877,7 @@ namespace
     TEST(CollisionWorldTest, RemoveSolver)
     {
         Guch2D::CollisionWorld world;
-        const auto solver = std::make_shared<Guch2D::PenetrationVectorSolver>();
+        const auto solver = std::make_shared<Guch2D::PenetrationSolver>();
         world.AddSolver(solver);
         world.RemoveSolver(solver);
         EXPECT_EQ(world.GetSolversCount(), 0U);
@@ -886,7 +886,7 @@ namespace
     TEST(CollisionWorldTest, RemoveDuplicateSolver)
     {
         Guch2D::CollisionWorld world;
-        const auto solver = std::make_shared<Guch2D::PenetrationVectorSolver>();
+        const auto solver = std::make_shared<Guch2D::PenetrationSolver>();
         world.AddSolver(solver);
         world.RemoveSolver(solver);
         world.RemoveSolver(solver);
@@ -896,7 +896,7 @@ namespace
     TEST(CollisionWorldTest, RemoveSolverNullptr)
     {
         Guch2D::CollisionWorld world;
-        const std::shared_ptr<Guch2D::PenetrationVectorSolver> solver = nullptr;
+        const std::shared_ptr<Guch2D::PenetrationSolver> solver = nullptr;
         world.AddSolver(solver);
         world.RemoveSolver(solver);
         EXPECT_EQ(world.GetSolversCount(), 0U);
@@ -905,7 +905,7 @@ namespace
     TEST(CollisionWorldTest, StepTwoCirclesWithAddedPenetrationSolverResolvesPositions)
     {
         Guch2D::CollisionWorld world;
-        world.AddSolver(std::make_shared<Guch2D::PenetrationVectorSolver>());
+        world.AddSolver(std::make_shared<Guch2D::PenetrationSolver>());
 
         const auto bodyA = std::make_shared<TestCollisionBody>();
         bodyA->SetPosition({0.0F, 0.0F});
@@ -957,7 +957,7 @@ namespace
     TEST(CollisionWorldTest, StepTwoCirclesSamePositionWithAddedPenetrationSolverResolvesPositions)
     {
         Guch2D::CollisionWorld world;
-        world.AddSolver(std::make_shared<Guch2D::PenetrationVectorSolver>());
+        world.AddSolver(std::make_shared<Guch2D::PenetrationSolver>());
 
         const auto bodyA = std::make_shared<TestCollisionBody>();
         bodyA->SetPosition({1.0F, 1.0F});

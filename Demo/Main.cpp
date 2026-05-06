@@ -409,7 +409,7 @@ private:
     {
         _world = Guch2D::DynamicWorld();
         _world.AddObject(_probe.body);
-        _world.AddSolver(std::make_shared<Guch2D::PenetrationVectorSolver>());
+        _world.AddSolver(std::make_shared<Guch2D::PenetrationSolver>());
     }
 
     void DrawCircle(sf::RenderWindow& window,
