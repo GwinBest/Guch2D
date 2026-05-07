@@ -226,4 +226,90 @@ namespace
         body.SetBounciness(INFINITY);
         EXPECT_FLOAT_EQ(body.GetBounciness(), 0.0F);
     }
+
+    TEST(RigidBodyTest, DefaultStaticFrictionIsZero)
+    {
+        const TestableRigidBody body;
+        EXPECT_FLOAT_EQ(body.GetStaticFriction(), 0.0F);
+    }
+
+    TEST(RigidBodyTest, SetStaticFrictionWithinRange)
+    {
+        TestableRigidBody body;
+        body.SetStaticFriction(0.65F);
+        EXPECT_FLOAT_EQ(body.GetStaticFriction(), 0.65F);
+    }
+
+    TEST(RigidBodyTest, SetStaticFrictionBelowRangeClampsToZero)
+    {
+        TestableRigidBody body;
+        body.SetStaticFriction(-0.25F);
+        EXPECT_FLOAT_EQ(body.GetStaticFriction(), 0.0F);
+    }
+
+    TEST(RigidBodyTest, SetStaticFrictionAboveRangeClampsToOne)
+    {
+        TestableRigidBody body;
+        body.SetStaticFriction(1.75F);
+        EXPECT_FLOAT_EQ(body.GetStaticFriction(), 1.0F);
+    }
+
+    TEST(RigidBodyTest, SetStaticFrictionNaNResetsToZero)
+    {
+        TestableRigidBody body;
+        body.SetStaticFriction(0.5F);
+        body.SetStaticFriction(NAN);
+        EXPECT_FLOAT_EQ(body.GetStaticFriction(), 0.0F);
+    }
+
+    TEST(RigidBodyTest, SetStaticFrictionInfinityResetsToZero)
+    {
+        TestableRigidBody body;
+        body.SetStaticFriction(0.5F);
+        body.SetStaticFriction(INFINITY);
+        EXPECT_FLOAT_EQ(body.GetStaticFriction(), 0.0F);
+    }
+
+    TEST(RigidBodyTest, DefaultDynamicFrictionIsZero)
+    {
+        const TestableRigidBody body;
+        EXPECT_FLOAT_EQ(body.GetDynamicFriction(), 0.0F);
+    }
+
+    TEST(RigidBodyTest, SetDynamicFrictionWithinRange)
+    {
+        TestableRigidBody body;
+        body.SetDynamicFriction(0.4F);
+        EXPECT_FLOAT_EQ(body.GetDynamicFriction(), 0.4F);
+    }
+
+    TEST(RigidBodyTest, SetDynamicFrictionBelowRangeClampsToZero)
+    {
+        TestableRigidBody body;
+        body.SetDynamicFriction(-0.25F);
+        EXPECT_FLOAT_EQ(body.GetDynamicFriction(), 0.0F);
+    }
+
+    TEST(RigidBodyTest, SetDynamicFrictionAboveRangeClampsToOne)
+    {
+        TestableRigidBody body;
+        body.SetDynamicFriction(1.75F);
+        EXPECT_FLOAT_EQ(body.GetDynamicFriction(), 1.0F);
+    }
+
+    TEST(RigidBodyTest, SetDynamicFrictionNaNResetsToZero)
+    {
+        TestableRigidBody body;
+        body.SetDynamicFriction(0.5F);
+        body.SetDynamicFriction(NAN);
+        EXPECT_FLOAT_EQ(body.GetDynamicFriction(), 0.0F);
+    }
+
+    TEST(RigidBodyTest, SetDynamicFrictionInfinityResetsToZero)
+    {
+        TestableRigidBody body;
+        body.SetDynamicFriction(0.5F);
+        body.SetDynamicFriction(INFINITY);
+        EXPECT_FLOAT_EQ(body.GetDynamicFriction(), 0.0F);
+    }
 }   // namespace
