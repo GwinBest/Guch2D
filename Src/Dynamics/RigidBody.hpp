@@ -81,6 +81,38 @@ namespace Guch2D
             _bounciness = std::clamp(bounciness, 0.0F, 1.0F);
         }
 
+        [[nodiscard]] float GetStaticFriction() const noexcept { return _staticFriction; }
+
+        // The friction used when an object is laying still on a surface. Usually a value from 0
+        // to 1. A value of zero feels like ice, a value of 1 will make it very hard to get the
+        // object moving.
+        void SetStaticFriction(const float staticFriction) noexcept
+        {
+            if (!IsFinite(staticFriction))
+            {
+                _staticFriction = 0.0F;
+                return;
+            }
+
+            _staticFriction = std::clamp(staticFriction, 0.0F, 1.0F);
+        }
+
+        [[nodiscard]] float GetDynamicFriction() const noexcept { return _dynamicFriction; }
+
+        // The friction used when already moving. Usually a value from 0 to 1. A value of zero
+        // feels like ice, a value of 1 will make it come to rest very quickly unless a lot of force
+        // or gravity pushes the object.
+        void SetDynamicFriction(const float dynamicFriction) noexcept
+        {
+            if (!IsFinite(dynamicFriction))
+            {
+                _dynamicFriction = 0.0F;
+                return;
+            }
+
+            _dynamicFriction = std::clamp(dynamicFriction, 0.0F, 1.0F);
+        }
+
     private:
         // Mass of the rigid body, in kilograms (kg)
         // NOTE: Do not access this field directly, use GetMass() instead
@@ -94,6 +126,16 @@ namespace Guch2D
         // A value of 0 indicates no bounce while a value of 1 indicates a perfect bounce with no
         // loss of energy (if friction and linear damping is 0).
         float _bounciness = 0.0F;
+
+        // The friction used when an object is laying still on a surface. Usually a value from 0
+        // to 1. A value of zero feels like ice, a value of 1 will make it very hard to get the
+        // object moving.
+        float _staticFriction = 0.0F;
+
+        // The friction used when already moving. Usually a value from 0 to 1. A value of zero
+        // feels like ice, a value of 1 will make it come to rest very quickly unless a lot of force
+        // or gravity pushes the object.
+        float _dynamicFriction = 0.0F;
 
         MassMode _massMode = MassMode::Manual;
     };

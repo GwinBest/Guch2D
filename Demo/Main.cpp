@@ -209,6 +209,7 @@ public:
         _spawnShape = SpawnShape::Circle;
         _spawnMass = BallMass;
         _spawnBounciness = DefaultSpawnBounciness;
+        _spawnFriction = DefaultSpawnFriction;
         _spawnCircleRadius = BallRadiusPixels / _pixelsPerMeter;
         _spawnAABBExtent = {0.12f, 0.12f};
 
@@ -229,6 +230,8 @@ public:
             case sf::Keyboard::Key::A:   AdjustSpawnMass(-MassStep); break;
             case sf::Keyboard::Key::Z:   AdjustSpawnBounciness(BouncinessStep); break;
             case sf::Keyboard::Key::X:   AdjustSpawnBounciness(-BouncinessStep); break;
+            case sf::Keyboard::Key::F:   AdjustSpawnFriction(FrictionStep); break;
+            case sf::Keyboard::Key::G:   AdjustSpawnFriction(-FrictionStep); break;
             case sf::Keyboard::Key::W:   AdjustSpawnPrimarySize(SizeStep); break;
             case sf::Keyboard::Key::S:   AdjustSpawnPrimarySize(-SizeStep); break;
             case sf::Keyboard::Key::E:   AdjustSpawnAABBHeight(SizeStep); break;
@@ -322,6 +325,7 @@ public:
         lines.emplace_back("TAB: TOGGLE SPAWN TYPE");
         lines.emplace_back("Q/A: MASS UP/DOWN");
         lines.emplace_back("Z/X: BOUNCINESS UP/DOWN");
+        lines.emplace_back("F/G: FRICTION UP/DOWN");
         lines.emplace_back("W/S: WIDTH OR RADIUS UP/DOWN");
         lines.emplace_back("E/D: AABB HEIGHT UP/DOWN");
         lines.emplace_back("C: CLEAR DYNAMIC BODIES");
@@ -329,6 +333,7 @@ public:
         lines.emplace_back("SPAWN: " + std::string(SpawnShapeName()));
         lines.emplace_back("MASS: " + std::to_string(_spawnMass));
         lines.emplace_back("BOUNCINESS: " + std::to_string(_spawnBounciness));
+        lines.emplace_back("FRICTION: " + std::to_string(_spawnFriction));
         lines.emplace_back("BALL RADIUS: " + std::to_string(_spawnCircleRadius));
         lines.emplace_back("AABB X: " + std::to_string(_spawnAABBExtent.x));
         lines.emplace_back("AABB Y: " + std::to_string(_spawnAABBExtent.y));
@@ -365,6 +370,8 @@ private:
         auto body = std::make_shared<Guch2D::StaticRigidBody>(position);
         body->SetCollider(collider);
         body->SetBounciness(1.0f);
+        body->SetStaticFriction(_spawnFriction);
+        body->SetDynamicFriction(_spawnFriction);
         return {body, extent};
     }
 
@@ -438,6 +445,23 @@ private:
         }
     }
 
+    void AdjustSpawnFriction(const float delta)
+    {
+        _spawnFriction = std::clamp(_spawnFriction + delta, MinSpawnFriction, MaxSpawnFriction);
+
+        for (const auto& dynamicBody : _dynamicBodies)
+        {
+            dynamicBody.body->SetStaticFriction(_spawnFriction);
+            dynamicBody.body->SetDynamicFriction(_spawnFriction);
+        }
+
+        for (const auto& staticBody : _staticBodies)
+        {
+            staticBody.body->SetStaticFriction(_spawnFriction);
+            staticBody.body->SetDynamicFriction(_spawnFriction);
+        }
+    }
+
     void AdjustSpawnPrimarySize(const float delta)
     {
         if (_spawnShape == SpawnShape::Circle)
@@ -479,6 +503,8 @@ private:
         auto body = std::make_shared<Guch2D::DynamicRigidBody>(position, _spawnMass);
         body->SetCollider(collider);
         body->SetBounciness(_spawnBounciness);
+        body->SetStaticFriction(_spawnFriction);
+        body->SetDynamicFriction(_spawnFriction);
         body->SetVelocity(launchVelocity);
 
         _world.AddObject(body);
@@ -498,6 +524,8 @@ private:
         auto body = std::make_shared<Guch2D::DynamicRigidBody>(position, _spawnMass);
         body->SetCollider(collider);
         body->SetBounciness(_spawnBounciness);
+        body->SetStaticFriction(_spawnFriction);
+        body->SetDynamicFriction(_spawnFriction);
         body->SetVelocity(launchVelocity);
 
         _world.AddObject(body);
@@ -552,6 +580,10 @@ private:
     static constexpr float MaxSpawnBounciness = 1.0f;
     static constexpr float DefaultSpawnBounciness = 0.5f;
     static constexpr float BouncinessStep = 0.05f;
+    static constexpr float MinSpawnFriction = 0.0f;
+    static constexpr float MaxSpawnFriction = 1.0f;
+    static constexpr float DefaultSpawnFriction = 1.0f;
+    static constexpr float FrictionStep = 0.05f;
     static constexpr float MinSpawnRadius = 0.04f;
     static constexpr float MaxSpawnRadius = 0.8f;
     static constexpr float MinSpawnExtent = 0.04f;
@@ -569,6 +601,7 @@ private:
     SpawnShape _spawnShape = SpawnShape::Circle;
     float _spawnMass = BallMass;
     float _spawnBounciness = DefaultSpawnBounciness;
+    float _spawnFriction = DefaultSpawnFriction;
     float _spawnCircleRadius = BallRadiusPixels / PixelsPerMeter;
     Guch2D::Vect _spawnAABBExtent = {0.12f, 0.12f};
     float _accumulator = 0.0f;
