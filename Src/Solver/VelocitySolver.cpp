@@ -9,12 +9,13 @@
 
 namespace
 {
-    void CalculateNormalImpulse(const Guch2D::CollisionPoints& points,
-                                const std::shared_ptr<Guch2D::DynamicRigidBody>& dynamicBodyA,
-                                const std::shared_ptr<Guch2D::DynamicRigidBody>& dynamicBodyB,
-                                const float invMassA,
-                                const float invMassB,
-                                const float impulseOfForce)
+    void CalculateNormalImpulse(
+        const Guch2D::CollisionPoints& points,
+        const std::shared_ptr<Guch2D::DynamicRigidBody>& dynamicBodyA,
+        const std::shared_ptr<Guch2D::DynamicRigidBody>& dynamicBodyB,
+        const float invMassA,
+        const float invMassB,
+        const float impulseOfForce)   // NOLINT(bugprone-easily-swappable-parameters)
     {
         const Guch2D::Vect impulse = points.Normal * impulseOfForce;
 
@@ -29,14 +30,15 @@ namespace
         }
     }
 
-    void CalculateTangentialImpulse(const Guch2D::CollisionPoints& points,
-                                    const std::shared_ptr<Guch2D::RigidBody>& rigidBodyA,
-                                    const std::shared_ptr<Guch2D::RigidBody>& rigidBodyB,
-                                    const Guch2D::Vect deltaVelocity,
-                                    const float velocityAlongNormal,
-                                    const float impulseOfForce,
-                                    const float invMassA,
-                                    const float invMassB)
+    void CalculateTangentialImpulse(
+        const Guch2D::CollisionPoints& points,
+        const std::shared_ptr<Guch2D::RigidBody>& rigidBodyA,
+        const std::shared_ptr<Guch2D::RigidBody>& rigidBodyB,
+        const Guch2D::Vect deltaVelocity,
+        const float velocityAlongNormal,
+        const float impulseOfForce,
+        const float invMassA,
+        const float invMassB)   // NOLINT(bugprone-easily-swappable-parameters)
     {
         Guch2D::Vect tangent = deltaVelocity - (points.Normal * velocityAlongNormal);
 
