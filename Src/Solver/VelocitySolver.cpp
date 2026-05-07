@@ -9,6 +9,33 @@
 
 namespace
 {
+    void CalculateNormalImpulse(const Guch2D::CollisionPoints& Points,
+                                const std::shared_ptr<Guch2D::RigidBody>& rigidBodyA,
+                                const std::shared_ptr<Guch2D::RigidBody>& rigidBodyB,
+                                const std::shared_ptr<Guch2D::DynamicRigidBody>& dynamicBodyA,
+                                const std::shared_ptr<Guch2D::DynamicRigidBody>& dynamicBodyB,
+                                const float velocityAlongNormal,
+                                const float invMassA,
+                                const float invMassB,
+                                const float invMassSum)
+    {
+        const float bounciness = std::min(rigidBodyA->GetBounciness(), rigidBodyB->GetBounciness());
+        float impulseOfForce = (1.0F + bounciness) * velocityAlongNormal;
+        impulseOfForce /= invMassSum;
+
+        const Guch2D::Vect impulse = Points.Normal * impulseOfForce;
+
+        if (dynamicBodyA)
+        {
+            dynamicBodyA->AddVelocity(impulse * invMassA);
+        }
+
+        if (dynamicBodyB)
+        {
+            dynamicBodyB->AddVelocity(-(impulse * invMassB));
+        }
+    }
+
     void SingleVelocityIteration(const std::vector<Guch2D::Collision>& collisions)
     {
         for (const auto& [BodyA, BodyB, Points] : collisions)
@@ -53,22 +80,15 @@ namespace
             if (invMassSum == 0.0F)
                 continue;
 
-            const float bounciness = std::min(rigidBodyA->GetBounciness(),
-                                              rigidBodyB->GetBounciness());
-            float impulseOfForce = (1.0F + bounciness) * velocityAlongNormal;
-            impulseOfForce /= invMassSum;
-
-            const Guch2D::Vect impulse = Points.Normal * impulseOfForce;
-
-            if (dynamicBodyA)
-            {
-                dynamicBodyA->AddVelocity(impulse * invMassA);
-            }
-
-            if (dynamicBodyB)
-            {
-                dynamicBodyB->AddVelocity(-(impulse * invMassB));
-            }
+            CalculateNormalImpulse(Points,
+                                   rigidBodyA,
+                                   rigidBodyB,
+                                   dynamicBodyA,
+                                   dynamicBodyB,
+                                   velocityAlongNormal,
+                                   invMassA,
+                                   invMassB,
+                                   invMassSum);
         }
     }
 }   // namespace
