@@ -9,14 +9,14 @@
 
 namespace
 {
-    void CalculateNormalImpulse(const Guch2D::CollisionPoints& Points,
+    void CalculateNormalImpulse(const Guch2D::CollisionPoints& points,
                                 const std::shared_ptr<Guch2D::DynamicRigidBody>& dynamicBodyA,
                                 const std::shared_ptr<Guch2D::DynamicRigidBody>& dynamicBodyB,
                                 const float invMassA,
                                 const float invMassB,
                                 const float impulseOfForce)
     {
-        const Guch2D::Vect impulse = Points.Normal * impulseOfForce;
+        const Guch2D::Vect impulse = points.Normal * impulseOfForce;
 
         if (dynamicBodyA)
         {
@@ -29,23 +29,22 @@ namespace
         }
     }
 
-    void CalculateTangentialImpulse(const Guch2D::CollisionPoints& Points,
+    void CalculateTangentialImpulse(const Guch2D::CollisionPoints& points,
                                     const std::shared_ptr<Guch2D::RigidBody>& rigidBodyA,
                                     const std::shared_ptr<Guch2D::RigidBody>& rigidBodyB,
                                     const Guch2D::Vect deltaVelocity,
                                     const float velocityAlongNormal,
-                                    const float invMassSum,
                                     const float impulseOfForce,
                                     const float invMassA,
                                     const float invMassB)
     {
-        Guch2D::Vect tangent = deltaVelocity - (Points.Normal * velocityAlongNormal);
+        Guch2D::Vect tangent = deltaVelocity - (points.Normal * velocityAlongNormal);
 
         if (Guch2D::VectLength(tangent) > 0.0F)
             tangent = Guch2D::VectNormalize(tangent);
 
         float tangentialImpulseMagnitude = Guch2D::VectDot(deltaVelocity, tangent);
-        tangentialImpulseMagnitude /= invMassSum;
+        tangentialImpulseMagnitude /= invMassA + invMassB;
 
         const float muStatic = std::sqrt(rigidBodyA->GetStaticFriction()
                                          * rigidBodyB->GetStaticFriction());
@@ -137,7 +136,6 @@ namespace
                                        rigidBodyB,
                                        deltaVelocity,
                                        velocityAlongNormal,
-                                       invMassSum,
                                        impulseOfForce,
                                        invMassA,
                                        invMassB);
