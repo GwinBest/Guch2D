@@ -13,8 +13,8 @@ namespace
         const Guch2D::CollisionPoints& points,
         const std::shared_ptr<Guch2D::DynamicRigidBody>& dynamicBodyA,
         const std::shared_ptr<Guch2D::DynamicRigidBody>& dynamicBodyB,
-        const float invMassA,
-        const float invMassB,
+        const float invMassA,         // NOLINT(bugprone-easily-swappable-parameters)
+        const float invMassB,         // NOLINT(bugprone-easily-swappable-parameters)
         const float impulseOfForce)   // NOLINT(bugprone-easily-swappable-parameters)
     {
         const Guch2D::Vect impulse = points.Normal * impulseOfForce;
@@ -35,10 +35,10 @@ namespace
         const std::shared_ptr<Guch2D::RigidBody>& rigidBodyA,
         const std::shared_ptr<Guch2D::RigidBody>& rigidBodyB,
         const Guch2D::Vect deltaVelocity,
-        const float velocityAlongNormal,
-        const float impulseOfForce,
-        const float invMassA,
-        const float invMassB)   // NOLINT(bugprone-easily-swappable-parameters)
+        const float velocityAlongNormal,   // NOLINT(bugprone-easily-swappable-parameters)
+        const float impulseOfForce,        // NOLINT(bugprone-easily-swappable-parameters)
+        const float invMassA,              // NOLINT(bugprone-easily-swappable-parameters)
+        const float invMassB)              // NOLINT(bugprone-easily-swappable-parameters)
     {
         Guch2D::Vect tangent = deltaVelocity - (points.Normal * velocityAlongNormal);
 
