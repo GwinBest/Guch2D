@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Collision/CollisionBody.hpp"
 #include "Solver/Solver.hpp"
 
 namespace Guch2D
@@ -15,5 +16,8 @@ namespace Guch2D
         ~VelocitySolver() override = default;
 
         void Solve(const std::vector<Collision>& collisions) override;
+
+    private:
+        std::vector<Collision> _previousCollisions;
     };
 }   // namespace Guch2D

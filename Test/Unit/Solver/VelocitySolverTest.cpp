@@ -49,6 +49,57 @@ namespace
         EXPECT_FLOAT_EQ(dynamicBody->GetVelocity().y, 3.0F);
     }
 
+    TEST(VelocitySolverTest, PreservesBounceWithoutWarmStartingRestitutionNextFrame)
+    {
+        const auto dynamicBody = std::make_shared<Guch2D::DynamicRigidBody>();
+        dynamicBody->SetMass(2.0F);
+        dynamicBody->SetVelocity({0.0F, -5.0F});
+        dynamicBody->SetBounciness(0.5F);
+
+        const auto staticBody = std::make_shared<Guch2D::StaticRigidBody>();
+        staticBody->SetBounciness(0.5F);
+
+        Guch2D::Collision collision;
+        collision.BodyA = dynamicBody;
+        collision.BodyB = staticBody;
+        collision.Points.Normal = {0.0F, 1.0F};
+        collision.Points.HasCollision = true;
+
+        Guch2D::VelocitySolver solver;
+        solver.Solve({collision});
+
+        EXPECT_FLOAT_EQ(dynamicBody->GetVelocity().x, 0.0F);
+        EXPECT_FLOAT_EQ(dynamicBody->GetVelocity().y, 2.5F);
+
+        solver.Solve({collision});
+
+        EXPECT_FLOAT_EQ(dynamicBody->GetVelocity().x, 0.0F);
+        EXPECT_FLOAT_EQ(dynamicBody->GetVelocity().y, 2.5F);
+    }
+
+    TEST(VelocitySolverTest, SmallRestitutionVelocitiesSettleWithoutMicroBounce)
+    {
+        const auto dynamicBody = std::make_shared<Guch2D::DynamicRigidBody>();
+        dynamicBody->SetMass(2.0F);
+        dynamicBody->SetVelocity({0.0F, -0.5F});
+        dynamicBody->SetBounciness(1.0F);
+
+        const auto staticBody = std::make_shared<Guch2D::StaticRigidBody>();
+        staticBody->SetBounciness(1.0F);
+
+        Guch2D::Collision collision;
+        collision.BodyA = dynamicBody;
+        collision.BodyB = staticBody;
+        collision.Points.Normal = {0.0F, 1.0F};
+        collision.Points.HasCollision = true;
+
+        Guch2D::VelocitySolver solver;
+        solver.Solve({collision});
+
+        EXPECT_FLOAT_EQ(dynamicBody->GetVelocity().x, 0.0F);
+        EXPECT_FLOAT_EQ(dynamicBody->GetVelocity().y, 0.0F);
+    }
+
     TEST(VelocitySolverTest, TangentialImpulseCancelsTangentialVelocityWithHighStaticFriction)
     {
         const auto dynamicBody = std::make_shared<Guch2D::DynamicRigidBody>();
