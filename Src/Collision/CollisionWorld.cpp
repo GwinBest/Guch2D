@@ -144,8 +144,8 @@ namespace
         const Guch2D::Vect directionAB = distance > 0.0F ? delta / distance
                                                          : Guch2D::Vect {1.0F, 0.0F};
 
-        collisionPoints.ContactPoints.front() = centerA + directionAB * radiusA;
-        collisionPoints.ContactPoints.back() = centerB - directionAB * radiusB;
+        collisionPoints.ContactPoints.front().Position = centerA + directionAB * radiusA;
+        collisionPoints.ContactPoints.back().Position = centerB - directionAB * radiusB;
         collisionPoints.Normal = -directionAB;
         collisionPoints.Depth = std::max(0.0F, radiusSum - distance);
 
@@ -193,10 +193,10 @@ namespace
             const float minOverlapY = std::max(centerA.y - extentA.y, centerB.y - extentB.y);
             const float maxOverlapY = std::min(centerA.y + extentA.y, centerB.y + extentB.y);
 
-            collisionPoints.ContactPoints.front() = {centerA.x + (extentA.x * direction),
-                                                     minOverlapY};
-            collisionPoints.ContactPoints.back() = {centerB.x - (extentB.x * direction),
-                                                    maxOverlapY};
+            collisionPoints.ContactPoints.front().Position = {centerA.x + (extentA.x * direction),
+                                                              minOverlapY};
+            collisionPoints.ContactPoints.back().Position = {centerB.x - (extentB.x * direction),
+                                                             maxOverlapY};
         }
         else
         {
@@ -207,10 +207,10 @@ namespace
             const float minOverlapX = std::max(centerA.x - extentA.x, centerB.x - extentB.x);
             const float maxOverlapX = std::min(centerA.x + extentA.x, centerB.x + extentB.x);
 
-            collisionPoints.ContactPoints.front() = {minOverlapX,
-                                                     centerA.y + (extentA.y * direction)};
-            collisionPoints.ContactPoints.back() = {maxOverlapX,
-                                                    centerB.y - (extentB.y * direction)};
+            collisionPoints.ContactPoints.front().Position = {minOverlapX,
+                                                              centerA.y + (extentA.y * direction)};
+            collisionPoints.ContactPoints.back().Position = {maxOverlapX,
+                                                             centerB.y - (extentB.y * direction)};
         }
 
         return collisionPoints;
@@ -253,8 +253,9 @@ namespace
             const float distance = std::sqrt(distanceSquared);
             collisionPoints.Normal = delta / distance;
             collisionPoints.Depth = std::max(0.0F, radiusB - distance);
-            collisionPoints.ContactPoints.front() = closestPoint;
-            collisionPoints.ContactPoints.back() = centerB + (collisionPoints.Normal * radiusB);
+            collisionPoints.ContactPoints.front().Position = closestPoint;
+            collisionPoints.ContactPoints.back().Position = centerB
+                                                          + (collisionPoints.Normal * radiusB);
             return collisionPoints;
         }
 
@@ -267,31 +268,32 @@ namespace
 
         float minDistanceToFace = distanceToLeft;
         collisionPoints.Normal = {1.0F, 0.0F};
-        collisionPoints.ContactPoints.front() = {minX, centerB.y};
+        collisionPoints.ContactPoints.front().Position = {minX, centerB.y};
 
         if (distanceToRight < minDistanceToFace)
         {
             minDistanceToFace = distanceToRight;
             collisionPoints.Normal = {-1.0F, 0.0F};
-            collisionPoints.ContactPoints.front() = {maxX, centerB.y};
+            collisionPoints.ContactPoints.front().Position = {maxX, centerB.y};
         }
 
         if (distanceToBottom < minDistanceToFace)
         {
             minDistanceToFace = distanceToBottom;
             collisionPoints.Normal = {0.0F, 1.0F};
-            collisionPoints.ContactPoints.front() = {centerB.x, minY};
+            collisionPoints.ContactPoints.front().Position = {centerB.x, minY};
         }
 
         if (distanceToTop < minDistanceToFace)
         {
             minDistanceToFace = distanceToTop;
             collisionPoints.Normal = {0.0F, -1.0F};
-            collisionPoints.ContactPoints.front() = {centerB.x, maxY};
+            collisionPoints.ContactPoints.front().Position = {centerB.x, maxY};
         }
 
         collisionPoints.Depth = radiusB + minDistanceToFace;
-        collisionPoints.ContactPoints.back() = centerB + (collisionPoints.Normal * radiusB);
+        collisionPoints.ContactPoints.back().Position = centerB
+                                                      + (collisionPoints.Normal * radiusB);
 
         return collisionPoints;
     }

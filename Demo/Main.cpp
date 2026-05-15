@@ -885,11 +885,12 @@ private:
                 continue;
             }
 
-            DrawContactPoint(window, pair.points.ContactPoints.front(), pointAColor);
-            DrawContactPoint(window, pair.points.ContactPoints.back(), pointBColor);
+            DrawContactPoint(window, pair.points.ContactPoints.front().Position, pointAColor);
+            DrawContactPoint(window, pair.points.ContactPoints.back().Position, pointBColor);
             DrawArrow(window,
-                      pair.points.ContactPoints.front(),
-                      pair.points.ContactPoints.back() - pair.points.ContactPoints.front(),
+                      pair.points.ContactPoints.front().Position,
+                      pair.points.ContactPoints.back().Position
+                          - pair.points.ContactPoints.front().Position,
                       normalColor);
         }
     }
