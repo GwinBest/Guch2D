@@ -5,9 +5,9 @@
 #include <cstdint>
 #include <memory>
 #include <optional>
-#include <unordered_set>
 #include <string>
 #include <string_view>
+#include <unordered_set>
 #include <vector>
 
 #include "Collision/AABBCollider.hpp"
@@ -298,8 +298,8 @@ public:
 
             for (const auto& staticBody : _staticBodies)
             {
-                const auto points =
-                    CollisionWorldInspector::Check(_dynamicBodies[i].body, staticBody.body);
+                const auto points = CollisionWorldInspector::Check(_dynamicBodies[i].body,
+                                                                   staticBody.body);
                 if (!points.HasCollision)
                     continue;
 
@@ -322,10 +322,10 @@ public:
         {
             const bool isColliding = collidingBodies.contains(body.body.get());
             const bool isSleeping = !body.body->IsAwake();
-            const sf::Color fillColor =
-                isColliding ? sf::Color(230, 70, 70, 185)
-                            : (body.shape == SpawnShape::Circle ? sf::Color(70, 220, 120, 180)
-                                                                : sf::Color(80, 170, 255, 180));
+            const sf::Color fillColor = isColliding ? sf::Color(230, 70, 70, 185)
+                                                    : (body.shape == SpawnShape::Circle
+                                                           ? sf::Color(70, 220, 120, 180)
+                                                           : sf::Color(80, 170, 255, 180));
             const sf::Color outlineColor = isSleeping ? sf::Color(255, 210, 70, 245)
                                                       : sf::Color(255, 255, 255, 220);
 
@@ -359,12 +359,10 @@ public:
 
     void BuildOverlay(std::vector<std::string>& lines) const override
     {
-        const size_t sleepingBodies =
-            static_cast<size_t>(std::count_if(_dynamicBodies.begin(),
-                                              _dynamicBodies.end(),
-                                              [](const DynamicBodyVisual& dynamicBody) {
-                                                  return !dynamicBody.body->IsAwake();
-                                              }));
+        const size_t sleepingBodies = static_cast<size_t>(std::count_if(
+            _dynamicBodies.begin(),
+            _dynamicBodies.end(),
+            [](const DynamicBodyVisual& dynamicBody) { return !dynamicBody.body->IsAwake(); }));
 
         lines.emplace_back("LEFT MOUSE DRAG: SPAWN BODY");
         lines.emplace_back("TAB: TOGGLE SPAWN TYPE");

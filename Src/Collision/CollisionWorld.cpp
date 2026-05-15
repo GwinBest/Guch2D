@@ -100,14 +100,14 @@ namespace
         const auto dynamicRigidBodyB = GetDynamicRigidBody(objectB);
 
         const bool hasWakeImpact = HasWakeImpact(objectA, objectB, collisionPoints);
-        if (dynamicRigidBodyA && !dynamicRigidBodyA->IsAwake()
-            && CanWakeSleepingRigidBody(objectB) && hasWakeImpact)
+        if (dynamicRigidBodyA && !dynamicRigidBodyA->IsAwake() && CanWakeSleepingRigidBody(objectB)
+            && hasWakeImpact)
         {
             dynamicRigidBodyA->SetAwake(true);
         }
 
-        if (dynamicRigidBodyB && !dynamicRigidBodyB->IsAwake()
-            && CanWakeSleepingRigidBody(objectA) && hasWakeImpact)
+        if (dynamicRigidBodyB && !dynamicRigidBodyB->IsAwake() && CanWakeSleepingRigidBody(objectA)
+            && hasWakeImpact)
         {
             dynamicRigidBodyB->SetAwake(true);
         }

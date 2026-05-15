@@ -366,8 +366,9 @@ namespace
         world.AddSolver(std::make_shared<Guch2D::VelocitySolver>());
         world.AddSolver(std::make_shared<Guch2D::PositionSolver>());
 
-        const auto dynamicBody = std::make_shared<Guch2D::DynamicRigidBody>(Guch2D::Vect {0.0F, -1.0F},
-                                                                            10.0F);
+        const auto dynamicBody = std::make_shared<Guch2D::DynamicRigidBody>(
+            Guch2D::Vect {0.0F, -1.0F},
+            10.0F);
         dynamicBody->SetCollider(std::make_shared<Guch2D::CircleCollider>(0.1F));
         dynamicBody->SetBounciness(0.5F);
         dynamicBody->SetStaticFriction(1.0F);
@@ -398,13 +399,13 @@ namespace
         world.AddSolver(std::make_shared<Guch2D::PositionSolver>());
 
         const auto bottom = std::make_shared<Guch2D::DynamicRigidBody>(Guch2D::Vect {0.0F, -1.0F},
-                                                                        1.0F);
+                                                                       1.0F);
         bottom->SetCollider(std::make_shared<Guch2D::CircleCollider>(1.0F));
         bottom->SetLinearDamping({0.0F, 0.0F});
         bottom->SetAwake(false);
 
         const auto top = std::make_shared<Guch2D::DynamicRigidBody>(Guch2D::Vect {0.0F, -3.0F},
-                                                                     1.0F);
+                                                                    1.0F);
         top->SetCollider(std::make_shared<Guch2D::CircleCollider>(1.0F));
         top->SetLinearDamping({0.0F, 0.0F});
         top->SetAwake(false);
