@@ -12,11 +12,27 @@ namespace Guch2D
     class CollisionBody;
     class CollisionWorld;
 
+    struct ContactPoint final
+    {
+        Vect Position;
+        float AccumulatedNormalImpulse = 0.0F;
+        float AccumulatedTangentImpulse = 0.0F;
+
+        bool operator==(const ContactPoint& other) const
+        {
+            return this->Position == other.Position
+                && this->AccumulatedNormalImpulse == other.AccumulatedNormalImpulse
+                && this->AccumulatedTangentImpulse == other.AccumulatedTangentImpulse;
+        }
+    };
+
     struct CollisionPoints final
     {
-        std::array<Vect, 2> ContactPoints = {};
-        Vect Normal = {0.0F, 0.0F};   // ContactPoints.back() - ContactPoints.front() normalized
-        float Depth = 0.0F;           // Length of ContactPoints.back() - ContactPoints.front()
+        std::array<ContactPoint, 2> ContactPoints = {};
+        Vect Normal = {
+            0.0F,
+            0.0F};   // ContactPoints.back().Position - ContactPoints.front().Position normalized
+        float Depth = 0.0F;   // Length of ContactPoints.back() - ContactPoints.front()
         bool HasCollision = false;
     };
 

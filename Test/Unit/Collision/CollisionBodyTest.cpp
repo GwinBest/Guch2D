@@ -315,6 +315,70 @@ namespace
         SUCCEED();
     }
 
+    TEST(ContactPointTest, EqualsWhenAllFieldsMatch)
+    {
+        const Guch2D::ContactPoint contactPointA {
+            {1.0F, 2.0F},
+            3.0F,
+            4.0F
+        };
+        const Guch2D::ContactPoint contactPointB {
+            {1.0F, 2.0F},
+            3.0F,
+            4.0F
+        };
+
+        EXPECT_TRUE(contactPointA == contactPointB);
+    }
+
+    TEST(ContactPointTest, NotEqualsWhenPositionDiffers)
+    {
+        const Guch2D::ContactPoint contactPointA {
+            {1.0F, 2.0F},
+            3.0F,
+            4.0F
+        };
+        const Guch2D::ContactPoint contactPointB {
+            {2.0F, 2.0F},
+            3.0F,
+            4.0F
+        };
+
+        EXPECT_FALSE(contactPointA == contactPointB);
+    }
+
+    TEST(ContactPointTest, NotEqualsWhenAccumulatedNormalImpulseDiffers)
+    {
+        const Guch2D::ContactPoint contactPointA {
+            {1.0F, 2.0F},
+            3.0F,
+            4.0F
+        };
+        const Guch2D::ContactPoint contactPointB {
+            {1.0F, 2.0F},
+            5.0F,
+            4.0F
+        };
+
+        EXPECT_FALSE(contactPointA == contactPointB);
+    }
+
+    TEST(ContactPointTest, NotEqualsWhenAccumulatedTangentImpulseDiffers)
+    {
+        const Guch2D::ContactPoint contactPointA {
+            {1.0F, 2.0F},
+            3.0F,
+            4.0F
+        };
+        const Guch2D::ContactPoint contactPointB {
+            {1.0F, 2.0F},
+            3.0F,
+            5.0F
+        };
+
+        EXPECT_FALSE(contactPointA == contactPointB);
+    }
+
     TEST(CollisionStrcutTest, EqualsOperator)
     {
         Guch2D::Collision collisionA;
