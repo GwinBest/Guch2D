@@ -34,6 +34,8 @@ namespace Guch2D
     private:
         void ApplyGravity() const noexcept;
 
+        void UpdateSleepStates() const noexcept;
+
         void MoveBodies() const noexcept;
 
         void ApplyLinearDamping(

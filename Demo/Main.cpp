@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <memory>
 #include <optional>
+#include <unordered_set>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -279,6 +280,34 @@ public:
 
     void Render(sf::RenderWindow& window) override
     {
+        std::unordered_set<const Guch2D::CollisionBody*> collidingBodies;
+        collidingBodies.reserve(_dynamicBodies.size());
+
+        for (size_t i = 0; i < _dynamicBodies.size(); ++i)
+        {
+            for (size_t j = i + 1; j < _dynamicBodies.size(); ++j)
+            {
+                const auto points = CollisionWorldInspector::Check(_dynamicBodies[i].body,
+                                                                   _dynamicBodies[j].body);
+                if (!points.HasCollision)
+                    continue;
+
+                collidingBodies.insert(_dynamicBodies[i].body.get());
+                collidingBodies.insert(_dynamicBodies[j].body.get());
+            }
+
+            for (const auto& staticBody : _staticBodies)
+            {
+                const auto points =
+                    CollisionWorldInspector::Check(_dynamicBodies[i].body, staticBody.body);
+                if (!points.HasCollision)
+                    continue;
+
+                collidingBodies.insert(_dynamicBodies[i].body.get());
+                break;
+            }
+        }
+
         for (const auto& staticBody : _staticBodies)
         {
             DrawAABB(window,
@@ -291,13 +320,22 @@ public:
 
         for (const auto& body : _dynamicBodies)
         {
+            const bool isColliding = collidingBodies.contains(body.body.get());
+            const bool isSleeping = !body.body->IsAwake();
+            const sf::Color fillColor =
+                isColliding ? sf::Color(230, 70, 70, 185)
+                            : (body.shape == SpawnShape::Circle ? sf::Color(70, 220, 120, 180)
+                                                                : sf::Color(80, 170, 255, 180));
+            const sf::Color outlineColor = isSleeping ? sf::Color(255, 210, 70, 245)
+                                                      : sf::Color(255, 255, 255, 220);
+
             if (body.shape == SpawnShape::Circle)
             {
                 DrawCircle(window,
                            body.body->GetColliderCenterWorld(),
                            body.radius,
-                           sf::Color(70, 220, 120, 180),
-                           sf::Color(255, 255, 255, 220),
+                           fillColor,
+                           outlineColor,
                            1.0f);
                 continue;
             }
@@ -305,8 +343,8 @@ public:
             DrawAABB(window,
                      body.body->GetColliderCenterWorld(),
                      body.extent,
-                     sf::Color(80, 170, 255, 180),
-                     sf::Color(255, 255, 255, 220),
+                     fillColor,
+                     outlineColor,
                      1.0f);
         }
 
@@ -321,6 +359,13 @@ public:
 
     void BuildOverlay(std::vector<std::string>& lines) const override
     {
+        const size_t sleepingBodies =
+            static_cast<size_t>(std::count_if(_dynamicBodies.begin(),
+                                              _dynamicBodies.end(),
+                                              [](const DynamicBodyVisual& dynamicBody) {
+                                                  return !dynamicBody.body->IsAwake();
+                                              }));
+
         lines.emplace_back("LEFT MOUSE DRAG: SPAWN BODY");
         lines.emplace_back("TAB: TOGGLE SPAWN TYPE");
         lines.emplace_back("Q/A: MASS UP/DOWN");
@@ -338,6 +383,7 @@ public:
         lines.emplace_back("AABB X: " + std::to_string(_spawnAABBExtent.x));
         lines.emplace_back("AABB Y: " + std::to_string(_spawnAABBExtent.y));
         lines.emplace_back("DYNAMIC BODIES: " + std::to_string(_dynamicBodies.size()));
+        lines.emplace_back("SLEEPING BODIES: " + std::to_string(sleepingBodies));
     }
 
 private:

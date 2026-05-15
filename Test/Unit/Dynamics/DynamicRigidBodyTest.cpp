@@ -15,6 +15,8 @@ namespace
         EXPECT_EQ(body.GetVelocity(), Guch2D::Vect(0.0F, 0.0F));
         EXPECT_EQ(body.GetGravityScale(), Guch2D::DynamicRigidBody::DefaultGravityScale);
         EXPECT_EQ(body.GetLinearDamping(), Guch2D::DynamicRigidBody::DefaultLinearDamping);
+        EXPECT_TRUE(body.IsAwake());
+        EXPECT_FLOAT_EQ(body.GetSleepTime(), 0.0F);
     }
 
     TEST(DynamicRigidBodyTest, PositionConstructor)
@@ -29,6 +31,8 @@ namespace
         EXPECT_EQ(body.GetVelocity(), Guch2D::Vect(0.0F, 0.0F));
         EXPECT_EQ(body.GetGravityScale(), Guch2D::DynamicRigidBody::DefaultGravityScale);
         EXPECT_EQ(body.GetLinearDamping(), Guch2D::DynamicRigidBody::DefaultLinearDamping);
+        EXPECT_TRUE(body.IsAwake());
+        EXPECT_FLOAT_EQ(body.GetSleepTime(), 0.0F);
     }
 
     TEST(DymanicRigidBodyTest, PositionAndMassConstructor)
@@ -44,6 +48,8 @@ namespace
         EXPECT_EQ(body.GetVelocity(), Guch2D::Vect(0.0F, 0.0F));
         EXPECT_EQ(body.GetGravityScale(), Guch2D::DynamicRigidBody::DefaultGravityScale);
         EXPECT_EQ(body.GetLinearDamping(), Guch2D::DynamicRigidBody::DefaultLinearDamping);
+        EXPECT_TRUE(body.IsAwake());
+        EXPECT_FLOAT_EQ(body.GetSleepTime(), 0.0F);
     }
 
     TEST(DynamicRigidBodyTest, SetForcePositive)
@@ -350,5 +356,80 @@ namespace
         Guch2D::DynamicRigidBody body;
         body.SetSimulatePhysics(false);
         EXPECT_FALSE(body.GetSimulatePhysics());
+    }
+
+    TEST(DynamicRigidBodyTest, SetAwakeFalseClearsMotionState)
+    {
+        Guch2D::DynamicRigidBody body;
+        body.SetForce({1.0F, 2.0F});
+        body.SetAcceleration({3.0F, 4.0F});
+        body.SetVelocity({5.0F, 6.0F});
+        body.AddSleepTime(0.25F);
+
+        body.SetAwake(false);
+
+        EXPECT_FALSE(body.IsAwake());
+        EXPECT_EQ(body.GetForce(), Guch2D::Vect(0.0F, 0.0F));
+        EXPECT_EQ(body.GetAcceleration(), Guch2D::Vect(0.0F, 0.0F));
+        EXPECT_EQ(body.GetVelocity(), Guch2D::Vect(0.0F, 0.0F));
+        EXPECT_FLOAT_EQ(body.GetSleepTime(), 0.0F);
+    }
+
+    TEST(DynamicRigidBodyTest, SleepTimeAccumulatesAndResets)
+    {
+        Guch2D::DynamicRigidBody body;
+
+        body.AddSleepTime(0.25F);
+        body.AddSleepTime(0.5F);
+
+        EXPECT_FLOAT_EQ(body.GetSleepTime(), 0.75F);
+
+        body.ResetSleepTime();
+
+        EXPECT_FLOAT_EQ(body.GetSleepTime(), 0.0F);
+    }
+
+    TEST(DynamicRigidBodyTest, SetForceWakesBody)
+    {
+        Guch2D::DynamicRigidBody body;
+        body.SetAwake(false);
+
+        body.SetForce({1.0F, 2.0F});
+
+        EXPECT_TRUE(body.IsAwake());
+        EXPECT_EQ(body.GetForce(), Guch2D::Vect(1.0F, 2.0F));
+    }
+
+    TEST(DynamicRigidBodyTest, AddForceWakesBody)
+    {
+        Guch2D::DynamicRigidBody body;
+        body.SetAwake(false);
+
+        body.AddForce({1.0F, 2.0F});
+
+        EXPECT_TRUE(body.IsAwake());
+        EXPECT_EQ(body.GetForce(), Guch2D::Vect(1.0F, 2.0F));
+    }
+
+    TEST(DynamicRigidBodyTest, SetVelocityWakesBody)
+    {
+        Guch2D::DynamicRigidBody body;
+        body.SetAwake(false);
+
+        body.SetVelocity({1.0F, 2.0F});
+
+        EXPECT_TRUE(body.IsAwake());
+        EXPECT_EQ(body.GetVelocity(), Guch2D::Vect(1.0F, 2.0F));
+    }
+
+    TEST(DynamicRigidBodyTest, AddVelocityWakesBody)
+    {
+        Guch2D::DynamicRigidBody body;
+        body.SetAwake(false);
+
+        body.AddVelocity({1.0F, 2.0F});
+
+        EXPECT_TRUE(body.IsAwake());
+        EXPECT_EQ(body.GetVelocity(), Guch2D::Vect(1.0F, 2.0F));
     }
 }   // namespace

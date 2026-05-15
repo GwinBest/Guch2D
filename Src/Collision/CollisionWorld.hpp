@@ -96,6 +96,8 @@ namespace Guch2D
             _broadPhaseType = broadPhaseType;
         }
 
+        [[nodiscard]] static CollisionPoints CheckCollisions(ObjectType bodyA, ObjectType bodyB);
+
     protected:
         std::vector<Collision> BroadPhase();
 
@@ -105,8 +107,6 @@ namespace Guch2D
         void InvokeEndOverlap() const;
 
         void SolveCollisions() const;
-
-        [[nodiscard]] static CollisionPoints CheckCollisions(ObjectType bodyA, ObjectType bodyB);
 
     private:
         std::vector<Collision> SweepAndPrune();

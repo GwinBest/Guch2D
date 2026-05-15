@@ -12,6 +12,9 @@
 
 #include "Collision/AABBCollider.hpp"
 #include "Collision/CircleCollider.hpp"
+#include "Dynamics/DynamicRigidBody.hpp"
+#include "Dynamics/StaticRigidBody.hpp"
+#include "Math/Vector.hpp"
 #include "Solver/PositionSolver.hpp"
 #include "Utils/Logger.hpp"
 
@@ -20,6 +23,95 @@ namespace
     using SpatialBucket = std::vector<Guch2D::CollisionWorld::ObjectType>;
     using SpatialGridMap = std::unordered_map<size_t, SpatialBucket>;
     constexpr size_t SpatialHashingCalculateHash(int64_t cellX, int64_t cellY) noexcept;
+
+    [[nodiscard]] std::shared_ptr<Guch2D::DynamicRigidBody>
+        GetDynamicRigidBody(const Guch2D::CollisionWorld::ObjectType& object)
+    {
+        return std::dynamic_pointer_cast<Guch2D::DynamicRigidBody>(object);
+    }
+
+    [[nodiscard]] bool IsSleepingDynamicRigidBody(const Guch2D::CollisionWorld::ObjectType& object)
+    {
+        const auto dynamicRigidBody = GetDynamicRigidBody(object);
+        return dynamicRigidBody && !dynamicRigidBody->IsAwake();
+    }
+
+    [[nodiscard]] bool CanWakeSleepingRigidBody(const Guch2D::CollisionWorld::ObjectType& object)
+    {
+        if (!object)
+            return false;
+
+        if (const auto dynamicRigidBody = GetDynamicRigidBody(object))
+            return dynamicRigidBody->IsAwake();
+
+        return !std::dynamic_pointer_cast<Guch2D::StaticRigidBody>(object);
+    }
+
+    [[nodiscard]] Guch2D::Vect GetWakeVelocity(const Guch2D::CollisionWorld::ObjectType& object)
+    {
+        if (const auto dynamicRigidBody = GetDynamicRigidBody(object);
+            dynamicRigidBody && dynamicRigidBody->IsAwake())
+        {
+            return dynamicRigidBody->GetVelocity();
+        }
+
+        return {0.0F, 0.0F};
+    }
+
+    [[nodiscard]] bool HasWakeImpact(const Guch2D::CollisionWorld::ObjectType& objectA,
+                                     const Guch2D::CollisionWorld::ObjectType& objectB,
+                                     const Guch2D::CollisionPoints& collisionPoints)
+    {
+        constexpr float WakePenetrationDepthThreshold = 0.05F;
+        constexpr float WakeApproachSpeedThreshold = 0.2F;
+
+        if (collisionPoints.Depth >= WakePenetrationDepthThreshold)
+            return true;
+
+        const Guch2D::Vect velocityA = GetWakeVelocity(objectA);
+        const Guch2D::Vect velocityB = GetWakeVelocity(objectB);
+        const float approachSpeed = Guch2D::VectDot(velocityB - velocityA, collisionPoints.Normal);
+        return approachSpeed >= WakeApproachSpeedThreshold;
+    }
+
+    [[nodiscard]] bool ShouldProcessCollisionPair(const Guch2D::CollisionWorld::ObjectType& objectA,
+                                                  const Guch2D::CollisionWorld::ObjectType& objectB)
+    {
+        if (!objectA || !objectB || objectA == objectB)
+            return false;
+
+        const bool objectAIsSleeping = IsSleepingDynamicRigidBody(objectA);
+        const bool objectBIsSleeping = IsSleepingDynamicRigidBody(objectB);
+        if (!objectAIsSleeping && !objectBIsSleeping)
+            return true;
+
+        if (objectAIsSleeping && objectBIsSleeping)
+            return false;
+
+        return objectAIsSleeping ? CanWakeSleepingRigidBody(objectB)
+                                 : CanWakeSleepingRigidBody(objectA);
+    }
+
+    void WakeSleepingRigidBodies(const Guch2D::CollisionWorld::ObjectType& objectA,
+                                 const Guch2D::CollisionWorld::ObjectType& objectB,
+                                 const Guch2D::CollisionPoints& collisionPoints)
+    {
+        const auto dynamicRigidBodyA = GetDynamicRigidBody(objectA);
+        const auto dynamicRigidBodyB = GetDynamicRigidBody(objectB);
+
+        const bool hasWakeImpact = HasWakeImpact(objectA, objectB, collisionPoints);
+        if (dynamicRigidBodyA && !dynamicRigidBodyA->IsAwake()
+            && CanWakeSleepingRigidBody(objectB) && hasWakeImpact)
+        {
+            dynamicRigidBodyA->SetAwake(true);
+        }
+
+        if (dynamicRigidBodyB && !dynamicRigidBodyB->IsAwake()
+            && CanWakeSleepingRigidBody(objectA) && hasWakeImpact)
+        {
+            dynamicRigidBodyB->SetAwake(true);
+        }
+    }
 
     [[nodiscard]] std::pair<int64_t, int64_t>
         GetSpatialCellFromPosition(const Guch2D::Vect& position,
@@ -47,7 +139,7 @@ namespace
         {
             for (size_t j = i + 1; j < bucket.size(); ++j)
             {
-                if (bucket.at(i) == bucket.at(j))
+                if (!ShouldProcessCollisionPair(bucket.at(i), bucket.at(j)))
                     continue;
 
                 possibleCollisions.emplace_back(bucket.at(i), bucket.at(j));
@@ -63,7 +155,7 @@ namespace
         {
             for (const auto& objectB : bucketB)
             {
-                if (objectA == objectB)
+                if (!ShouldProcessCollisionPair(objectA, objectB))
                     continue;
 
                 possibleCollisions.emplace_back(objectA, objectB);
@@ -363,15 +455,18 @@ namespace Guch2D
     {
         for (const auto& collision : possibleCollisions)
         {
-            const auto collisionPoints = CheckCollisions(collision.BodyA.lock(),
-                                                         collision.BodyB.lock());
+            const auto bodyA = collision.BodyA.lock();
+            const auto bodyB = collision.BodyB.lock();
+            if (!ShouldProcessCollisionPair(bodyA, bodyB))
+                continue;
+
+            const auto collisionPoints = CheckCollisions(bodyA, bodyB);
 
             if (!collisionPoints.HasCollision)
                 continue;
 
-            _collisions.emplace_back(collision.BodyA.lock(),
-                                     collision.BodyB.lock(),
-                                     collisionPoints);
+            WakeSleepingRigidBodies(bodyA, bodyB, collisionPoints);
+            _collisions.emplace_back(bodyA, bodyB, collisionPoints);
         }
 
         std::erase_if(_collisions,
@@ -510,6 +605,9 @@ namespace Guch2D
                 if (_objects.at(i)->GetColliderRightBorderWorld().x
                     < _objects.at(j)->GetColliderLeftBorderWorld().x)
                     break;
+
+                if (!ShouldProcessCollisionPair(_objects.at(i), _objects.at(j)))
+                    continue;
 
                 possibleCollisions.emplace_back(_objects.at(i), _objects.at(j));
             }
