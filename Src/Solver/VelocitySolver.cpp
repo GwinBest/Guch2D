@@ -26,6 +26,12 @@ namespace
         if (!rigidBody)
             return 0.0F;
 
+        if (const auto dynamicBody = std::dynamic_pointer_cast<Guch2D::DynamicRigidBody>(rigidBody);
+            dynamicBody && !dynamicBody->IsAwake())
+        {
+            return 0.0F;
+        }
+
         const float mass = rigidBody->GetMass();
         return mass == 0.0F ? 0.0F : 1.0F / mass;
     }
@@ -49,10 +55,12 @@ namespace
         const auto dynamicBodyA = std::dynamic_pointer_cast<Guch2D::DynamicRigidBody>(bodyA);
         const auto dynamicBodyB = std::dynamic_pointer_cast<Guch2D::DynamicRigidBody>(bodyB);
 
-        const Guch2D::Vect velocityA = dynamicBodyA ? dynamicBodyA->GetVelocity()
-                                                    : Guch2D::Vect {0.0F, 0.0F};
-        const Guch2D::Vect velocityB = dynamicBodyB ? dynamicBodyB->GetVelocity()
-                                                    : Guch2D::Vect {0.0F, 0.0F};
+        const Guch2D::Vect velocityA = dynamicBodyA && dynamicBodyA->IsAwake()
+                                         ? dynamicBodyA->GetVelocity()
+                                         : Guch2D::Vect {0.0F, 0.0F};
+        const Guch2D::Vect velocityB = dynamicBodyB && dynamicBodyB->IsAwake()
+                                         ? dynamicBodyB->GetVelocity()
+                                         : Guch2D::Vect {0.0F, 0.0F};
 
         return Guch2D::VectDot(velocityB - velocityA, normal);
     }
@@ -69,12 +77,12 @@ namespace
         const Guch2D::Vect impulse = (points.Normal * normalImpulseMagnitude)
                                    + (GetTangent(points.Normal) * tangentImpulseMagnitude);
 
-        if (dynamicBodyA)
+        if (dynamicBodyA && dynamicBodyA->IsAwake())
         {
             dynamicBodyA->AddVelocity(impulse * invMassA);
         }
 
-        if (dynamicBodyB)
+        if (dynamicBodyB && dynamicBodyB->IsAwake())
         {
             dynamicBodyB->AddVelocity(-(impulse * invMassB));
         }
@@ -299,9 +307,9 @@ namespace
                 continue;
             }
 
-            auto& collision = collisions.at(index);
-            const auto bodyA = collision.BodyA.lock();
-            const auto bodyB = collision.BodyB.lock();
+            auto& [BodyA, BodyB, Points] = collisions.at(index);
+            const auto bodyA = BodyA.lock();
+            const auto bodyB = BodyB.lock();
 
             if (!bodyA || !bodyB)
                 continue;
@@ -317,7 +325,7 @@ namespace
             if (invMassSum == 0.0F)
                 continue;
 
-            auto& contact = GetSolverContact(collision.Points);
+            auto& contact = GetSolverContact(Points);
             const float restitutionImpulse = restitutionVelocityBiases.at(index) / invMassSum;
 
             contact.AccumulatedNormalImpulse = std::max(
@@ -358,10 +366,12 @@ namespace
             const auto dynamicBodyA = std::dynamic_pointer_cast<Guch2D::DynamicRigidBody>(bodyA);
             const auto dynamicBodyB = std::dynamic_pointer_cast<Guch2D::DynamicRigidBody>(bodyB);
 
-            const Guch2D::Vect velocityA = dynamicBodyA ? dynamicBodyA->GetVelocity()
-                                                        : Guch2D::Vect {0.0F, 0.0F};
-            const Guch2D::Vect velocityB = dynamicBodyB ? dynamicBodyB->GetVelocity()
-                                                        : Guch2D::Vect {0.0F, 0.0F};
+            const Guch2D::Vect velocityA = dynamicBodyA && dynamicBodyA->IsAwake()
+                                             ? dynamicBodyA->GetVelocity()
+                                             : Guch2D::Vect {0.0F, 0.0F};
+            const Guch2D::Vect velocityB = dynamicBodyB && dynamicBodyB->IsAwake()
+                                             ? dynamicBodyB->GetVelocity()
+                                             : Guch2D::Vect {0.0F, 0.0F};
 
             const auto deltaVelocity = velocityB - velocityA;
 

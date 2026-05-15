@@ -149,4 +149,31 @@ namespace
         EXPECT_FLOAT_EQ(dynamicBody->GetVelocity().x, 0.5F);
         EXPECT_FLOAT_EQ(dynamicBody->GetVelocity().y, 0.0F);
     }
+
+    TEST(VelocitySolverTest, TreatsAsleepDynamicBodyAsStatic)
+    {
+        const auto awakeBody = std::make_shared<Guch2D::DynamicRigidBody>();
+        awakeBody->SetMass(2.0F);
+        awakeBody->SetVelocity({-5.0F, 0.0F});
+
+        const auto asleepBody = std::make_shared<Guch2D::DynamicRigidBody>();
+        asleepBody->SetMass(2.0F);
+        asleepBody->SetAwake(false);
+
+        Guch2D::Collision collision;
+        collision.BodyA = awakeBody;
+        collision.BodyB = asleepBody;
+        collision.Points.Normal = {1.0F, 0.0F};
+        collision.Points.HasCollision = true;
+
+        Guch2D::VelocitySolver solver;
+        solver.Solve({collision});
+
+        EXPECT_TRUE(awakeBody->IsAwake());
+        EXPECT_FALSE(asleepBody->IsAwake());
+        EXPECT_FLOAT_EQ(awakeBody->GetVelocity().x, 0.0F);
+        EXPECT_FLOAT_EQ(awakeBody->GetVelocity().y, 0.0F);
+        EXPECT_FLOAT_EQ(asleepBody->GetVelocity().x, 0.0F);
+        EXPECT_FLOAT_EQ(asleepBody->GetVelocity().y, 0.0F);
+    }
 }   // namespace

@@ -21,7 +21,11 @@ namespace
     class CollisionWorldTest final : public Guch2D::CollisionWorld
     {
     public:
+        using Guch2D::CollisionWorld::BroadPhase;
         using Guch2D::CollisionWorld::CheckCollisions;
+        using Guch2D::CollisionWorld::NarrowPhase;
+
+        [[nodiscard]] size_t GetCollisionsCount() const noexcept { return _collisions.size(); }
     };
 
     [[nodiscard]] std::shared_ptr<Guch2D::CollisionBody>
@@ -226,6 +230,100 @@ namespace
 
         EXPECT_EQ(onBeginOverlapCalledACount, 1);
         EXPECT_EQ(onBeginOverlapCalledBCount, 1);
+    }
+
+    TEST(CollisionWorldTest, SweepAndPruneSkipsSleepingDynamicBodyAgainstStaticBody)
+    {
+        CollisionWorldTest world;
+
+        const auto sleepingBody = MakeDynamicCircleRigidBody({0.0F, 0.0F}, 2.0F);
+        sleepingBody->SetAwake(false);
+        const auto staticBody = MakeStaticCircleRigidBody({1.0F, 0.0F}, 2.0F);
+
+        world.AddObject(sleepingBody);
+        world.AddObject(staticBody);
+
+        EXPECT_TRUE(world.BroadPhase().empty());
+
+        Guch2D::Collision collision;
+        collision.BodyA = sleepingBody;
+        collision.BodyB = staticBody;
+        world.NarrowPhase({collision});
+
+        EXPECT_EQ(world.GetCollisionsCount(), 0U);
+        EXPECT_FALSE(sleepingBody->IsAwake());
+    }
+
+    TEST(CollisionWorldTest, SpatialHashingSkipsSleepingDynamicBodyAgainstStaticBody)
+    {
+        CollisionWorldTest world;
+        world.SetBroadPhaseType(Guch2D::BroadPhaseType::SpatialHashing);
+
+        const auto sleepingBody = MakeDynamicCircleRigidBody({0.0F, 0.0F}, 2.0F);
+        sleepingBody->SetAwake(false);
+        const auto staticBody = MakeStaticCircleRigidBody({1.0F, 0.0F}, 2.0F);
+
+        world.AddObject(sleepingBody);
+        world.AddObject(staticBody);
+
+        EXPECT_TRUE(world.BroadPhase().empty());
+    }
+
+    TEST(CollisionWorldTest, StepWakesSleepingDynamicBodyWhenHitByAwakeDynamicBody)
+    {
+        Guch2D::CollisionWorld world;
+
+        const auto sleepingBody = MakeDynamicCircleRigidBody({0.0F, 0.0F}, 2.0F);
+        sleepingBody->SetAwake(false);
+        const auto awakeBody = MakeDynamicCircleRigidBody({1.0F, 0.0F}, 2.0F);
+        awakeBody->SetVelocity({-0.5F, 0.0F});
+
+        world.AddObject(sleepingBody);
+        world.AddObject(awakeBody);
+
+        world.Step();
+
+        EXPECT_TRUE(sleepingBody->IsAwake());
+        EXPECT_TRUE(awakeBody->IsAwake());
+    }
+
+    TEST(CollisionWorldTest, StepDoesNotWakeSleepingDynamicBodyFromLowSpeedRestingContact)
+    {
+        Guch2D::CollisionWorld world;
+
+        const auto sleepingBody = MakeDynamicCircleRigidBody({0.0F, 0.0F}, 2.0F);
+        sleepingBody->SetAwake(false);
+        const auto awakeBody = MakeDynamicCircleRigidBody({3.99F, 0.0F}, 2.0F);
+        awakeBody->SetVelocity({-0.05F, 0.0F});
+
+        world.AddObject(sleepingBody);
+        world.AddObject(awakeBody);
+
+        world.Step();
+
+        EXPECT_FALSE(sleepingBody->IsAwake());
+        EXPECT_TRUE(awakeBody->IsAwake());
+    }
+
+    TEST(CollisionWorldTest, StepDoesNotWakeSleepingDynamicBodyAgainstStaticBody)
+    {
+        Guch2D::CollisionWorld world;
+
+        const auto sleepingBody = MakeDynamicCircleRigidBody({0.0F, 0.0F}, 2.0F);
+        sleepingBody->SetAwake(false);
+        const auto staticBody = MakeStaticCircleRigidBody({1.0F, 0.0F}, 2.0F);
+
+        bool onBeginOverlapCalled = false;
+        sleepingBody->BindOnBeginOverlap(
+            [&](const Guch2D::Collision&) { onBeginOverlapCalled = true; });
+
+        world.AddObject(sleepingBody);
+        world.AddObject(staticBody);
+
+        world.Step();
+
+        EXPECT_FALSE(sleepingBody->IsAwake());
+        EXPECT_FALSE(onBeginOverlapCalled);
     }
 
     TEST(CollisionWorldTest, StepNoObjects)

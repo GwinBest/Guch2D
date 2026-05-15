@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cmath>
+
 #include "Dynamics/RigidBody.hpp"
 #include "Math/Vector.hpp"
 
@@ -34,6 +36,8 @@ namespace Guch2D
                 return;
             }
 
+            SetAwake(true);
+
             _force = force;
         }
 
@@ -41,6 +45,8 @@ namespace Guch2D
         {
             if (!IsFinite(force))
                 return;
+
+            SetAwake(true);
 
             _force += force;
         }
@@ -70,6 +76,8 @@ namespace Guch2D
                 return;
             }
 
+            SetAwake(true);
+
             _velocity = velocity;
         }
 
@@ -77,6 +85,8 @@ namespace Guch2D
         {
             if (!IsFinite(velocity))
                 return;
+
+            SetAwake(true);
 
             _velocity += velocity;
         }
@@ -114,6 +124,39 @@ namespace Guch2D
             _simulatePhysics = simulatePhysics;
         }
 
+        [[nodiscard]] bool IsAwake() const noexcept { return _isAwake; }
+
+        void SetAwake(const bool awake) noexcept
+        {
+            if (awake)
+            {
+                if (!_isAwake)
+                {
+                    _sleepTime = 0.0F;
+                }
+                _isAwake = true;
+                return;
+            }
+
+            _isAwake = false;
+            _sleepTime = 0.0F;
+            _force = {0.0F, 0.0F};
+            _acceleration = {0.0F, 0.0F};
+            _velocity = {0.0F, 0.0F};
+        }
+
+        [[nodiscard]] float GetSleepTime() const noexcept { return _sleepTime; }
+
+        void ResetSleepTime() noexcept { _sleepTime = 0.0F; }
+
+        void AddSleepTime(const float sleepTime) noexcept
+        {
+            if (sleepTime <= 0.0F || !std::isfinite(sleepTime))
+                return;
+
+            _sleepTime += sleepTime;
+        }
+
     public:
         static constexpr Vect DefaultGravityScale = {1.0F, 1.0F};
         static constexpr Vect DefaultLinearDamping = {0.0F, 0.1F};
@@ -137,5 +180,9 @@ namespace Guch2D
         Vect _linearDamping = DefaultLinearDamping;
 
         bool _simulatePhysics = true;
+
+        bool _isAwake = true;
+
+        float _sleepTime = 0.0F;
     };
 }   // namespace Guch2D
