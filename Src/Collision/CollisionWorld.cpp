@@ -62,16 +62,16 @@ namespace
                                      const Guch2D::CollisionWorld::ObjectType& objectB,
                                      const Guch2D::CollisionPoints& collisionPoints)
     {
-        constexpr float WakePenetrationDepthThreshold = 0.05F;
-        constexpr float WakeApproachSpeedThreshold = 0.2F;
+        constexpr float wakePenetrationDepthThreshold = 0.05F;
+        constexpr float wakeApproachSpeedThreshold = 0.2F;
 
-        if (collisionPoints.Depth >= WakePenetrationDepthThreshold)
+        if (collisionPoints.Depth >= wakePenetrationDepthThreshold)
             return true;
 
         const Guch2D::Vect velocityA = GetWakeVelocity(objectA);
         const Guch2D::Vect velocityB = GetWakeVelocity(objectB);
         const float approachSpeed = Guch2D::VectDot(velocityB - velocityA, collisionPoints.Normal);
-        return approachSpeed >= WakeApproachSpeedThreshold;
+        return approachSpeed >= wakeApproachSpeedThreshold;
     }
 
     [[nodiscard]] bool ShouldProcessCollisionPair(const Guch2D::CollisionWorld::ObjectType& objectA,
