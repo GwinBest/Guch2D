@@ -592,10 +592,10 @@ namespace
         EXPECT_FLOAT_EQ(collisionPoints.Depth, 1.0F);
         EXPECT_FLOAT_EQ(collisionPoints.Normal.x, -1.0F);
         EXPECT_FLOAT_EQ(collisionPoints.Normal.y, 0.0F);
-        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().x, 2.0F);
-        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().y, -0.5F);
-        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().x, 1.0F);
-        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().y, 1.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().Position.x, 2.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().Position.y, -0.5F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().Position.x, 1.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().Position.y, 1.0F);
     }
 
     TEST(CollisionWorld, CheckCollisionsAABBVsAABBOverlapY)
@@ -613,10 +613,10 @@ namespace
         EXPECT_FLOAT_EQ(collisionPoints.Depth, 1.0F);
         EXPECT_FLOAT_EQ(collisionPoints.Normal.x, 0.0F);
         EXPECT_FLOAT_EQ(collisionPoints.Normal.y, -1.0F);
-        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().x, -0.75F);
-        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().y, 2.0F);
-        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().x, 1.0F);
-        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().y, 1.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().Position.x, -0.75F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().Position.y, 2.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().Position.x, 1.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().Position.y, 1.0F);
     }
 
     TEST(CollisionWorld, CheckCollisionsAABBVsCircleNoCollisionOutsideFace)
@@ -647,10 +647,10 @@ namespace
         EXPECT_FLOAT_EQ(collisionPoints.Normal.x, -1.0F);
         EXPECT_FLOAT_EQ(collisionPoints.Normal.y, 0.0F);
         EXPECT_FLOAT_EQ(collisionPoints.Depth, 0.0F);
-        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().x, 2.0F);
-        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().y, 0.0F);
-        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().x, 2.0F);
-        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().y, 0.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().Position.x, 2.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().Position.y, 0.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().Position.x, 2.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().Position.y, 0.0F);
     }
 
     TEST(CollisionWorld, CheckCollisionsAABBVsCirclePenetratingFace)
@@ -663,10 +663,10 @@ namespace
         EXPECT_FLOAT_EQ(collisionPoints.Normal.x, -1.0F);
         EXPECT_FLOAT_EQ(collisionPoints.Normal.y, 0.0F);
         EXPECT_FLOAT_EQ(collisionPoints.Depth, 1.0F);
-        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().x, 2.0F);
-        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().y, 0.0F);
-        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().x, 1.0F);
-        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().y, 0.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().Position.x, 2.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().Position.y, 0.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().Position.x, 1.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().Position.y, 0.0F);
     }
 
     TEST(CollisionWorld, CheckCollisionsAABBVsCircleTouchingCorner)
@@ -679,10 +679,10 @@ namespace
         EXPECT_NEAR(collisionPoints.Normal.x, -0.70710677F, 1.0e-6F);
         EXPECT_NEAR(collisionPoints.Normal.y, -0.70710677F, 1.0e-6F);
         EXPECT_FLOAT_EQ(collisionPoints.Depth, 0.0F);
-        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().x, 2.0F);
-        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().y, 2.0F);
-        EXPECT_NEAR(collisionPoints.ContactPoints.back().x, 2.0F, 1.0e-5F);
-        EXPECT_NEAR(collisionPoints.ContactPoints.back().y, 2.0F, 1.0e-5F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().Position.x, 2.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().Position.y, 2.0F);
+        EXPECT_NEAR(collisionPoints.ContactPoints.back().Position.x, 2.0F, 1.0e-5F);
+        EXPECT_NEAR(collisionPoints.ContactPoints.back().Position.y, 2.0F, 1.0e-5F);
     }
 
     TEST(CollisionWorld, CheckCollisionsAABBVsCirclePenetratingCorner)
@@ -695,10 +695,10 @@ namespace
         EXPECT_NEAR(collisionPoints.Normal.x, -0.70710677F, 1.0e-6F);
         EXPECT_NEAR(collisionPoints.Normal.y, -0.70710677F, 1.0e-6F);
         EXPECT_NEAR(collisionPoints.Depth, 0.17157292F, 1.0e-6F);
-        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().x, 2.0F);
-        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().y, 2.0F);
-        EXPECT_NEAR(collisionPoints.ContactPoints.back().x, 1.87867963F, 1.0e-6F);
-        EXPECT_NEAR(collisionPoints.ContactPoints.back().y, 1.87867963F, 1.0e-6F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().Position.x, 2.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().Position.y, 2.0F);
+        EXPECT_NEAR(collisionPoints.ContactPoints.back().Position.x, 1.87867963F, 1.0e-6F);
+        EXPECT_NEAR(collisionPoints.ContactPoints.back().Position.y, 1.87867963F, 1.0e-6F);
     }
 
     TEST(CollisionWorld, CheckCollisionsAABBVsCircleInsideChoosesLeftFace)
@@ -711,10 +711,10 @@ namespace
         EXPECT_FLOAT_EQ(collisionPoints.Normal.x, 1.0F);
         EXPECT_FLOAT_EQ(collisionPoints.Normal.y, 0.0F);
         EXPECT_FLOAT_EQ(collisionPoints.Depth, 0.7F);
-        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().x, -2.0F);
-        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().y, 0.0F);
-        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().x, -1.3F);
-        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().y, 0.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().Position.x, -2.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().Position.y, 0.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().Position.x, -1.3F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().Position.y, 0.0F);
     }
 
     TEST(CollisionWorld, CheckCollisionsAABBVsCircleInsideChoosesRightFace)
@@ -727,10 +727,10 @@ namespace
         EXPECT_FLOAT_EQ(collisionPoints.Normal.x, -1.0F);
         EXPECT_FLOAT_EQ(collisionPoints.Normal.y, 0.0F);
         EXPECT_FLOAT_EQ(collisionPoints.Depth, 0.7F);
-        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().x, 2.0F);
-        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().y, 0.0F);
-        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().x, 1.3F);
-        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().y, 0.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().Position.x, 2.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().Position.y, 0.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().Position.x, 1.3F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().Position.y, 0.0F);
     }
 
     TEST(CollisionWorld, CheckCollisionsAABBVsCircleInsideChoosesBottomFace)
@@ -743,10 +743,10 @@ namespace
         EXPECT_FLOAT_EQ(collisionPoints.Normal.x, 0.0F);
         EXPECT_FLOAT_EQ(collisionPoints.Normal.y, 1.0F);
         EXPECT_FLOAT_EQ(collisionPoints.Depth, 0.75F);
-        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().x, 0.0F);
-        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().y, -2.0F);
-        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().x, 0.0F);
-        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().y, -1.25F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().Position.x, 0.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().Position.y, -2.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().Position.x, 0.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().Position.y, -1.25F);
     }
 
     TEST(CollisionWorld, CheckCollisionsAABBVsCircleInsideChoosesTopFace)
@@ -759,10 +759,10 @@ namespace
         EXPECT_FLOAT_EQ(collisionPoints.Normal.x, 0.0F);
         EXPECT_FLOAT_EQ(collisionPoints.Normal.y, -1.0F);
         EXPECT_FLOAT_EQ(collisionPoints.Depth, 0.75F);
-        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().x, 0.0F);
-        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().y, 2.0F);
-        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().x, 0.0F);
-        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().y, 1.25F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().Position.x, 0.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().Position.y, 2.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().Position.x, 0.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().Position.y, 1.25F);
     }
 
     TEST(CollisionWorld, CheckCollisionsAABBVsCircleInsideEqualDistanceChoosesLeftFace)
@@ -775,10 +775,10 @@ namespace
         EXPECT_FLOAT_EQ(collisionPoints.Normal.x, 1.0F);
         EXPECT_FLOAT_EQ(collisionPoints.Normal.y, 0.0F);
         EXPECT_FLOAT_EQ(collisionPoints.Depth, 2.5F);
-        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().x, -2.0F);
-        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().y, 0.0F);
-        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().x, 0.5F);
-        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().y, 0.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().Position.x, -2.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().Position.y, 0.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().Position.x, 0.5F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().Position.y, 0.0F);
     }
 
     TEST(CollisionWorld, CheckCollisionsAABBVsCircleUsesColliderLocalCenter)
@@ -791,10 +791,10 @@ namespace
         EXPECT_FLOAT_EQ(collisionPoints.Normal.x, -1.0F);
         EXPECT_FLOAT_EQ(collisionPoints.Normal.y, 0.0F);
         EXPECT_FLOAT_EQ(collisionPoints.Depth, 1.5F);
-        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().x, 13.0F);
-        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().y, 9.0F);
-        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().x, 11.5F);
-        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().y, 9.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().Position.x, 13.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().Position.y, 9.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().Position.x, 11.5F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().Position.y, 9.0F);
     }
 
     TEST(CollisionWorld, CheckCollisionsCircleVsAABBReturnsSwappedNormalAndContacts)
@@ -810,10 +810,14 @@ namespace
         EXPECT_FLOAT_EQ(aabbVsCircle.Depth, circleVsAabb.Depth);
         EXPECT_FLOAT_EQ(aabbVsCircle.Normal.x, -circleVsAabb.Normal.x);
         EXPECT_FLOAT_EQ(aabbVsCircle.Normal.y, -circleVsAabb.Normal.y);
-        EXPECT_FLOAT_EQ(aabbVsCircle.ContactPoints.front().x, circleVsAabb.ContactPoints.back().x);
-        EXPECT_FLOAT_EQ(aabbVsCircle.ContactPoints.front().y, circleVsAabb.ContactPoints.back().y);
-        EXPECT_FLOAT_EQ(aabbVsCircle.ContactPoints.back().x, circleVsAabb.ContactPoints.front().x);
-        EXPECT_FLOAT_EQ(aabbVsCircle.ContactPoints.back().y, circleVsAabb.ContactPoints.front().y);
+        EXPECT_FLOAT_EQ(aabbVsCircle.ContactPoints.front().Position.x,
+                        circleVsAabb.ContactPoints.back().Position.x);
+        EXPECT_FLOAT_EQ(aabbVsCircle.ContactPoints.front().Position.y,
+                        circleVsAabb.ContactPoints.back().Position.y);
+        EXPECT_FLOAT_EQ(aabbVsCircle.ContactPoints.back().Position.x,
+                        circleVsAabb.ContactPoints.front().Position.x);
+        EXPECT_FLOAT_EQ(aabbVsCircle.ContactPoints.back().Position.y,
+                        circleVsAabb.ContactPoints.front().Position.y);
     }
 
     TEST(CollisionWorld, CheckCollisionsNullBodyA)
