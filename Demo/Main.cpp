@@ -14,6 +14,7 @@
 #include "Collision/CircleCollider.hpp"
 #include "Collision/CollisionBody.hpp"
 #include "Collision/CollisionWorld.hpp"
+#include "Collision/Trigger.hpp"
 #include "Dynamics/DynamicRigidBody.hpp"
 #include "Dynamics/DynamicWorld.hpp"
 #include "Dynamics/KinematicBody.hpp"
@@ -204,6 +205,7 @@ public:
     void Reset(sf::RenderWindow& window) override
     {
         _dynamicBodies.clear();
+        _triggers.clear();
         _staticBodies.clear();
         _dragging = false;
         _accumulator = 0.0f;
@@ -224,7 +226,7 @@ public:
         {
             switch (keyPressed->code)
             {
-            case sf::Keyboard::Key::C:   ClearDynamicBodies(); break;
+            case sf::Keyboard::Key::C:   ClearSpawnedBodies(); break;
             case sf::Keyboard::Key::R:   Reset(window); break;
             case sf::Keyboard::Key::Tab: ToggleSpawnShape(); break;
             case sf::Keyboard::Key::Q:   AdjustSpawnMass(MassStep); break;
@@ -281,7 +283,7 @@ public:
     void Render(sf::RenderWindow& window) override
     {
         std::unordered_set<const Guch2D::CollisionBody*> collidingBodies;
-        collidingBodies.reserve(_dynamicBodies.size());
+        collidingBodies.reserve(_dynamicBodies.size() + _triggers.size());
 
         for (size_t i = 0; i < _dynamicBodies.size(); ++i)
         {
@@ -305,6 +307,17 @@ public:
 
                 collidingBodies.insert(_dynamicBodies[i].body.get());
                 break;
+            }
+
+            for (const auto& triggerBody : _triggers)
+            {
+                const auto points = CollisionWorldInspector::Check(_dynamicBodies[i].body,
+                                                                   triggerBody.body);
+                if (!points.HasCollision)
+                    continue;
+
+                collidingBodies.insert(_dynamicBodies[i].body.get());
+                collidingBodies.insert(triggerBody.body.get());
             }
         }
 
@@ -348,6 +361,19 @@ public:
                      1.0f);
         }
 
+        for (const auto& triggerBody : _triggers)
+        {
+            const bool isColliding = collidingBodies.contains(triggerBody.body.get());
+            const sf::Color fillColor = isColliding ? sf::Color(255, 155, 60, 130)
+                                                    : sf::Color(255, 216, 0, 100);
+            DrawCircle(window,
+                       triggerBody.body->GetColliderCenterWorld(),
+                       triggerBody.radius,
+                       fillColor,
+                       sf::Color(255, 245, 160, 230),
+                       2.0f);
+        }
+
         if (_dragging)
         {
             sf::VertexArray line(sf::PrimitiveType::Lines, 2);
@@ -371,7 +397,7 @@ public:
         lines.emplace_back("F/G: FRICTION UP/DOWN");
         lines.emplace_back("W/S: WIDTH OR RADIUS UP/DOWN");
         lines.emplace_back("E/D: AABB HEIGHT UP/DOWN");
-        lines.emplace_back("C: CLEAR DYNAMIC BODIES");
+        lines.emplace_back("C: CLEAR SPAWNED BODIES");
         lines.emplace_back("R: RESET DEMO");
         lines.emplace_back("SPAWN: " + std::string(SpawnShapeName()));
         lines.emplace_back("MASS: " + std::to_string(_spawnMass));
@@ -381,6 +407,7 @@ public:
         lines.emplace_back("AABB X: " + std::to_string(_spawnAABBExtent.x));
         lines.emplace_back("AABB Y: " + std::to_string(_spawnAABBExtent.y));
         lines.emplace_back("DYNAMIC BODIES: " + std::to_string(_dynamicBodies.size()));
+        lines.emplace_back("TRIGGERS: " + std::to_string(_triggers.size()));
         lines.emplace_back("SLEEPING BODIES: " + std::to_string(sleepingBodies));
     }
 
@@ -389,6 +416,7 @@ private:
     {
         Circle,
         AABB,
+        Trigger,
     };
 
     struct DynamicBodyVisual
@@ -403,6 +431,12 @@ private:
     {
         std::shared_ptr<Guch2D::StaticRigidBody> body;
         Guch2D::Vect extent = {0.0f, 0.0f};
+    };
+
+    struct TriggerBodyVisual
+    {
+        std::shared_ptr<Guch2D::Trigger> body;
+        float radius = 0.0f;
     };
 
     [[nodiscard]] StaticBodyVisual CreateStaticAABB(const Guch2D::Vect& position,
@@ -460,16 +494,23 @@ private:
         }
     }
 
-    void ClearDynamicBodies()
+    void ClearSpawnedBodies()
     {
         _dynamicBodies.clear();
+        _triggers.clear();
         _accumulator = 0.0f;
         RebuildWorld();
     }
 
     void ToggleSpawnShape()
     {
-        _spawnShape = (_spawnShape == SpawnShape::Circle) ? SpawnShape::AABB : SpawnShape::Circle;
+        if (_spawnShape == SpawnShape::Circle)
+        {
+            _spawnShape = SpawnShape::AABB;
+            return;
+        }
+
+        _spawnShape = _spawnShape == SpawnShape::AABB ? SpawnShape::Trigger : SpawnShape::Circle;
     }
 
     void AdjustSpawnMass(const float delta)
@@ -508,7 +549,7 @@ private:
 
     void AdjustSpawnPrimarySize(const float delta)
     {
-        if (_spawnShape == SpawnShape::Circle)
+        if (_spawnShape != SpawnShape::AABB)
         {
             _spawnCircleRadius = std::clamp(_spawnCircleRadius + delta,
                                             MinSpawnRadius,
@@ -536,7 +577,13 @@ private:
             return;
         }
 
-        SpawnAABB(_dragStartWorld, launchVelocity);
+        if (_spawnShape == SpawnShape::AABB)
+        {
+            SpawnAABB(_dragStartWorld, launchVelocity);
+            return;
+        }
+
+        SpawnTrigger(_dragStartWorld);
     }
 
     void SpawnCircle(const Guch2D::Vect& position, const Guch2D::Vect& launchVelocity)
@@ -574,6 +621,18 @@ private:
 
         _world.AddObject(body);
         _dynamicBodies.push_back({body, SpawnShape::AABB, 0.0f, _spawnAABBExtent});
+    }
+
+    void SpawnTrigger(const Guch2D::Vect& position)
+    {
+        auto collider = std::make_shared<Guch2D::CircleCollider>();
+        collider->SetRadius(_spawnCircleRadius);
+
+        auto trigger = std::make_shared<Guch2D::Trigger>();
+        trigger->SetPosition(position);
+        trigger->SetCollider(collider);
+
+        _triggers.push_back({trigger, _spawnCircleRadius});
     }
 
     void DrawCircle(sf::RenderWindow& window,
@@ -614,7 +673,12 @@ private:
 
     [[nodiscard]] const char* SpawnShapeName() const noexcept
     {
-        return _spawnShape == SpawnShape::Circle ? "BALL" : "AABB";
+        if (_spawnShape == SpawnShape::Circle)
+        {
+            return "BALL";
+        }
+
+        return _spawnShape == SpawnShape::AABB ? "AABB" : "TRIGGER";
     }
 
     static constexpr float MinSpawnMass = 0.1f;
@@ -637,6 +701,7 @@ private:
     float _pixelsPerMeter = PixelsPerMeter;
     Guch2D::DynamicWorld _world;
     std::vector<DynamicBodyVisual> _dynamicBodies;
+    std::vector<TriggerBodyVisual> _triggers;
     std::vector<StaticBodyVisual> _staticBodies;
     bool _dragging = false;
     Guch2D::Vect _dragStartWorld = {0.0f, 0.0f};
