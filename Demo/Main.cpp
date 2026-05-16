@@ -2,8 +2,8 @@
 #include <algorithm>
 #include <array>
 #include <cctype>
-#include <cstdint>
 #include <cmath>
+#include <cstdint>
 #include <memory>
 #include <optional>
 #include <string>
@@ -27,6 +27,7 @@
 
 namespace
 {
+
     constexpr float PixelsPerMeter = 100.0f;
     constexpr float BallRadiusPixels = 10.0f;
     constexpr float BallMass = 10.0f;
@@ -695,17 +696,17 @@ private:
         _raycastHit = worldHit;
 
         const auto triggerHit = RaycastTriggers(_raycastStartWorld, direction, maxDistance);
-        if (triggerHit.HasHit && (!_raycastHit.HasHit || triggerHit.Distance < _raycastHit.Distance))
+        if (triggerHit.HasHit
+            && (!_raycastHit.HasHit || triggerHit.Distance < _raycastHit.Distance))
         {
             _raycastHit = triggerHit;
             _raycastHitIsTrigger = true;
         }
     }
 
-    [[nodiscard]] Guch2D::RaycastHit
-        RaycastTriggers(const Guch2D::Vect& origin,
-                        const Guch2D::Vect& direction,
-                        const float maxDistance) const
+    [[nodiscard]] Guch2D::RaycastHit RaycastTriggers(const Guch2D::Vect& origin,
+                                                     const Guch2D::Vect& direction,
+                                                     const float maxDistance) const
     {
         Guch2D::RaycastHit bestHit;
         const float directionLength = Guch2D::VectLength(direction);
