@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <limits>
 #include <memory>
 #include <vector>
 
@@ -15,6 +16,15 @@ namespace Guch2D
     {
         SweepAndPrune,
         SpatialHashing,
+    };
+
+    struct RaycastHit final
+    {
+        std::weak_ptr<CollisionBody> Body;
+        Vect Point = {0.0F, 0.0F};
+        Vect Normal = {0.0F, 0.0F};
+        float Distance = 0.0F;
+        bool HasHit = false;
     };
 
     class CollisionWorld
@@ -97,6 +107,16 @@ namespace Guch2D
         }
 
         [[nodiscard]] static CollisionPoints CheckCollisions(ObjectType bodyA, ObjectType bodyB);
+
+        [[nodiscard]] RaycastHit
+            Raycast(const Vect& origin,
+                    const Vect& direction,
+                    float maxDistance = std::numeric_limits<float>::infinity()) const;
+
+        [[nodiscard]] std::vector<RaycastHit>
+            RaycastAll(const Vect& origin,
+                       const Vect& direction,
+                       float maxDistance = std::numeric_limits<float>::infinity()) const;
 
     protected:
         std::vector<Collision> BroadPhase();

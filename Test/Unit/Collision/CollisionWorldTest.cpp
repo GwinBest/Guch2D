@@ -980,6 +980,79 @@ namespace
         EXPECT_FALSE(collisionPoints.HasCollision);
     }
 
+    TEST(CollisionWorldTest, RaycastReturnsClosestHit)
+    {
+        Guch2D::CollisionWorld world;
+
+        const auto farBody = MakeCircleBody({8.0F, 0.0F}, 1.0F);
+        const auto nearBody = MakeAABBBody({4.0F, 0.0F}, {1.0F, 1.0F});
+
+        // Intentionally add farther body first to validate closest-hit selection.
+        world.AddObject(farBody);
+        world.AddObject(nearBody);
+
+        const auto hit = world.Raycast({0.0F, 0.0F}, {10.0F, 0.0F}, 20.0F);
+
+        EXPECT_TRUE(hit.HasHit);
+        EXPECT_EQ(hit.Body.lock(), nearBody);
+        EXPECT_FLOAT_EQ(hit.Distance, 3.0F);
+        EXPECT_FLOAT_EQ(hit.Point.x, 3.0F);
+        EXPECT_FLOAT_EQ(hit.Point.y, 0.0F);
+        EXPECT_FLOAT_EQ(hit.Normal.x, -1.0F);
+        EXPECT_FLOAT_EQ(hit.Normal.y, 0.0F);
+    }
+
+    TEST(CollisionWorldTest, RaycastAllReturnsHitsSortedByDistance)
+    {
+        Guch2D::CollisionWorld world;
+
+        const auto nearBody = MakeAABBBody({4.0F, 0.0F}, {1.0F, 1.0F});
+        const auto farBody = MakeCircleBody({10.0F, 0.0F}, 2.0F);
+
+        world.AddObject(farBody);
+        world.AddObject(nearBody);
+
+        const auto hits = world.RaycastAll({0.0F, 0.0F}, {1.0F, 0.0F}, 20.0F);
+
+        ASSERT_EQ(hits.size(), 2U);
+        EXPECT_EQ(hits.at(0).Body.lock(), nearBody);
+        EXPECT_EQ(hits.at(1).Body.lock(), farBody);
+        EXPECT_FLOAT_EQ(hits.at(0).Distance, 3.0F);
+        EXPECT_FLOAT_EQ(hits.at(1).Distance, 8.0F);
+    }
+
+    TEST(CollisionWorldTest, RaycastFromInsideAABBReturnsExitHit)
+    {
+        Guch2D::CollisionWorld world;
+        const auto body = MakeAABBBody({0.0F, 0.0F}, {2.0F, 2.0F});
+        world.AddObject(body);
+
+        const auto hit = world.Raycast({0.0F, 0.0F}, {1.0F, 0.0F}, 10.0F);
+
+        EXPECT_TRUE(hit.HasHit);
+        EXPECT_EQ(hit.Body.lock(), body);
+        EXPECT_FLOAT_EQ(hit.Distance, 2.0F);
+        EXPECT_FLOAT_EQ(hit.Point.x, 2.0F);
+        EXPECT_FLOAT_EQ(hit.Point.y, 0.0F);
+        EXPECT_FLOAT_EQ(hit.Normal.x, 1.0F);
+        EXPECT_FLOAT_EQ(hit.Normal.y, 0.0F);
+    }
+
+    TEST(CollisionWorldTest, RaycastInvalidInputReturnsNoHit)
+    {
+        Guch2D::CollisionWorld world;
+        world.AddObject(MakeCircleBody({2.0F, 0.0F}, 1.0F));
+
+        const auto zeroDirectionHit = world.Raycast({0.0F, 0.0F}, {0.0F, 0.0F}, 10.0F);
+        EXPECT_FALSE(zeroDirectionHit.HasHit);
+
+        const auto negativeDistanceHit = world.Raycast({0.0F, 0.0F}, {1.0F, 0.0F}, -1.0F);
+        EXPECT_FALSE(negativeDistanceHit.HasHit);
+
+        const auto negativeDistanceHits = world.RaycastAll({0.0F, 0.0F}, {1.0F, 0.0F}, -1.0F);
+        EXPECT_TRUE(negativeDistanceHits.empty());
+    }
+
     TEST(CollisionWorldTest, AddSolver)
     {
         Guch2D::CollisionWorld world;

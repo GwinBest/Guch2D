@@ -208,6 +208,218 @@ namespace
         return {bodyA, bodyB};
     }
 
+    struct RaycastIntersection final
+    {
+        Guch2D::Vect Point = {0.0F, 0.0F};
+        Guch2D::Vect Normal = {0.0F, 0.0F};
+        float Distance = 0.0F;
+        bool HasHit = false;
+    };
+
+    [[nodiscard]] bool IsValidRaycastMaxDistance(const float maxDistance) noexcept
+    {
+        if (maxDistance < 0.0F)
+            return false;
+
+        if (Guch2D::IsFinite(maxDistance))
+            return true;
+
+        return maxDistance == std::numeric_limits<float>::infinity();
+    }
+
+    [[nodiscard]] bool IsValidRaycastInput(const Guch2D::Vect& origin,
+                                           const Guch2D::Vect& direction,
+                                           const float maxDistance) noexcept
+    {
+        if (!Guch2D::IsFinite(origin) || !Guch2D::IsFinite(direction))
+            return false;
+
+        if (!IsValidRaycastMaxDistance(maxDistance))
+            return false;
+
+        return Guch2D::VectLength(direction) > 0.0F;
+    }
+
+    [[nodiscard]] bool IsRaycastDistanceInRange(const float distance,
+                                                const float maxDistance) noexcept
+    {
+        if (distance < 0.0F || !Guch2D::IsFinite(distance))
+            return false;
+
+        if (!Guch2D::IsFinite(maxDistance))
+            return true;
+
+        const float scaledEpsilon = std::numeric_limits<float>::epsilon()
+                                  * std::max({1.0F, distance, maxDistance});
+        return distance <= (maxDistance + scaledEpsilon);
+    }
+
+    [[nodiscard]] RaycastIntersection RaycastCircle(const Guch2D::CollisionWorld::ObjectType& body,
+                                                    const Guch2D::Vect& origin,
+                                                    const Guch2D::Vect& directionNormalized,
+                                                    const float maxDistance)
+    {
+        const auto circleCollider = std::dynamic_pointer_cast<Guch2D::CircleCollider>(
+            body ? body->GetCollider() : nullptr);
+        if (!circleCollider)
+            return {};
+
+        const Guch2D::Vect center = body->GetColliderCenterWorld();
+        const float radius = circleCollider->GetRadius();
+
+        const Guch2D::Vect originToCenter = origin - center;
+        const float bHalf = Guch2D::VectDot(originToCenter, directionNormalized);
+        const float c = Guch2D::VectDot(originToCenter, originToCenter) - (radius * radius);
+
+        const float discriminant = (bHalf * bHalf) - c;
+        const float scaledEpsilon = std::numeric_limits<float>::epsilon()
+                                  * std::max({1.0F, std::abs(bHalf), std::abs(c)});
+        if (discriminant < -scaledEpsilon)
+            return {};
+
+        const float sqrtDiscriminant = std::sqrt(std::max(0.0F, discriminant));
+        const float nearDistance = -bHalf - sqrtDiscriminant;
+        const float farDistance = -bHalf + sqrtDiscriminant;
+
+        const float hitDistance = nearDistance >= 0.0F ? nearDistance : farDistance;
+        if (!IsRaycastDistanceInRange(hitDistance, maxDistance))
+            return {};
+
+        RaycastIntersection hit;
+        hit.Distance = hitDistance;
+        hit.Point = origin + directionNormalized * hitDistance;
+        hit.Normal = Guch2D::VectNormalize(hit.Point - center);
+        hit.HasHit = true;
+        return hit;
+    }
+
+    [[nodiscard]] RaycastIntersection RaycastAABB(const Guch2D::CollisionWorld::ObjectType& body,
+                                                  const Guch2D::Vect& origin,
+                                                  const Guch2D::Vect& directionNormalized,
+                                                  const float maxDistance)
+    {
+        const auto aabbCollider = std::dynamic_pointer_cast<Guch2D::AABBCollider>(
+            body ? body->GetCollider() : nullptr);
+        if (!aabbCollider)
+            return {};
+
+        const Guch2D::Vect center = body->GetColliderCenterWorld();
+        const Guch2D::Vect extent = aabbCollider->GetExtent();
+
+        const float minX = std::min(center.x - extent.x, center.x + extent.x);
+        const float maxX = std::max(center.x - extent.x, center.x + extent.x);
+        const float minY = std::min(center.y - extent.y, center.y + extent.y);
+        const float maxY = std::max(center.y - extent.y, center.y + extent.y);
+
+        float distanceToEnter = -std::numeric_limits<float>::infinity();
+        float distanceToExit = std::numeric_limits<float>::infinity();
+        Guch2D::Vect enterNormal = {0.0F, 0.0F};
+        Guch2D::Vect exitNormal = {0.0F, 0.0F};
+        constexpr float parallelEpsilon = 1.0e-6F;
+
+        const auto intersectSlab = [&](const float originAxis,
+                                       const float directionAxis,
+                                       const float minimumAxis,
+                                       const float maximumAxis,
+                                       const Guch2D::Vect& minimumNormal,
+                                       const Guch2D::Vect& maximumNormal) -> bool {
+            if (std::abs(directionAxis) <= parallelEpsilon)
+                return originAxis >= minimumAxis && originAxis <= maximumAxis;
+
+            const float inverseDirectionAxis = 1.0F / directionAxis;
+            float nearDistance = (minimumAxis - originAxis) * inverseDirectionAxis;
+            float farDistance = (maximumAxis - originAxis) * inverseDirectionAxis;
+
+            Guch2D::Vect nearNormal = minimumNormal;
+            Guch2D::Vect farNormal = maximumNormal;
+            if (nearDistance > farDistance)
+            {
+                std::swap(nearDistance, farDistance);
+                std::swap(nearNormal, farNormal);
+            }
+
+            if (nearDistance > distanceToEnter)
+            {
+                distanceToEnter = nearDistance;
+                enterNormal = nearNormal;
+            }
+
+            if (farDistance < distanceToExit)
+            {
+                distanceToExit = farDistance;
+                exitNormal = farNormal;
+            }
+
+            return distanceToEnter <= distanceToExit;
+        };
+
+        if (!intersectSlab(origin.x,
+                           directionNormalized.x,
+                           minX,
+                           maxX,
+                           {-1.0F, 0.0F},
+                           {1.0F, 0.0F}))
+        {
+            return {};
+        }
+
+        if (!intersectSlab(origin.y,
+                           directionNormalized.y,
+                           minY,
+                           maxY,
+                           {0.0F, -1.0F},
+                           {0.0F, 1.0F}))
+        {
+            return {};
+        }
+
+        if (distanceToExit < 0.0F)
+            return {};
+
+        const bool startsInside = distanceToEnter < 0.0F;
+        const float hitDistance = startsInside ? distanceToExit : distanceToEnter;
+        if (!IsRaycastDistanceInRange(hitDistance, maxDistance))
+            return {};
+
+        RaycastIntersection hit;
+        hit.Distance = hitDistance;
+        hit.Point = origin + directionNormalized * hitDistance;
+        hit.Normal = startsInside ? exitNormal : enterNormal;
+        hit.HasHit = true;
+        return hit;
+    }
+
+    [[nodiscard]] RaycastIntersection RaycastObject(const Guch2D::CollisionWorld::ObjectType& body,
+                                                    const Guch2D::Vect& origin,
+                                                    const Guch2D::Vect& directionNormalized,
+                                                    const float maxDistance)
+    {
+        if (!body)
+            return {};
+
+        const auto& collider = body->GetCollider();
+        if (!collider)
+            return {};
+
+        switch (collider->GetColliderType())
+        {
+        case Guch2D::ColliderType::Circle:
+        {
+            return RaycastCircle(body, origin, directionNormalized, maxDistance);
+        }
+        case Guch2D::ColliderType::AABB:
+        {
+            return RaycastAABB(body, origin, directionNormalized, maxDistance);
+        }
+        default:
+        {
+            break;
+        }
+        }
+
+        return {};
+    }
+
     [[nodiscard]] Guch2D::CollisionPoints
         CheckCollisionCircleVsCircle(const Guch2D::CollisionWorld::ObjectType& bodyA,
                                      const Guch2D::CollisionWorld::ObjectType& bodyB)
@@ -583,6 +795,73 @@ namespace Guch2D
         }
 
         return {};
+    }
+
+    RaycastHit CollisionWorld::Raycast(const Vect& origin,
+                                       const Vect& direction,
+                                       const float maxDistance) const
+    {
+        if (!IsValidRaycastInput(origin, direction, maxDistance))
+            return {};
+
+        const Vect directionNormalized = VectNormalize(direction);
+        float bestDistance = std::numeric_limits<float>::infinity();
+        RaycastHit bestHit;
+
+        for (const auto& object : _objects)
+        {
+            const auto hit = RaycastObject(object, origin, directionNormalized, maxDistance);
+            if (!hit.HasHit)
+                continue;
+
+            if (hit.Distance < bestDistance)
+            {
+                bestDistance = hit.Distance;
+                bestHit.Body = object;
+                bestHit.Point = hit.Point;
+                bestHit.Normal = hit.Normal;
+                bestHit.Distance = hit.Distance;
+                bestHit.HasHit = true;
+            }
+        }
+
+        return bestHit;
+    }
+
+    std::vector<RaycastHit> CollisionWorld::RaycastAll(const Vect& origin,
+                                                       const Vect& direction,
+                                                       const float maxDistance) const
+    {
+        if (!IsValidRaycastInput(origin, direction, maxDistance))
+            return {};
+
+        const Vect directionNormalized = VectNormalize(direction);
+        std::vector<RaycastHit> hits;
+        hits.reserve(_objects.size());
+
+        for (const auto& object : _objects)
+        {
+            const auto [Point, Normal, Distance, HasHit] = RaycastObject(object,
+                                                                         origin,
+                                                                         directionNormalized,
+                                                                         maxDistance);
+            if (!HasHit)
+                continue;
+
+            RaycastHit raycastHit;
+            raycastHit.Body = object;
+            raycastHit.Point = Point;
+            raycastHit.Normal = Normal;
+            raycastHit.Distance = Distance;
+            raycastHit.HasHit = true;
+            hits.push_back(raycastHit);
+        }
+
+        std::ranges::sort(hits, std::ranges::less {}, [](const RaycastHit& hit) {
+            return hit.Distance;
+        });
+
+        return hits;
     }
 
     std::vector<Collision> CollisionWorld::SweepAndPrune()

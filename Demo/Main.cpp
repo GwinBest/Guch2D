@@ -3,6 +3,7 @@
 #include <array>
 #include <cctype>
 #include <cstdint>
+#include <cmath>
 #include <memory>
 #include <optional>
 #include <string>
@@ -208,6 +209,11 @@ public:
         _triggers.clear();
         _staticBodies.clear();
         _dragging = false;
+        _draggingRaycast = false;
+        _raycastHit = {};
+        _raycastHitIsTrigger = false;
+        _raycastStartWorld = {0.0f, 0.0f};
+        _raycastCurrentWorld = {0.0f, 0.0f};
         _accumulator = 0.0f;
         _spawnShape = SpawnShape::Circle;
         _spawnMass = BallMass;
@@ -247,10 +253,24 @@ public:
         {
             if (mousePressed->button == sf::Mouse::Button::Left)
             {
+                if (_draggingRaycast)
+                {
+                    return;
+                }
+
                 _dragging = true;
                 _dragStartScreen = ToVector2f(mousePressed->position);
                 _dragCurrentScreen = _dragStartScreen;
                 _dragStartWorld = ScreenToWorld(mousePressed->position, _pixelsPerMeter);
+            }
+            else if (mousePressed->button == sf::Mouse::Button::Right)
+            {
+                _dragging = false;
+                _draggingRaycast = true;
+                _raycastStartWorld = ScreenToWorld(mousePressed->position, _pixelsPerMeter);
+                _raycastCurrentWorld = _raycastStartWorld;
+                _raycastHit = {};
+                _raycastHitIsTrigger = false;
             }
         }
 
@@ -261,6 +281,10 @@ public:
                 _dragging = false;
                 SpawnBody(mouseReleased->position);
             }
+            else if (mouseReleased->button == sf::Mouse::Button::Right)
+            {
+                _draggingRaycast = false;
+            }
         }
     }
 
@@ -269,6 +293,17 @@ public:
         if (_dragging)
         {
             _dragCurrentScreen = ToVector2f(sf::Mouse::getPosition(window));
+        }
+
+        if (_draggingRaycast)
+        {
+            _raycastCurrentWorld = ScreenToWorld(sf::Mouse::getPosition(window), _pixelsPerMeter);
+            UpdateRaycast();
+        }
+        else
+        {
+            _raycastHit = {};
+            _raycastHitIsTrigger = false;
         }
 
         _accumulator += dt;
@@ -374,6 +409,8 @@ public:
                        2.0f);
         }
 
+        DrawRaycastDebug(window);
+
         if (_dragging)
         {
             sf::VertexArray line(sf::PrimitiveType::Lines, 2);
@@ -397,6 +434,7 @@ public:
         lines.emplace_back("F/G: FRICTION UP/DOWN");
         lines.emplace_back("W/S: WIDTH OR RADIUS UP/DOWN");
         lines.emplace_back("E/D: AABB HEIGHT UP/DOWN");
+        lines.emplace_back("RIGHT MOUSE DRAG: RAYCAST");
         lines.emplace_back("C: CLEAR SPAWNED BODIES");
         lines.emplace_back("R: RESET DEMO");
         lines.emplace_back("SPAWN: " + std::string(SpawnShapeName()));
@@ -409,6 +447,12 @@ public:
         lines.emplace_back("DYNAMIC BODIES: " + std::to_string(_dynamicBodies.size()));
         lines.emplace_back("TRIGGERS: " + std::to_string(_triggers.size()));
         lines.emplace_back("SLEEPING BODIES: " + std::to_string(sleepingBodies));
+        lines.emplace_back(std::string("RAY HIT: ") + (_raycastHit.HasHit ? "YES" : "NO"));
+        if (_raycastHit.HasHit)
+        {
+            lines.emplace_back("RAY DIST: " + std::to_string(_raycastHit.Distance));
+            lines.emplace_back(std::string("RAY BODY: ") + RaycastHitTypeName());
+        }
     }
 
 private:
@@ -635,6 +679,189 @@ private:
         _triggers.push_back({trigger, _spawnCircleRadius});
     }
 
+    void UpdateRaycast()
+    {
+        _raycastHit = {};
+        _raycastHitIsTrigger = false;
+
+        const Guch2D::Vect direction = _raycastCurrentWorld - _raycastStartWorld;
+        const float maxDistance = Guch2D::VectLength(direction);
+        if (maxDistance <= 0.0f)
+        {
+            return;
+        }
+
+        const auto worldHit = _world.Raycast(_raycastStartWorld, direction, maxDistance);
+        _raycastHit = worldHit;
+
+        const auto triggerHit = RaycastTriggers(_raycastStartWorld, direction, maxDistance);
+        if (triggerHit.HasHit && (!_raycastHit.HasHit || triggerHit.Distance < _raycastHit.Distance))
+        {
+            _raycastHit = triggerHit;
+            _raycastHitIsTrigger = true;
+        }
+    }
+
+    [[nodiscard]] Guch2D::RaycastHit
+        RaycastTriggers(const Guch2D::Vect& origin,
+                        const Guch2D::Vect& direction,
+                        const float maxDistance) const
+    {
+        Guch2D::RaycastHit bestHit;
+        const float directionLength = Guch2D::VectLength(direction);
+        if (directionLength <= 0.0f)
+        {
+            return bestHit;
+        }
+
+        const Guch2D::Vect directionNormalized = direction / directionLength;
+        float nearestDistance = maxDistance;
+
+        for (const auto& triggerBody : _triggers)
+        {
+            const Guch2D::Vect center = triggerBody.body->GetColliderCenterWorld();
+            const float radius = triggerBody.radius;
+            const Guch2D::Vect originToCenter = origin - center;
+            const float bHalf = Guch2D::VectDot(originToCenter, directionNormalized);
+            const float c = Guch2D::VectDot(originToCenter, originToCenter) - (radius * radius);
+            const float discriminant = (bHalf * bHalf) - c;
+
+            if (discriminant < 0.0f)
+            {
+                continue;
+            }
+
+            const float sqrtDiscriminant = std::sqrt(std::max(0.0f, discriminant));
+            const float nearDistance = -bHalf - sqrtDiscriminant;
+            const float farDistance = -bHalf + sqrtDiscriminant;
+            const float hitDistance = nearDistance >= 0.0f ? nearDistance : farDistance;
+
+            if (hitDistance < 0.0f || hitDistance > maxDistance)
+            {
+                continue;
+            }
+
+            if (bestHit.HasHit && hitDistance >= nearestDistance)
+            {
+                continue;
+            }
+
+            nearestDistance = hitDistance;
+            bestHit.Body = triggerBody.body;
+            bestHit.Point = origin + directionNormalized * hitDistance;
+            bestHit.Normal = Guch2D::VectNormalize(bestHit.Point - center);
+            bestHit.Distance = hitDistance;
+            bestHit.HasHit = true;
+        }
+
+        return bestHit;
+    }
+
+    void DrawRaycastDebug(sf::RenderWindow& window) const
+    {
+        if (!_draggingRaycast)
+        {
+            return;
+        }
+
+        const sf::Color missColor(80, 220, 255, 235);
+        const sf::Color hitColor(255, 95, 95, 245);
+        const sf::Color triggerHitColor(255, 205, 75, 245);
+        const sf::Color activeHitColor = _raycastHitIsTrigger ? triggerHitColor : hitColor;
+
+        sf::VertexArray fullRay(sf::PrimitiveType::Lines, 2);
+        fullRay[0] = sf::Vertex(WorldToScreen(_raycastStartWorld, _pixelsPerMeter), missColor);
+        fullRay[1] = sf::Vertex(WorldToScreen(_raycastCurrentWorld, _pixelsPerMeter), missColor);
+        window.draw(fullRay);
+
+        if (!_raycastHit.HasHit)
+        {
+            return;
+        }
+
+        sf::VertexArray hitRay(sf::PrimitiveType::Lines, 2);
+        hitRay[0] = sf::Vertex(WorldToScreen(_raycastStartWorld, _pixelsPerMeter), activeHitColor);
+        hitRay[1] = sf::Vertex(WorldToScreen(_raycastHit.Point, _pixelsPerMeter), activeHitColor);
+        window.draw(hitRay);
+
+        sf::CircleShape point(CollisionPointRadiusPixels);
+        point.setOrigin({CollisionPointRadiusPixels, CollisionPointRadiusPixels});
+        point.setPosition(WorldToScreen(_raycastHit.Point, _pixelsPerMeter));
+        point.setFillColor(activeHitColor);
+        point.setOutlineColor(sf::Color::Black);
+        point.setOutlineThickness(1.0f);
+        window.draw(point);
+
+        DrawRaycastNormal(window, _raycastHit.Point, _raycastHit.Normal, activeHitColor);
+    }
+
+    void DrawRaycastNormal(sf::RenderWindow& window,
+                           const Guch2D::Vect& pointWorld,
+                           const Guch2D::Vect& normalWorld,
+                           const sf::Color color) const
+    {
+        const auto normal = Guch2D::VectNormalize(normalWorld);
+        if (!Guch2D::IsFinite(normal) || (normal.x == 0.0f && normal.y == 0.0f))
+        {
+            return;
+        }
+
+        const Guch2D::Vect tipWorld = pointWorld + normal * CollisionNormalLengthMeters;
+        const Guch2D::Vect perp = {-normal.y, normal.x};
+        const Guch2D::Vect leftWorld = tipWorld - normal * CollisionNormalHeadLengthMeters
+                                     + perp * CollisionNormalHeadWidthMeters;
+        const Guch2D::Vect rightWorld = tipWorld - normal * CollisionNormalHeadLengthMeters
+                                      - perp * CollisionNormalHeadWidthMeters;
+
+        sf::VertexArray normalLine(sf::PrimitiveType::Lines, 2);
+        normalLine[0] = sf::Vertex(WorldToScreen(pointWorld, _pixelsPerMeter), color);
+        normalLine[1] = sf::Vertex(WorldToScreen(tipWorld, _pixelsPerMeter), color);
+        window.draw(normalLine);
+
+        sf::VertexArray normalHead(sf::PrimitiveType::Lines, 4);
+        normalHead[0] = sf::Vertex(WorldToScreen(tipWorld, _pixelsPerMeter), color);
+        normalHead[1] = sf::Vertex(WorldToScreen(leftWorld, _pixelsPerMeter), color);
+        normalHead[2] = sf::Vertex(WorldToScreen(tipWorld, _pixelsPerMeter), color);
+        normalHead[3] = sf::Vertex(WorldToScreen(rightWorld, _pixelsPerMeter), color);
+        window.draw(normalHead);
+    }
+
+    [[nodiscard]] const char* RaycastHitTypeName() const
+    {
+        if (!_raycastHit.HasHit)
+        {
+            return "NONE";
+        }
+
+        if (_raycastHitIsTrigger)
+        {
+            return "TRIGGER";
+        }
+
+        const auto body = _raycastHit.Body.lock();
+        if (!body)
+        {
+            return "BODY";
+        }
+
+        if (std::dynamic_pointer_cast<Guch2D::DynamicRigidBody>(body))
+        {
+            return "DYNAMIC";
+        }
+
+        if (std::dynamic_pointer_cast<Guch2D::StaticRigidBody>(body))
+        {
+            return "STATIC";
+        }
+
+        if (std::dynamic_pointer_cast<Guch2D::KinematicBody>(body))
+        {
+            return "KINEMATIC";
+        }
+
+        return "BODY";
+    }
+
     void DrawCircle(sf::RenderWindow& window,
                     const Guch2D::Vect& center,
                     const float radius,
@@ -707,6 +934,11 @@ private:
     Guch2D::Vect _dragStartWorld = {0.0f, 0.0f};
     sf::Vector2f _dragStartScreen = {0.0f, 0.0f};
     sf::Vector2f _dragCurrentScreen = {0.0f, 0.0f};
+    bool _draggingRaycast = false;
+    Guch2D::Vect _raycastStartWorld = {0.0f, 0.0f};
+    Guch2D::Vect _raycastCurrentWorld = {0.0f, 0.0f};
+    Guch2D::RaycastHit _raycastHit;
+    bool _raycastHitIsTrigger = false;
     SpawnShape _spawnShape = SpawnShape::Circle;
     float _spawnMass = BallMass;
     float _spawnBounciness = DefaultSpawnBounciness;
