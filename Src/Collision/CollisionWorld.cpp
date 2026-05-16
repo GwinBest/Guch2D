@@ -269,11 +269,15 @@ namespace
 
         const Guch2D::Vect originToCenter = origin - center;
         const float bHalf = Guch2D::VectDot(originToCenter, directionNormalized);
-        const float c = Guch2D::VectDot(originToCenter, originToCenter) - (radius * radius);
+        const float centerDistanceSquaredMinusRadiusSquared = Guch2D::VectDot(originToCenter,
+                                                                              originToCenter)
+                                                            - (radius * radius);
 
-        const float discriminant = (bHalf * bHalf) - c;
+        const float discriminant = (bHalf * bHalf) - centerDistanceSquaredMinusRadiusSquared;
         const float scaledEpsilon = std::numeric_limits<float>::epsilon()
-                                  * std::max({1.0F, std::abs(bHalf), std::abs(c)});
+                                  * std::max({1.0F,
+                                              std::abs(bHalf),
+                                              std::abs(centerDistanceSquaredMinusRadiusSquared)});
         if (discriminant < -scaledEpsilon)
             return {};
 
@@ -317,21 +321,26 @@ namespace
         Guch2D::Vect exitNormal = {0.0F, 0.0F};
         constexpr float parallelEpsilon = 1.0e-6F;
 
-        const auto intersectSlab = [&](const float originAxis,
-                                       const float directionAxis,
-                                       const float minimumAxis,
-                                       const float maximumAxis,
-                                       const Guch2D::Vect& minimumNormal,
-                                       const Guch2D::Vect& maximumNormal) -> bool {
-            if (std::abs(directionAxis) <= parallelEpsilon)
-                return originAxis >= minimumAxis && originAxis <= maximumAxis;
+        struct SlabInput
+        {
+            float OriginAxis = 0.0F;
+            float DirectionAxis = 0.0F;
+            float MinimumAxis = 0.0F;
+            float MaximumAxis = 0.0F;
+            Guch2D::Vect MinimumNormal;
+            Guch2D::Vect MaximumNormal;
+        };
 
-            const float inverseDirectionAxis = 1.0F / directionAxis;
-            float nearDistance = (minimumAxis - originAxis) * inverseDirectionAxis;
-            float farDistance = (maximumAxis - originAxis) * inverseDirectionAxis;
+        const auto intersectSlab = [&](const SlabInput& slab) -> bool {
+            if (std::abs(slab.DirectionAxis) <= parallelEpsilon)
+                return slab.OriginAxis >= slab.MinimumAxis && slab.OriginAxis <= slab.MaximumAxis;
 
-            Guch2D::Vect nearNormal = minimumNormal;
-            Guch2D::Vect farNormal = maximumNormal;
+            const float inverseDirectionAxis = 1.0F / slab.DirectionAxis;
+            float nearDistance = (slab.MinimumAxis - slab.OriginAxis) * inverseDirectionAxis;
+            float farDistance = (slab.MaximumAxis - slab.OriginAxis) * inverseDirectionAxis;
+
+            Guch2D::Vect nearNormal = slab.MinimumNormal;
+            Guch2D::Vect farNormal = slab.MaximumNormal;
             if (nearDistance > farDistance)
             {
                 std::swap(nearDistance, farDistance);
@@ -353,22 +362,26 @@ namespace
             return distanceToEnter <= distanceToExit;
         };
 
-        if (!intersectSlab(origin.x,
-                           directionNormalized.x,
-                           minX,
-                           maxX,
-                           {-1.0F, 0.0F},
-                           {1.0F, 0.0F}))
+        if (!intersectSlab({
+                origin.x,
+                directionNormalized.x,
+                minX,
+                maxX,
+                {-1.0F, 0.0F},
+                {1.0F,  0.0F}
+        }))
         {
             return {};
         }
 
-        if (!intersectSlab(origin.y,
-                           directionNormalized.y,
-                           minY,
-                           maxY,
-                           {0.0F, -1.0F},
-                           {0.0F, 1.0F}))
+        if (!intersectSlab({
+                origin.y,
+                directionNormalized.y,
+                minY,
+                maxY,
+                {0.0F, -1.0F},
+                {0.0F, 1.0F }
+        }))
         {
             return {};
         }
