@@ -1,18 +1,37 @@
 #pragma once
 
 #include <algorithm>
+#include <limits>
 #include <memory>
 #include <vector>
 
 #include "Collision/CollisionBody.hpp"
-#include "Solver/PenetrationVectorSolver.hpp"
+#include "Solver/PositionSolver.hpp"
 
 namespace Guch2D
 {
     class Solver;
 
+    enum class BroadPhaseType : std::uint8_t
+    {
+        SweepAndPrune,
+        SpatialHashing,
+    };
+
+    struct RaycastHit final
+    {
+        std::weak_ptr<CollisionBody> Body;
+        Vect Point = {0.0F, 0.0F};
+        Vect Normal = {0.0F, 0.0F};
+        float Distance = 0.0F;
+        bool HasHit = false;
+    };
+
     class CollisionWorld
     {
+    public:
+        using ObjectType = std::shared_ptr<CollisionBody>;
+
     public:
         CollisionWorld() noexcept = default;
         CollisionWorld(const CollisionWorld&) = default;
@@ -21,11 +40,12 @@ namespace Guch2D
         CollisionWorld& operator=(CollisionWorld&&) = default;
         virtual ~CollisionWorld() = default;
 
-        virtual void Step() const;
+        virtual void Step();
 
-        void AddObject(const std::shared_ptr<CollisionBody>& object)
+        void AddObject(const ObjectType& object)
         {
-            if (!object) return;
+            if (!object)
+                return;
 
             // Avoid duplicates
             if (std::ranges::find(_objects, object) == _objects.end())
@@ -34,16 +54,18 @@ namespace Guch2D
             }
         }
 
-        void RemoveObject(const std::shared_ptr<CollisionBody>& object)
+        void RemoveObject(const ObjectType& object)
         {
-            if (!object) return;
+            if (!object)
+                return;
 
             std::erase(_objects, object);
         }
 
         void AddSolver(const std::shared_ptr<Solver>& solver)
         {
-            if (!solver) return;
+            if (!solver)
+                return;
 
             // Avoid duplicates
             if (std::ranges::find(_solvers, solver) == _solvers.end())
@@ -54,7 +76,8 @@ namespace Guch2D
 
         void RemoveSolver(const std::shared_ptr<Solver>& solver)
         {
-            if (!solver) return;
+            if (!solver)
+                return;
 
             std::erase(_solvers, solver);
         }
@@ -76,27 +99,52 @@ namespace Guch2D
             _timeStep = timeStep;
         }
 
-    protected:
-        void FindCollisions() const;
+        [[nodiscard]] BroadPhaseType GetBroadPhaseType() const noexcept { return _broadPhaseType; }
 
-        void SolveCollisions() const;
+        void SetBroadPhaseType(const BroadPhaseType broadPhaseType) noexcept
+        {
+            _broadPhaseType = broadPhaseType;
+        }
+
+        [[nodiscard]] static CollisionPoints CheckCollisions(ObjectType bodyA, ObjectType bodyB);
+
+        [[nodiscard]] RaycastHit
+            Raycast(const Vect& origin,
+                    const Vect& direction,
+                    float maxDistance = std::numeric_limits<float>::infinity()) const;
+
+        [[nodiscard]] std::vector<RaycastHit>
+            RaycastAll(const Vect& origin,
+                       const Vect& direction,
+                       float maxDistance = std::numeric_limits<float>::infinity()) const;
+
+    protected:
+        std::vector<Collision> BroadPhase();
+
+        void NarrowPhase(const std::vector<Collision>& possibleCollisions) const;
 
         void InvokeBeginOverlap() const;
         void InvokeEndOverlap() const;
 
-        [[nodiscard]] static CollisionPoints CheckCollisions(std::shared_ptr<CollisionBody> bodyA,
-                                                             std::shared_ptr<CollisionBody> bodyB);
+        void SolveCollisions() const;
+
+    private:
+        std::vector<Collision> SweepAndPrune();
+
+        std::vector<Collision> SpatialHashing() const;
 
     public:
         static constexpr float DefaultTimeStep = 1.0F / 60.0F;
 
     protected:
-        std::vector<std::shared_ptr<CollisionBody>> _objects;
+        std::vector<ObjectType> _objects;
         std::vector<std::shared_ptr<Solver>> _solvers;
 
         float _timeStep = DefaultTimeStep;
 
         mutable std::vector<Collision> _collisions;
         mutable std::vector<Collision> _previousCollisions;
+
+        BroadPhaseType _broadPhaseType = BroadPhaseType::SweepAndPrune;
     };
 }   // namespace Guch2D

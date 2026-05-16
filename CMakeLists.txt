@@ -11,6 +11,163 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 option(BUILD_DEMO "Build demo executable" OFF)
 option(BUILD_TEST "Build tests" OFF)
 option(ENABLE_ASAN "Enable AddressSanitizer" ON)
+option(ENABLE_UBSAN "Enable UndefinedBehaviorSanitizer" ON)
+option(ENABLE_CLANG_TIDY "Enable clang-tidy checks for project targets" OFF)
+option(ENABLE_CLANG_FORMAT "Enable clang-format helper targets" ON)
+option(ENABLE_LINT_STRICT "Fail configuration when enabled lint tools are missing" OFF)
+
+set(CLANG_TIDY_CONFIG_FILE "${CMAKE_SOURCE_DIR}/.clang-tidy" CACHE FILEPATH
+        "Path to clang-tidy configuration file."
+)
+set(CLANG_TIDY_HEADER_FILTER "^${CMAKE_SOURCE_DIR}/Src/" CACHE STRING
+        "Regex for headers analyzed by clang-tidy."
+)
+set(CLANG_FORMAT_STYLE_FILE "${CMAKE_SOURCE_DIR}/.clang-format" CACHE FILEPATH
+        "Path to clang-format style configuration file."
+)
+
+set(PROJECT_FORMAT_DIRS Src Demo Test)
+set(PROJECT_FORMAT_EXTENSIONS h hh hpp hxx c cc cpp cxx)
+set(PROJECT_FORMAT_PATTERNS)
+
+foreach (format_dir IN LISTS PROJECT_FORMAT_DIRS)
+    foreach (format_ext IN LISTS PROJECT_FORMAT_EXTENSIONS)
+        list(APPEND PROJECT_FORMAT_PATTERNS "${CMAKE_SOURCE_DIR}/${format_dir}/*.${format_ext}")
+    endforeach ()
+endforeach ()
+
+file(GLOB_RECURSE PROJECT_FORMAT_SOURCES CONFIGURE_DEPENDS ${PROJECT_FORMAT_PATTERNS})
+
+include(CheckCXXCompilerFlag)
+include(CheckLinkerFlag)
+
+set(PROJECT_SANITIZER_COMPILE_FLAGS "")
+set(PROJECT_SANITIZER_LINK_FLAGS "")
+
+macro(append_sanitizer_if_supported sanitizer_name sanitizer_flag)
+    string(MAKE_C_IDENTIFIER "${sanitizer_flag}" sanitizer_flag_id)
+
+    if (DEFINED CMAKE_TRY_COMPILE_TARGET_TYPE)
+        set(_saved_try_compile_target_type "${CMAKE_TRY_COMPILE_TARGET_TYPE}")
+        set(_saved_try_compile_target_type_is_set TRUE)
+    else ()
+        set(_saved_try_compile_target_type_is_set FALSE)
+    endif ()
+
+    set(CMAKE_TRY_COMPILE_TARGET_TYPE "STATIC_LIBRARY")
+    check_cxx_compiler_flag("${sanitizer_flag}" "HAS_CXX_FLAG_${sanitizer_flag_id}")
+    if (_saved_try_compile_target_type_is_set)
+        set(CMAKE_TRY_COMPILE_TARGET_TYPE "${_saved_try_compile_target_type}")
+    else ()
+        unset(CMAKE_TRY_COMPILE_TARGET_TYPE)
+    endif ()
+
+    check_linker_flag(CXX "${sanitizer_flag}" "HAS_LINKER_FLAG_${sanitizer_flag_id}")
+
+    if (HAS_CXX_FLAG_${sanitizer_flag_id} AND HAS_LINKER_FLAG_${sanitizer_flag_id})
+        list(APPEND PROJECT_SANITIZER_COMPILE_FLAGS "${sanitizer_flag}")
+        list(APPEND PROJECT_SANITIZER_LINK_FLAGS "${sanitizer_flag}")
+    else ()
+        message(WARNING
+                "${sanitizer_name} requested, but '${sanitizer_flag}' is not fully supported by "
+                "${CMAKE_CXX_COMPILER_ID} (${CMAKE_CXX_COMPILER}). Skipping ${sanitizer_name}."
+        )
+    endif ()
+endmacro()
+
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+    if (ENABLE_ASAN)
+        append_sanitizer_if_supported("ASan" "-fsanitize=address")
+    endif ()
+    if (ENABLE_UBSAN)
+        append_sanitizer_if_supported("UBSan" "-fsanitize=undefined")
+    endif ()
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    if (ENABLE_UBSAN)
+        message(WARNING "UBSan is not supported by the MSVC toolchain and will be ignored.")
+    endif ()
+endif ()
+
+if (ENABLE_CLANG_TIDY)
+    find_program(CLANG_TIDY_EXE NAMES clang-tidy)
+    if (NOT CLANG_TIDY_EXE)
+        if (ENABLE_LINT_STRICT)
+            message(FATAL_ERROR
+                    "ENABLE_CLANG_TIDY is ON, but clang-tidy was not found in PATH."
+            )
+        endif ()
+        message(WARNING
+                "ENABLE_CLANG_TIDY is ON, but clang-tidy was not found in PATH. "
+                "Disabling clang-tidy integration for this configure."
+        )
+        set(ENABLE_CLANG_TIDY OFF)
+    endif ()
+endif ()
+
+if (ENABLE_CLANG_TIDY)
+    if (NOT EXISTS "${CLANG_TIDY_CONFIG_FILE}")
+        message(FATAL_ERROR
+                "ENABLE_CLANG_TIDY is ON, but '${CLANG_TIDY_CONFIG_FILE}' does not exist."
+        )
+    endif ()
+
+    set(PROJECT_CXX_CLANG_TIDY
+            "${CLANG_TIDY_EXE}"
+            "-p=${CMAKE_BINARY_DIR}"
+            "--config-file=${CLANG_TIDY_CONFIG_FILE}"
+            "-header-filter=${CLANG_TIDY_HEADER_FILTER}"
+    )
+
+    message(STATUS "clang-tidy enabled for Src target: ${CLANG_TIDY_EXE}")
+else ()
+    unset(PROJECT_CXX_CLANG_TIDY)
+endif ()
+
+if (ENABLE_CLANG_FORMAT)
+    find_program(CLANG_FORMAT_EXE NAMES clang-format)
+    if (NOT CLANG_FORMAT_EXE)
+        if (ENABLE_LINT_STRICT)
+            message(FATAL_ERROR
+                    "ENABLE_CLANG_FORMAT is ON, but clang-format was not found in PATH."
+            )
+        endif ()
+        message(WARNING
+                "ENABLE_CLANG_FORMAT is ON, but clang-format was not found in PATH. "
+                "Skipping format helper targets."
+        )
+        set(ENABLE_CLANG_FORMAT OFF)
+    endif ()
+endif ()
+
+if (ENABLE_CLANG_FORMAT)
+    if (NOT EXISTS "${CLANG_FORMAT_STYLE_FILE}")
+        message(FATAL_ERROR
+                "ENABLE_CLANG_FORMAT is ON, but '${CLANG_FORMAT_STYLE_FILE}' does not exist."
+        )
+    endif ()
+
+    if (NOT PROJECT_FORMAT_SOURCES)
+        message(WARNING
+                "ENABLE_CLANG_FORMAT is ON, but no source files were found for format targets."
+        )
+    else ()
+        add_custom_target(format
+                COMMAND "${CLANG_FORMAT_EXE}" -i --style=file ${PROJECT_FORMAT_SOURCES}
+                WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+                COMMENT "Formatting project sources with clang-format"
+                VERBATIM
+        )
+
+        add_custom_target(format-check
+                COMMAND "${CLANG_FORMAT_EXE}" --dry-run --Werror --style=file ${PROJECT_FORMAT_SOURCES}
+                WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+                COMMENT "Checking formatting of project sources with clang-format"
+                VERBATIM
+        )
+    endif ()
+
+    message(STATUS "clang-format enabled: ${CLANG_FORMAT_EXE}")
+endif ()
 
 function(copy_msvc_asan_runtime target_name)
     if (NOT MSVC OR NOT ENABLE_ASAN)
@@ -45,27 +202,48 @@ function(copy_msvc_asan_runtime target_name)
     endforeach ()
 endfunction()
 
-function(enable_asan target_name)
-    if (NOT ENABLE_ASAN)
-        return()
-    endif ()
-
+function(enable_sanitizers target_name)
     if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
-        target_compile_options(${target_name} PRIVATE
-                $<$<CONFIG:Debug>:-fsanitize=address -fno-omit-frame-pointer>
-                $<$<CONFIG:RelWithDebInfo>:-fsanitize=address -fno-omit-frame-pointer>
-        )
-        target_link_options(${target_name} PRIVATE
-                $<$<CONFIG:Debug>:-fsanitize=address>
-                $<$<CONFIG:RelWithDebInfo>:-fsanitize=address>
-        )
-    elseif (MSVC)
+        if (NOT PROJECT_SANITIZER_COMPILE_FLAGS)
+            return()
+        endif ()
+
+        foreach (sanitizer_flag IN LISTS PROJECT_SANITIZER_COMPILE_FLAGS)
+            target_compile_options(${target_name} PRIVATE
+                    $<$<CONFIG:Debug>:${sanitizer_flag}>
+                    $<$<CONFIG:RelWithDebInfo>:${sanitizer_flag}>
+            )
+        endforeach ()
+
+        foreach (sanitizer_flag IN LISTS PROJECT_SANITIZER_LINK_FLAGS)
+            target_link_options(${target_name} PRIVATE
+                    $<$<CONFIG:Debug>:${sanitizer_flag}>
+                    $<$<CONFIG:RelWithDebInfo>:${sanitizer_flag}>
+            )
+        endforeach ()
+
+        if ("-fsanitize=address" IN_LIST PROJECT_SANITIZER_COMPILE_FLAGS
+                OR "-fsanitize=leak" IN_LIST PROJECT_SANITIZER_COMPILE_FLAGS)
+            target_compile_options(${target_name} PRIVATE
+                    $<$<CONFIG:Debug>:-fno-omit-frame-pointer>
+                    $<$<CONFIG:RelWithDebInfo>:-fno-omit-frame-pointer>
+            )
+        endif ()
+    elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+        if (NOT ENABLE_ASAN)
+            return()
+        endif ()
+
         target_compile_options(${target_name} PRIVATE
                 $<$<CONFIG:Debug>:/fsanitize=address>
                 $<$<CONFIG:RelWithDebInfo>:/fsanitize=address>
         )
         copy_msvc_asan_runtime(${target_name})
     endif ()
+endfunction()
+
+function(enable_asan target_name)
+    enable_sanitizers(${target_name})
 endfunction()
 
 function(enable_project_warnings target_name)

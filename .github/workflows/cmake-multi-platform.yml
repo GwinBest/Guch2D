@@ -67,6 +67,8 @@ jobs:
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
         -DBUILD_TEST=ON
+        -DENABLE_CLANG_TIDY=OFF
+        -DENABLE_CLANG_FORMAT=OFF
         -S ${{ github.workspace }}
 
     - name: Build
@@ -78,3 +80,40 @@ jobs:
       # Execute tests defined by the CMake configuration. Note that --build-config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
       # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
       run: ctest --build-config ${{ matrix.build_type }}
+
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install LLVM 22 tools
+      run: |
+        wget https://apt.llvm.org/llvm.sh
+        chmod +x llvm.sh
+        sudo ./llvm.sh 22
+        echo "/usr/lib/llvm-22/bin" >> "$GITHUB_PATH"
+        sudo apt-get update
+        sudo apt-get install -y clang-format-22 clang-tidy-22
+
+    - name: Configure CMake (strict lint mode)
+      run: >
+        cmake -B ${{ github.workspace }}/build-lint
+        -DCMAKE_C_COMPILER=clang
+        -DCMAKE_CXX_COMPILER=clang++
+        -DCMAKE_BUILD_TYPE=Debug
+        -DBUILD_TEST=ON
+        -DENABLE_ASAN=OFF
+        -DENABLE_UBSAN=OFF
+        -DENABLE_CLANG_TIDY=ON
+        -DENABLE_CLANG_FORMAT=ON
+        -DENABLE_LINT_STRICT=ON
+        -DCLANG_TIDY_EXE=/usr/lib/llvm-22/bin/clang-tidy
+        -DCLANG_FORMAT_EXE=/usr/lib/llvm-22/bin/clang-format
+        -S ${{ github.workspace }}
+
+    - name: Check formatting
+      run: cmake --build ${{ github.workspace }}/build-lint --target format-check
+
+    - name: Build with clang-tidy
+      run: cmake --build ${{ github.workspace }}/build-lint --config Debug

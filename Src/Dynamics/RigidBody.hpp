@@ -1,5 +1,7 @@
 #pragma once
 
+#include <algorithm>
+
 #include "Collision/CollisionBody.hpp"
 #include "Math/Vector.hpp"
 
@@ -7,6 +9,13 @@ namespace Guch2D
 {
     class RigidBody : public CollisionBody
     {
+    private:
+        enum class MassMode : std::uint8_t
+        {
+            Manual,
+            FromDensity
+        };
+
     public:
         RigidBody() noexcept = default;
 
@@ -24,22 +33,112 @@ namespace Guch2D
         RigidBody(RigidBody&&) = default;
         RigidBody& operator=(const RigidBody&) = default;
         RigidBody& operator=(RigidBody&&) = default;
-        ~RigidBody() override = default;
+        ~RigidBody() override = 0;
 
-        [[nodiscard]] float GetMass() const noexcept { return _mass; }
+        [[nodiscard]] float GetMass() const noexcept
+        {
+            if (_massMode == MassMode::FromDensity)
+            {
+                const auto collider = GetCollider();
+                if (!collider)
+                    return 0.0F;
+
+                const float mass = _density * collider->GetArea();
+                return (mass > 0.0F && IsFinite(mass)) ? mass : 0.0F;
+            }
+
+            return _mass;
+        }
 
         void SetMass(const float mass) noexcept
         {
-            if (mass <= 0.0F || !IsFinite(mass))
+            _massMode = MassMode::Manual;
+            _density = 0.0F;
+            _mass = (mass > 0.0F && IsFinite(mass)) ? mass : 0.0F;
+        }
+
+        [[nodiscard]] float GetDensity() const noexcept { return _density; }
+
+        void SetDensity(const float density) noexcept
+        {
+            _density = (density > 0.0F && IsFinite(density)) ? density : 0.0F;
+            _massMode = (_density > 0.0F) ? MassMode::FromDensity : MassMode::Manual;
+        }
+
+        [[nodiscard]] float GetBounciness() const noexcept { return _bounciness; }
+
+        // Bounciness always stays between 0 and 1
+        // A value of 0 indicates no bounce while a value of 1 indicates a perfect bounce with no
+        // loss of energy.
+        void SetBounciness(const float bounciness) noexcept
+        {
+            if (!IsFinite(bounciness))
             {
-                _mass = 0.0F;
+                _bounciness = 0.0F;
                 return;
             }
 
-            _mass = mass;
+            _bounciness = std::clamp(bounciness, 0.0F, 1.0F);
+        }
+
+        [[nodiscard]] float GetStaticFriction() const noexcept { return _staticFriction; }
+
+        // The friction used when an object is laying still on a surface. Usually a value from 0
+        // to 1. A value of zero feels like ice, a value of 1 will make it very hard to get the
+        // object moving.
+        void SetStaticFriction(const float staticFriction) noexcept
+        {
+            if (!IsFinite(staticFriction))
+            {
+                _staticFriction = 0.0F;
+                return;
+            }
+
+            _staticFriction = std::clamp(staticFriction, 0.0F, 1.0F);
+        }
+
+        [[nodiscard]] float GetDynamicFriction() const noexcept { return _dynamicFriction; }
+
+        // The friction used when already moving. Usually a value from 0 to 1. A value of zero
+        // feels like ice, a value of 1 will make it come to rest very quickly unless a lot of force
+        // or gravity pushes the object.
+        void SetDynamicFriction(const float dynamicFriction) noexcept
+        {
+            if (!IsFinite(dynamicFriction))
+            {
+                _dynamicFriction = 0.0F;
+                return;
+            }
+
+            _dynamicFriction = std::clamp(dynamicFriction, 0.0F, 1.0F);
         }
 
     private:
+        // Mass of the rigid body, in kilograms (kg)
+        // NOTE: Do not access this field directly, use GetMass() instead
         float _mass = 0.0F;
+
+        // Density of the rigid body, in kilograms per square meter (kg/m^2)
+        float _density = 0.0F;
+
+        // Bounciness of the rigid body
+        // Bounciness always stays between 0 and 1
+        // A value of 0 indicates no bounce while a value of 1 indicates a perfect bounce with no
+        // loss of energy (if friction and linear damping is 0).
+        float _bounciness = 0.0F;
+
+        // The friction used when an object is laying still on a surface. Usually a value from 0
+        // to 1. A value of zero feels like ice, a value of 1 will make it very hard to get the
+        // object moving.
+        float _staticFriction = 0.0F;
+
+        // The friction used when already moving. Usually a value from 0 to 1. A value of zero
+        // feels like ice, a value of 1 will make it come to rest very quickly unless a lot of force
+        // or gravity pushes the object.
+        float _dynamicFriction = 0.0F;
+
+        MassMode _massMode = MassMode::Manual;
     };
+
+    inline RigidBody::~RigidBody() = default;
 }   // namespace Guch2D

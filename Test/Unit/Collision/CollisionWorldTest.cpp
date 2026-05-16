@@ -1,18 +1,88 @@
 #include "Collision/CollisionWorld.hpp"
 
+#include <cmath>
 #include <gtest/gtest.h>
 
+#include "Collision/AABBCollider.hpp"
 #include "Collision/CircleCollider.hpp"
-#include "Solver/PenetrationVectorSolver.hpp"
+#include "Dynamics/DynamicRigidBody.hpp"
+#include "Dynamics/KinematicBody.hpp"
+#include "Dynamics/StaticRigidBody.hpp"
+#include "Solver/PositionSolver.hpp"
 
 namespace
 {
+    class TestCollisionBody final : public Guch2D::CollisionBody
+    {
+    public:
+        using Guch2D::CollisionBody::CollisionBody;
+    };
 
     class CollisionWorldTest final : public Guch2D::CollisionWorld
     {
     public:
+        using Guch2D::CollisionWorld::BroadPhase;
         using Guch2D::CollisionWorld::CheckCollisions;
+        using Guch2D::CollisionWorld::NarrowPhase;
+
+        [[nodiscard]] size_t GetCollisionsCount() const noexcept { return _collisions.size(); }
     };
+
+    [[nodiscard]] std::shared_ptr<Guch2D::CollisionBody>
+        MakeAABBBody(const Guch2D::Vect& position,
+                     const Guch2D::Vect& extent,
+                     const Guch2D::Vect& colliderCenter = {0.0F, 0.0F})
+    {
+        const auto body = std::make_shared<TestCollisionBody>();
+        body->SetPosition(position);
+
+        const auto collider = std::make_shared<Guch2D::AABBCollider>(extent);
+        collider->SetCenterLocal(colliderCenter);
+        body->SetCollider(collider);
+
+        return body;
+    }
+
+    [[nodiscard]] std::shared_ptr<Guch2D::CollisionBody>
+        MakeCircleBody(const Guch2D::Vect& position,
+                       const float radius,
+                       const Guch2D::Vect& colliderCenter = {0.0F, 0.0F})
+    {
+        const auto body = std::make_shared<TestCollisionBody>();
+        body->SetPosition(position);
+
+        const auto collider = std::make_shared<Guch2D::CircleCollider>(radius);
+        collider->SetCenterLocal(colliderCenter);
+        body->SetCollider(collider);
+
+        return body;
+    }
+
+    [[nodiscard]] std::shared_ptr<Guch2D::StaticRigidBody>
+        MakeStaticCircleRigidBody(const Guch2D::Vect& position, const float radius)
+    {
+        const auto body = std::make_shared<Guch2D::StaticRigidBody>(position);
+        body->SetCollider(std::make_shared<Guch2D::CircleCollider>(radius));
+        return body;
+    }
+
+    [[nodiscard]] std::shared_ptr<Guch2D::KinematicBody>
+        MakeKinematicCircleRigidBody(const Guch2D::Vect& position, const float radius)
+    {
+        const auto body = std::make_shared<Guch2D::KinematicBody>(position);
+        body->SetCollider(std::make_shared<Guch2D::CircleCollider>(radius));
+        return body;
+    }
+
+    [[nodiscard]] std::shared_ptr<Guch2D::DynamicRigidBody>
+        MakeDynamicCircleRigidBody(const Guch2D::Vect& position,
+                                   const float radius,
+                                   const float mass = 1.0F)
+    {
+        const auto body = std::make_shared<Guch2D::DynamicRigidBody>(position, mass);
+        body->SetCollider(std::make_shared<Guch2D::CircleCollider>(radius));
+        return body;
+    }
 
     TEST(CollisionWorldTest, DefaultConstructor)
     {
@@ -23,7 +93,7 @@ namespace
     TEST(CollisionWorldTest, AddObject)
     {
         Guch2D::CollisionWorld world;
-        const auto body = std::make_shared<Guch2D::CollisionBody>();
+        const auto body = std::make_shared<TestCollisionBody>();
         world.AddObject(body);
         EXPECT_EQ(world.GetObjectsCount(), 1U);
     }
@@ -31,7 +101,7 @@ namespace
     TEST(CollisionWorldTest, AddDuplicateObject)
     {
         Guch2D::CollisionWorld world;
-        const auto body = std::make_shared<Guch2D::CollisionBody>();
+        const auto body = std::make_shared<TestCollisionBody>();
         world.AddObject(body);
         world.AddObject(body);
         EXPECT_EQ(world.GetObjectsCount(), 1U);
@@ -48,7 +118,7 @@ namespace
     TEST(CollisionWorldTest, RemoveObject)
     {
         Guch2D::CollisionWorld world;
-        const auto body = std::make_shared<Guch2D::CollisionBody>();
+        const auto body = std::make_shared<TestCollisionBody>();
         world.AddObject(body);
         world.RemoveObject(body);
         EXPECT_EQ(world.GetObjectsCount(), 0U);
@@ -57,7 +127,7 @@ namespace
     TEST(CollisionWorldTest, RemoveDuplicateObject)
     {
         Guch2D::CollisionWorld world;
-        const auto body = std::make_shared<Guch2D::CollisionBody>();
+        const auto body = std::make_shared<TestCollisionBody>();
         world.AddObject(body);
         world.RemoveObject(body);
         world.RemoveObject(body);
@@ -107,9 +177,158 @@ namespace
         EXPECT_FLOAT_EQ(world.GetTimeStep(), Guch2D::CollisionWorld::DefaultTimeStep);
     }
 
-    TEST(CollisionWorldTest, StepNoObjects)
+    TEST(CollisionWorldTest, GetBroadPhaseTypeDefaultIsSweepAndPrune)
     {
         const Guch2D::CollisionWorld world;
+        EXPECT_EQ(world.GetBroadPhaseType(), Guch2D::BroadPhaseType::SweepAndPrune);
+    }
+
+    TEST(CollisionWorldTest, SetBroadPhaseTypeSpatialHashing)
+    {
+        Guch2D::CollisionWorld world;
+        world.SetBroadPhaseType(Guch2D::BroadPhaseType::SpatialHashing);
+        EXPECT_EQ(world.GetBroadPhaseType(), Guch2D::BroadPhaseType::SpatialHashing);
+    }
+
+    TEST(CollisionWorldTest, StepTwoCirclesWithSpatialHashingDetectsCollision)
+    {
+        Guch2D::CollisionWorld world;
+        world.SetBroadPhaseType(Guch2D::BroadPhaseType::SpatialHashing);
+
+        const auto bodyA = MakeCircleBody({0.0F, 0.0F}, 2.0F);
+        const auto bodyB = MakeCircleBody({3.0F, 0.0F}, 2.0F);
+
+        bool onBeginOverlapCalledA = false;
+        bool onBeginOverlapCalledB = false;
+        bodyA->BindOnBeginOverlap([&](const Guch2D::Collision&) { onBeginOverlapCalledA = true; });
+        bodyB->BindOnBeginOverlap([&](const Guch2D::Collision&) { onBeginOverlapCalledB = true; });
+
+        world.AddObject(bodyA);
+        world.AddObject(bodyB);
+        world.Step();
+
+        EXPECT_TRUE(onBeginOverlapCalledA);
+        EXPECT_TRUE(onBeginOverlapCalledB);
+    }
+
+    TEST(CollisionWorldTest, SpatialHashingDeduplicatesCollisionPairAcrossNeighborCells)
+    {
+        Guch2D::CollisionWorld world;
+        world.SetBroadPhaseType(Guch2D::BroadPhaseType::SpatialHashing);
+
+        const auto bodyA = MakeCircleBody({3.9F, 0.0F}, 1.0F);
+        const auto bodyB = MakeCircleBody({4.1F, 0.0F}, 1.0F);
+
+        std::uint8_t onBeginOverlapCalledACount = 0;
+        std::uint8_t onBeginOverlapCalledBCount = 0;
+        bodyA->BindOnBeginOverlap([&](const Guch2D::Collision&) { ++onBeginOverlapCalledACount; });
+        bodyB->BindOnBeginOverlap([&](const Guch2D::Collision&) { ++onBeginOverlapCalledBCount; });
+
+        world.AddObject(bodyA);
+        world.AddObject(bodyB);
+        world.Step();
+
+        EXPECT_EQ(onBeginOverlapCalledACount, 1);
+        EXPECT_EQ(onBeginOverlapCalledBCount, 1);
+    }
+
+    TEST(CollisionWorldTest, SweepAndPruneSkipsSleepingDynamicBodyAgainstStaticBody)
+    {
+        CollisionWorldTest world;
+
+        const auto sleepingBody = MakeDynamicCircleRigidBody({0.0F, 0.0F}, 2.0F);
+        sleepingBody->SetAwake(false);
+        const auto staticBody = MakeStaticCircleRigidBody({1.0F, 0.0F}, 2.0F);
+
+        world.AddObject(sleepingBody);
+        world.AddObject(staticBody);
+
+        EXPECT_TRUE(world.BroadPhase().empty());
+
+        Guch2D::Collision collision;
+        collision.BodyA = sleepingBody;
+        collision.BodyB = staticBody;
+        world.NarrowPhase({collision});
+
+        EXPECT_EQ(world.GetCollisionsCount(), 0U);
+        EXPECT_FALSE(sleepingBody->IsAwake());
+    }
+
+    TEST(CollisionWorldTest, SpatialHashingSkipsSleepingDynamicBodyAgainstStaticBody)
+    {
+        CollisionWorldTest world;
+        world.SetBroadPhaseType(Guch2D::BroadPhaseType::SpatialHashing);
+
+        const auto sleepingBody = MakeDynamicCircleRigidBody({0.0F, 0.0F}, 2.0F);
+        sleepingBody->SetAwake(false);
+        const auto staticBody = MakeStaticCircleRigidBody({1.0F, 0.0F}, 2.0F);
+
+        world.AddObject(sleepingBody);
+        world.AddObject(staticBody);
+
+        EXPECT_TRUE(world.BroadPhase().empty());
+    }
+
+    TEST(CollisionWorldTest, StepWakesSleepingDynamicBodyWhenHitByAwakeDynamicBody)
+    {
+        Guch2D::CollisionWorld world;
+
+        const auto sleepingBody = MakeDynamicCircleRigidBody({0.0F, 0.0F}, 2.0F);
+        sleepingBody->SetAwake(false);
+        const auto awakeBody = MakeDynamicCircleRigidBody({1.0F, 0.0F}, 2.0F);
+        awakeBody->SetVelocity({-0.5F, 0.0F});
+
+        world.AddObject(sleepingBody);
+        world.AddObject(awakeBody);
+
+        world.Step();
+
+        EXPECT_TRUE(sleepingBody->IsAwake());
+        EXPECT_TRUE(awakeBody->IsAwake());
+    }
+
+    TEST(CollisionWorldTest, StepDoesNotWakeSleepingDynamicBodyFromLowSpeedRestingContact)
+    {
+        Guch2D::CollisionWorld world;
+
+        const auto sleepingBody = MakeDynamicCircleRigidBody({0.0F, 0.0F}, 2.0F);
+        sleepingBody->SetAwake(false);
+        const auto awakeBody = MakeDynamicCircleRigidBody({3.99F, 0.0F}, 2.0F);
+        awakeBody->SetVelocity({-0.05F, 0.0F});
+
+        world.AddObject(sleepingBody);
+        world.AddObject(awakeBody);
+
+        world.Step();
+
+        EXPECT_FALSE(sleepingBody->IsAwake());
+        EXPECT_TRUE(awakeBody->IsAwake());
+    }
+
+    TEST(CollisionWorldTest, StepDoesNotWakeSleepingDynamicBodyAgainstStaticBody)
+    {
+        Guch2D::CollisionWorld world;
+
+        const auto sleepingBody = MakeDynamicCircleRigidBody({0.0F, 0.0F}, 2.0F);
+        sleepingBody->SetAwake(false);
+        const auto staticBody = MakeStaticCircleRigidBody({1.0F, 0.0F}, 2.0F);
+
+        bool onBeginOverlapCalled = false;
+        sleepingBody->BindOnBeginOverlap(
+            [&](const Guch2D::Collision&) { onBeginOverlapCalled = true; });
+
+        world.AddObject(sleepingBody);
+        world.AddObject(staticBody);
+
+        world.Step();
+
+        EXPECT_FALSE(sleepingBody->IsAwake());
+        EXPECT_FALSE(onBeginOverlapCalled);
+    }
+
+    TEST(CollisionWorldTest, StepNoObjects)
+    {
+        Guch2D::CollisionWorld world;
         world.Step();
         SUCCEED();
     }
@@ -117,7 +336,7 @@ namespace
     TEST(CollisionWorldTest, StepOneCircleNoCollision)
     {
         Guch2D::CollisionWorld world;
-        const auto body = std::make_shared<Guch2D::CollisionBody>();
+        const auto body = std::make_shared<TestCollisionBody>();
         body->SetCollider(std::make_shared<Guch2D::CircleCollider>());
 
         bool onBeginOverlapCalled = false;
@@ -136,12 +355,12 @@ namespace
     {
         Guch2D::CollisionWorld world;
 
-        const auto bodyA = std::make_shared<Guch2D::CollisionBody>();
+        const auto bodyA = std::make_shared<TestCollisionBody>();
         bodyA->SetPosition({0.0F, 0.0F});
         bodyA->SetCollider(std::make_shared<Guch2D::CircleCollider>());
         std::dynamic_pointer_cast<Guch2D::CircleCollider>(bodyA->GetCollider())->SetRadius(0.5F);
 
-        const auto bodyB = std::make_shared<Guch2D::CollisionBody>();
+        const auto bodyB = std::make_shared<TestCollisionBody>();
         bodyB->SetPosition({5.0F, 5.0F});
         bodyB->SetCollider(std::make_shared<Guch2D::CircleCollider>());
         std::dynamic_pointer_cast<Guch2D::CircleCollider>(bodyB->GetCollider())->SetRadius(0.5F);
@@ -170,12 +389,12 @@ namespace
     {
         Guch2D::CollisionWorld world;
 
-        const auto bodyA = std::make_shared<Guch2D::CollisionBody>();
+        const auto bodyA = std::make_shared<TestCollisionBody>();
         bodyA->SetPosition({0.0F, 0.0F});
         bodyA->SetCollider(std::make_shared<Guch2D::CircleCollider>());
         std::dynamic_pointer_cast<Guch2D::CircleCollider>(bodyA->GetCollider())->SetRadius(5.0F);
 
-        const auto bodyB = std::make_shared<Guch2D::CollisionBody>();
+        const auto bodyB = std::make_shared<TestCollisionBody>();
         bodyB->SetPosition({5.0F, 0.0F});
         bodyB->SetCollider(std::make_shared<Guch2D::CircleCollider>());
         std::dynamic_pointer_cast<Guch2D::CircleCollider>(bodyB->GetCollider())->SetRadius(5.0F);
@@ -211,12 +430,12 @@ namespace
     {
         Guch2D::CollisionWorld world;
 
-        const auto bodyA = std::make_shared<Guch2D::CollisionBody>();
+        const auto bodyA = std::make_shared<TestCollisionBody>();
         bodyA->SetPosition({0.0F, 0.0F});
         bodyA->SetCollider(std::make_shared<Guch2D::CircleCollider>());
         std::dynamic_pointer_cast<Guch2D::CircleCollider>(bodyA->GetCollider())->SetRadius(2.0F);
 
-        const auto bodyB = std::make_shared<Guch2D::CollisionBody>();
+        const auto bodyB = std::make_shared<TestCollisionBody>();
         bodyB->SetPosition({4.0F, 0.0F});
         bodyB->SetCollider(std::make_shared<Guch2D::CircleCollider>());
         std::dynamic_pointer_cast<Guch2D::CircleCollider>(bodyB->GetCollider())->SetRadius(2.0F);
@@ -245,12 +464,12 @@ namespace
     {
         Guch2D::CollisionWorld world;
 
-        const auto bodyA = std::make_shared<Guch2D::CollisionBody>();
+        const auto bodyA = std::make_shared<TestCollisionBody>();
         bodyA->SetPosition({0.0F, 0.0F});
         bodyA->SetCollider(std::make_shared<Guch2D::CircleCollider>());
         std::dynamic_pointer_cast<Guch2D::CircleCollider>(bodyA->GetCollider())->SetRadius(2.0F);
 
-        const auto bodyB = std::make_shared<Guch2D::CollisionBody>();
+        const auto bodyB = std::make_shared<TestCollisionBody>();
         bodyB->SetPosition({4.0F, 0.0F});
         bodyB->SetCollider(std::make_shared<Guch2D::CircleCollider>());
         std::dynamic_pointer_cast<Guch2D::CircleCollider>(bodyB->GetCollider())->SetRadius(2.0F);
@@ -288,17 +507,17 @@ namespace
     {
         Guch2D::CollisionWorld world;
 
-        const auto bodyA = std::make_shared<Guch2D::CollisionBody>();
+        const auto bodyA = std::make_shared<TestCollisionBody>();
         bodyA->SetPosition({0.0F, 0.0F});
         bodyA->SetCollider(std::make_shared<Guch2D::CircleCollider>());
         std::dynamic_pointer_cast<Guch2D::CircleCollider>(bodyA->GetCollider())->SetRadius(2.0F);
 
-        const auto bodyB = std::make_shared<Guch2D::CollisionBody>();
+        const auto bodyB = std::make_shared<TestCollisionBody>();
         bodyB->SetPosition({4.0F, 0.0F});
         bodyB->SetCollider(std::make_shared<Guch2D::CircleCollider>());
         std::dynamic_pointer_cast<Guch2D::CircleCollider>(bodyB->GetCollider())->SetRadius(2.0F);
 
-        const auto bodyC = std::make_shared<Guch2D::CollisionBody>();
+        const auto bodyC = std::make_shared<TestCollisionBody>();
         bodyC->SetPosition({2.0F, 2.0F});
         bodyC->SetCollider(std::make_shared<Guch2D::CircleCollider>());
         std::dynamic_pointer_cast<Guch2D::CircleCollider>(bodyC->GetCollider())->SetRadius(2.0F);
@@ -336,17 +555,17 @@ namespace
     {
         Guch2D::CollisionWorld world;
 
-        const auto bodyA = std::make_shared<Guch2D::CollisionBody>();
+        const auto bodyA = std::make_shared<TestCollisionBody>();
         bodyA->SetPosition({0.0F, 0.0F});
         bodyA->SetCollider(std::make_shared<Guch2D::CircleCollider>());
         std::dynamic_pointer_cast<Guch2D::CircleCollider>(bodyA->GetCollider())->SetRadius(2.0F);
 
-        const auto bodyB = std::make_shared<Guch2D::CollisionBody>();
+        const auto bodyB = std::make_shared<TestCollisionBody>();
         bodyB->SetPosition({4.0F, 0.0F});
         bodyB->SetCollider(std::make_shared<Guch2D::CircleCollider>());
         std::dynamic_pointer_cast<Guch2D::CircleCollider>(bodyB->GetCollider())->SetRadius(2.0F);
 
-        const auto bodyC = std::make_shared<Guch2D::CollisionBody>();
+        const auto bodyC = std::make_shared<TestCollisionBody>();
         bodyC->SetPosition({2.0F, 2.0F});
         bodyC->SetCollider(std::make_shared<Guch2D::CircleCollider>());
         std::dynamic_pointer_cast<Guch2D::CircleCollider>(bodyC->GetCollider())->SetRadius(2.0F);
@@ -398,17 +617,17 @@ namespace
     {
         Guch2D::CollisionWorld world;
 
-        const auto bodyA = std::make_shared<Guch2D::CollisionBody>();
+        const auto bodyA = std::make_shared<TestCollisionBody>();
         bodyA->SetPosition({0.0F, 0.0F});
         bodyA->SetCollider(std::make_shared<Guch2D::CircleCollider>());
         std::dynamic_pointer_cast<Guch2D::CircleCollider>(bodyA->GetCollider())->SetRadius(2.0F);
 
-        const auto bodyB = std::make_shared<Guch2D::CollisionBody>();
+        const auto bodyB = std::make_shared<TestCollisionBody>();
         bodyB->SetPosition({4.0F, 0.0F});
         bodyB->SetCollider(std::make_shared<Guch2D::CircleCollider>());
         std::dynamic_pointer_cast<Guch2D::CircleCollider>(bodyB->GetCollider())->SetRadius(2.0F);
 
-        const auto bodyC = std::make_shared<Guch2D::CollisionBody>();
+        const auto bodyC = std::make_shared<TestCollisionBody>();
         bodyC->SetPosition({50.0F, 5.0F});
         bodyC->SetCollider(std::make_shared<Guch2D::CircleCollider>());
         std::dynamic_pointer_cast<Guch2D::CircleCollider>(bodyC->GetCollider())->SetRadius(2.0F);
@@ -456,17 +675,260 @@ namespace
         EXPECT_EQ(endOverlapCountC, 0);
     }
 
+    TEST(CollisionWorld, CheckCollisionsAABBVsAABBOverlapX)
+    {
+        const auto bodyA = std::make_shared<TestCollisionBody>();
+        bodyA->SetPosition({0.0F, 0.0F});
+        bodyA->SetCollider(std::make_shared<Guch2D::AABBCollider>(Guch2D::Vect {2.0F, 1.0F}));
+
+        const auto bodyB = std::make_shared<TestCollisionBody>();
+        bodyB->SetPosition({3.0F, 0.5F});
+        bodyB->SetCollider(std::make_shared<Guch2D::AABBCollider>(Guch2D::Vect {2.0F, 1.0F}));
+
+        const auto collisionPoints = CollisionWorldTest::CheckCollisions(bodyA, bodyB);
+        EXPECT_TRUE(collisionPoints.HasCollision);
+        EXPECT_FLOAT_EQ(collisionPoints.Depth, 1.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.Normal.x, -1.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.Normal.y, 0.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().Position.x, 2.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().Position.y, -0.5F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().Position.x, 1.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().Position.y, 1.0F);
+    }
+
+    TEST(CollisionWorld, CheckCollisionsAABBVsAABBOverlapY)
+    {
+        const auto bodyA = std::make_shared<TestCollisionBody>();
+        bodyA->SetPosition({0.0F, 0.0F});
+        bodyA->SetCollider(std::make_shared<Guch2D::AABBCollider>(Guch2D::Vect {1.0F, 2.0F}));
+
+        const auto bodyB = std::make_shared<TestCollisionBody>();
+        bodyB->SetPosition({0.25F, 3.0F});
+        bodyB->SetCollider(std::make_shared<Guch2D::AABBCollider>(Guch2D::Vect {1.0F, 2.0F}));
+
+        const auto collisionPoints = CollisionWorldTest::CheckCollisions(bodyA, bodyB);
+        EXPECT_TRUE(collisionPoints.HasCollision);
+        EXPECT_FLOAT_EQ(collisionPoints.Depth, 1.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.Normal.x, 0.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.Normal.y, -1.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().Position.x, -0.75F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().Position.y, 2.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().Position.x, 1.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().Position.y, 1.0F);
+    }
+
+    TEST(CollisionWorld, CheckCollisionsAABBVsCircleNoCollisionOutsideFace)
+    {
+        const auto bodyA = MakeAABBBody({0.0F, 0.0F}, {2.0F, 1.0F});
+        const auto bodyB = MakeCircleBody({4.1F, 0.0F}, 2.0F);
+
+        const auto collisionPoints = CollisionWorldTest::CheckCollisions(bodyA, bodyB);
+        EXPECT_FALSE(collisionPoints.HasCollision);
+    }
+
+    TEST(CollisionWorld, CheckCollisionsAABBVsCircleNoCollisionOutsideCorner)
+    {
+        const auto bodyA = MakeAABBBody({0.0F, 0.0F}, {2.0F, 2.0F});
+        const auto bodyB = MakeCircleBody({4.0F, 4.0F}, 2.8F);
+
+        const auto collisionPoints = CollisionWorldTest::CheckCollisions(bodyA, bodyB);
+        EXPECT_FALSE(collisionPoints.HasCollision);
+    }
+
+    TEST(CollisionWorld, CheckCollisionsAABBVsCircleTouchingFace)
+    {
+        const auto bodyA = MakeAABBBody({0.0F, 0.0F}, {2.0F, 1.0F});
+        const auto bodyB = MakeCircleBody({4.0F, 0.0F}, 2.0F);
+
+        const auto collisionPoints = CollisionWorldTest::CheckCollisions(bodyA, bodyB);
+        EXPECT_TRUE(collisionPoints.HasCollision);
+        EXPECT_FLOAT_EQ(collisionPoints.Normal.x, -1.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.Normal.y, 0.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.Depth, 0.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().Position.x, 2.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().Position.y, 0.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().Position.x, 2.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().Position.y, 0.0F);
+    }
+
+    TEST(CollisionWorld, CheckCollisionsAABBVsCirclePenetratingFace)
+    {
+        const auto bodyA = MakeAABBBody({0.0F, 0.0F}, {2.0F, 1.0F});
+        const auto bodyB = MakeCircleBody({3.0F, 0.0F}, 2.0F);
+
+        const auto collisionPoints = CollisionWorldTest::CheckCollisions(bodyA, bodyB);
+        EXPECT_TRUE(collisionPoints.HasCollision);
+        EXPECT_FLOAT_EQ(collisionPoints.Normal.x, -1.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.Normal.y, 0.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.Depth, 1.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().Position.x, 2.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().Position.y, 0.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().Position.x, 1.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().Position.y, 0.0F);
+    }
+
+    TEST(CollisionWorld, CheckCollisionsAABBVsCircleTouchingCorner)
+    {
+        const auto bodyA = MakeAABBBody({0.0F, 0.0F}, {2.0F, 2.0F});
+        const auto bodyB = MakeCircleBody({4.0F, 4.0F}, std::sqrt(8.0F));
+
+        const auto collisionPoints = CollisionWorldTest::CheckCollisions(bodyA, bodyB);
+        EXPECT_TRUE(collisionPoints.HasCollision);
+        EXPECT_NEAR(collisionPoints.Normal.x, -0.70710677F, 1.0e-6F);
+        EXPECT_NEAR(collisionPoints.Normal.y, -0.70710677F, 1.0e-6F);
+        EXPECT_FLOAT_EQ(collisionPoints.Depth, 0.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().Position.x, 2.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().Position.y, 2.0F);
+        EXPECT_NEAR(collisionPoints.ContactPoints.back().Position.x, 2.0F, 1.0e-5F);
+        EXPECT_NEAR(collisionPoints.ContactPoints.back().Position.y, 2.0F, 1.0e-5F);
+    }
+
+    TEST(CollisionWorld, CheckCollisionsAABBVsCirclePenetratingCorner)
+    {
+        const auto bodyA = MakeAABBBody({0.0F, 0.0F}, {2.0F, 2.0F});
+        const auto bodyB = MakeCircleBody({4.0F, 4.0F}, 3.0F);
+
+        const auto collisionPoints = CollisionWorldTest::CheckCollisions(bodyA, bodyB);
+        EXPECT_TRUE(collisionPoints.HasCollision);
+        EXPECT_NEAR(collisionPoints.Normal.x, -0.70710677F, 1.0e-6F);
+        EXPECT_NEAR(collisionPoints.Normal.y, -0.70710677F, 1.0e-6F);
+        EXPECT_NEAR(collisionPoints.Depth, 0.17157292F, 1.0e-6F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().Position.x, 2.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().Position.y, 2.0F);
+        EXPECT_NEAR(collisionPoints.ContactPoints.back().Position.x, 1.87867963F, 1.0e-6F);
+        EXPECT_NEAR(collisionPoints.ContactPoints.back().Position.y, 1.87867963F, 1.0e-6F);
+    }
+
+    TEST(CollisionWorld, CheckCollisionsAABBVsCircleInsideChoosesLeftFace)
+    {
+        const auto bodyA = MakeAABBBody({0.0F, 0.0F}, {2.0F, 2.0F});
+        const auto bodyB = MakeCircleBody({-1.8F, 0.0F}, 0.5F);
+
+        const auto collisionPoints = CollisionWorldTest::CheckCollisions(bodyA, bodyB);
+        EXPECT_TRUE(collisionPoints.HasCollision);
+        EXPECT_FLOAT_EQ(collisionPoints.Normal.x, 1.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.Normal.y, 0.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.Depth, 0.7F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().Position.x, -2.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().Position.y, 0.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().Position.x, -1.3F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().Position.y, 0.0F);
+    }
+
+    TEST(CollisionWorld, CheckCollisionsAABBVsCircleInsideChoosesRightFace)
+    {
+        const auto bodyA = MakeAABBBody({0.0F, 0.0F}, {2.0F, 2.0F});
+        const auto bodyB = MakeCircleBody({1.8F, 0.0F}, 0.5F);
+
+        const auto collisionPoints = CollisionWorldTest::CheckCollisions(bodyA, bodyB);
+        EXPECT_TRUE(collisionPoints.HasCollision);
+        EXPECT_FLOAT_EQ(collisionPoints.Normal.x, -1.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.Normal.y, 0.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.Depth, 0.7F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().Position.x, 2.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().Position.y, 0.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().Position.x, 1.3F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().Position.y, 0.0F);
+    }
+
+    TEST(CollisionWorld, CheckCollisionsAABBVsCircleInsideChoosesBottomFace)
+    {
+        const auto bodyA = MakeAABBBody({0.0F, 0.0F}, {2.0F, 2.0F});
+        const auto bodyB = MakeCircleBody({0.0F, -1.75F}, 0.5F);
+
+        const auto collisionPoints = CollisionWorldTest::CheckCollisions(bodyA, bodyB);
+        EXPECT_TRUE(collisionPoints.HasCollision);
+        EXPECT_FLOAT_EQ(collisionPoints.Normal.x, 0.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.Normal.y, 1.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.Depth, 0.75F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().Position.x, 0.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().Position.y, -2.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().Position.x, 0.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().Position.y, -1.25F);
+    }
+
+    TEST(CollisionWorld, CheckCollisionsAABBVsCircleInsideChoosesTopFace)
+    {
+        const auto bodyA = MakeAABBBody({0.0F, 0.0F}, {2.0F, 2.0F});
+        const auto bodyB = MakeCircleBody({0.0F, 1.75F}, 0.5F);
+
+        const auto collisionPoints = CollisionWorldTest::CheckCollisions(bodyA, bodyB);
+        EXPECT_TRUE(collisionPoints.HasCollision);
+        EXPECT_FLOAT_EQ(collisionPoints.Normal.x, 0.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.Normal.y, -1.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.Depth, 0.75F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().Position.x, 0.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().Position.y, 2.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().Position.x, 0.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().Position.y, 1.25F);
+    }
+
+    TEST(CollisionWorld, CheckCollisionsAABBVsCircleInsideEqualDistanceChoosesLeftFace)
+    {
+        const auto bodyA = MakeAABBBody({0.0F, 0.0F}, {2.0F, 2.0F});
+        const auto bodyB = MakeCircleBody({0.0F, 0.0F}, 0.5F);
+
+        const auto collisionPoints = CollisionWorldTest::CheckCollisions(bodyA, bodyB);
+        EXPECT_TRUE(collisionPoints.HasCollision);
+        EXPECT_FLOAT_EQ(collisionPoints.Normal.x, 1.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.Normal.y, 0.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.Depth, 2.5F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().Position.x, -2.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().Position.y, 0.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().Position.x, 0.5F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().Position.y, 0.0F);
+    }
+
+    TEST(CollisionWorld, CheckCollisionsAABBVsCircleUsesColliderLocalCenter)
+    {
+        const auto bodyA = MakeAABBBody({10.0F, 10.0F}, {2.0F, 2.0F}, {1.0F, -1.0F});
+        const auto bodyB = MakeCircleBody({12.0F, 9.0F}, 1.5F, {1.0F, 0.0F});
+
+        const auto collisionPoints = CollisionWorldTest::CheckCollisions(bodyA, bodyB);
+        EXPECT_TRUE(collisionPoints.HasCollision);
+        EXPECT_FLOAT_EQ(collisionPoints.Normal.x, -1.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.Normal.y, 0.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.Depth, 1.5F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().Position.x, 13.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.front().Position.y, 9.0F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().Position.x, 11.5F);
+        EXPECT_FLOAT_EQ(collisionPoints.ContactPoints.back().Position.y, 9.0F);
+    }
+
+    TEST(CollisionWorld, CheckCollisionsCircleVsAABBReturnsSwappedNormalAndContacts)
+    {
+        const auto aabbBody = MakeAABBBody({0.0F, 0.0F}, {2.0F, 1.0F});
+        const auto circleBody = MakeCircleBody({3.0F, 0.0F}, 2.0F);
+
+        const auto aabbVsCircle = CollisionWorldTest::CheckCollisions(aabbBody, circleBody);
+        const auto circleVsAabb = CollisionWorldTest::CheckCollisions(circleBody, aabbBody);
+
+        EXPECT_TRUE(aabbVsCircle.HasCollision);
+        EXPECT_TRUE(circleVsAabb.HasCollision);
+        EXPECT_FLOAT_EQ(aabbVsCircle.Depth, circleVsAabb.Depth);
+        EXPECT_FLOAT_EQ(aabbVsCircle.Normal.x, -circleVsAabb.Normal.x);
+        EXPECT_FLOAT_EQ(aabbVsCircle.Normal.y, -circleVsAabb.Normal.y);
+        EXPECT_FLOAT_EQ(aabbVsCircle.ContactPoints.front().Position.x,
+                        circleVsAabb.ContactPoints.back().Position.x);
+        EXPECT_FLOAT_EQ(aabbVsCircle.ContactPoints.front().Position.y,
+                        circleVsAabb.ContactPoints.back().Position.y);
+        EXPECT_FLOAT_EQ(aabbVsCircle.ContactPoints.back().Position.x,
+                        circleVsAabb.ContactPoints.front().Position.x);
+        EXPECT_FLOAT_EQ(aabbVsCircle.ContactPoints.back().Position.y,
+                        circleVsAabb.ContactPoints.front().Position.y);
+    }
+
     TEST(CollisionWorld, CheckCollisionsNullBodyA)
     {
         const auto bodyA = std::shared_ptr<Guch2D::CollisionBody>(nullptr);
-        const auto bodyB = std::make_shared<Guch2D::CollisionBody>();
+        const auto bodyB = std::make_shared<TestCollisionBody>();
         const auto collisionPoints = CollisionWorldTest::CheckCollisions(bodyA, bodyB);
         EXPECT_FALSE(collisionPoints.HasCollision);
     }
 
     TEST(CollisionWorld, CheckCollisionsNullBodyB)
     {
-        const auto bodyA = std::make_shared<Guch2D::CollisionBody>();
+        const auto bodyA = std::make_shared<TestCollisionBody>();
         const auto bodyB = std::shared_ptr<Guch2D::CollisionBody>(nullptr);
         const auto collisionPoints = CollisionWorldTest::CheckCollisions(bodyA, bodyB);
         EXPECT_FALSE(collisionPoints.HasCollision);
@@ -482,8 +944,8 @@ namespace
 
     TEST(CollisionWorld, CheckCollisionsNoColliderA)
     {
-        const auto bodyA = std::make_shared<Guch2D::CollisionBody>();
-        const auto bodyB = std::make_shared<Guch2D::CollisionBody>();
+        const auto bodyA = std::make_shared<TestCollisionBody>();
+        const auto bodyB = std::make_shared<TestCollisionBody>();
         bodyB->SetCollider(std::make_shared<Guch2D::CircleCollider>());
         const auto collisionPoints = CollisionWorldTest::CheckCollisions(bodyA, bodyB);
         EXPECT_FALSE(collisionPoints.HasCollision);
@@ -491,8 +953,8 @@ namespace
 
     TEST(CollisionWorld, CheckCollisionsNoColliderB)
     {
-        const auto bodyA = std::make_shared<Guch2D::CollisionBody>();
-        const auto bodyB = std::make_shared<Guch2D::CollisionBody>();
+        const auto bodyA = std::make_shared<TestCollisionBody>();
+        const auto bodyB = std::make_shared<TestCollisionBody>();
         bodyA->SetCollider(std::make_shared<Guch2D::CircleCollider>());
         const auto collisionPoints = CollisionWorldTest::CheckCollisions(bodyA, bodyB);
         EXPECT_FALSE(collisionPoints.HasCollision);
@@ -500,16 +962,16 @@ namespace
 
     TEST(CollisionWorld, CheckCollisionsNoColliders)
     {
-        const auto bodyA = std::make_shared<Guch2D::CollisionBody>();
-        const auto bodyB = std::make_shared<Guch2D::CollisionBody>();
+        const auto bodyA = std::make_shared<TestCollisionBody>();
+        const auto bodyB = std::make_shared<TestCollisionBody>();
         const auto collisionPoints = CollisionWorldTest::CheckCollisions(bodyA, bodyB);
         EXPECT_FALSE(collisionPoints.HasCollision);
     }
 
     TEST(CollisionWorld, CheckCollisionsNoCollisionFunc)
     {
-        const auto bodyA = std::make_shared<Guch2D::CollisionBody>();
-        const auto bodyB = std::make_shared<Guch2D::CollisionBody>();
+        const auto bodyA = std::make_shared<TestCollisionBody>();
+        const auto bodyB = std::make_shared<TestCollisionBody>();
         bodyA->SetCollider(std::make_shared<Guch2D::CircleCollider>());
         bodyB->SetCollider(std::make_shared<Guch2D::CircleCollider>());
         bodyA->GetCollider()->SetColliderType(Guch2D::ColliderType::Count);
@@ -518,10 +980,83 @@ namespace
         EXPECT_FALSE(collisionPoints.HasCollision);
     }
 
+    TEST(CollisionWorldTest, RaycastReturnsClosestHit)
+    {
+        Guch2D::CollisionWorld world;
+
+        const auto farBody = MakeCircleBody({8.0F, 0.0F}, 1.0F);
+        const auto nearBody = MakeAABBBody({4.0F, 0.0F}, {1.0F, 1.0F});
+
+        // Intentionally add farther body first to validate closest-hit selection.
+        world.AddObject(farBody);
+        world.AddObject(nearBody);
+
+        const auto hit = world.Raycast({0.0F, 0.0F}, {10.0F, 0.0F}, 20.0F);
+
+        EXPECT_TRUE(hit.HasHit);
+        EXPECT_EQ(hit.Body.lock(), nearBody);
+        EXPECT_FLOAT_EQ(hit.Distance, 3.0F);
+        EXPECT_FLOAT_EQ(hit.Point.x, 3.0F);
+        EXPECT_FLOAT_EQ(hit.Point.y, 0.0F);
+        EXPECT_FLOAT_EQ(hit.Normal.x, -1.0F);
+        EXPECT_FLOAT_EQ(hit.Normal.y, 0.0F);
+    }
+
+    TEST(CollisionWorldTest, RaycastAllReturnsHitsSortedByDistance)
+    {
+        Guch2D::CollisionWorld world;
+
+        const auto nearBody = MakeAABBBody({4.0F, 0.0F}, {1.0F, 1.0F});
+        const auto farBody = MakeCircleBody({10.0F, 0.0F}, 2.0F);
+
+        world.AddObject(farBody);
+        world.AddObject(nearBody);
+
+        const auto hits = world.RaycastAll({0.0F, 0.0F}, {1.0F, 0.0F}, 20.0F);
+
+        ASSERT_EQ(hits.size(), 2U);
+        EXPECT_EQ(hits.at(0).Body.lock(), nearBody);
+        EXPECT_EQ(hits.at(1).Body.lock(), farBody);
+        EXPECT_FLOAT_EQ(hits.at(0).Distance, 3.0F);
+        EXPECT_FLOAT_EQ(hits.at(1).Distance, 8.0F);
+    }
+
+    TEST(CollisionWorldTest, RaycastFromInsideAABBReturnsExitHit)
+    {
+        Guch2D::CollisionWorld world;
+        const auto body = MakeAABBBody({0.0F, 0.0F}, {2.0F, 2.0F});
+        world.AddObject(body);
+
+        const auto hit = world.Raycast({0.0F, 0.0F}, {1.0F, 0.0F}, 10.0F);
+
+        EXPECT_TRUE(hit.HasHit);
+        EXPECT_EQ(hit.Body.lock(), body);
+        EXPECT_FLOAT_EQ(hit.Distance, 2.0F);
+        EXPECT_FLOAT_EQ(hit.Point.x, 2.0F);
+        EXPECT_FLOAT_EQ(hit.Point.y, 0.0F);
+        EXPECT_FLOAT_EQ(hit.Normal.x, 1.0F);
+        EXPECT_FLOAT_EQ(hit.Normal.y, 0.0F);
+    }
+
+    TEST(CollisionWorldTest, RaycastInvalidInputReturnsNoHit)
+    {
+        Guch2D::CollisionWorld world;
+        world.AddObject(MakeCircleBody({2.0F, 0.0F}, 1.0F));
+
+        const auto zeroDirectionHit = world.Raycast({0.0F, 0.0F}, {0.0F, 0.0F}, 10.0F);
+        EXPECT_FALSE(zeroDirectionHit.HasHit);
+
+        const auto negativeDistanceHit = world.Raycast({0.0F, 0.0F}, {1.0F, 0.0F}, -1.0F);
+        EXPECT_FALSE(negativeDistanceHit.HasHit);
+
+        const auto negativeDistanceHits = world.RaycastAll({0.0F, 0.0F}, {1.0F, 0.0F}, -1.0F);
+        EXPECT_TRUE(negativeDistanceHits.empty());
+    }
+
     TEST(CollisionWorldTest, AddSolver)
     {
         Guch2D::CollisionWorld world;
-        const auto solver = std::make_shared<Guch2D::PenetrationVectorSolver>();
+        const auto solver = std::make_shared<Guch2D::PositionSolver>();
         world.AddSolver(solver);
         EXPECT_EQ(world.GetSolversCount(), 1U);
     }
@@ -529,7 +1064,7 @@ namespace
     TEST(CollisionWorldTest, AddDuplicateSolver)
     {
         Guch2D::CollisionWorld world;
-        const auto solver = std::make_shared<Guch2D::PenetrationVectorSolver>();
+        const auto solver = std::make_shared<Guch2D::PositionSolver>();
         world.AddSolver(solver);
         world.AddSolver(solver);
         EXPECT_EQ(world.GetSolversCount(), 1U);
@@ -538,7 +1073,7 @@ namespace
     TEST(CollisonWorldTest, AddSolverNullptr)
     {
         Guch2D::CollisionWorld world;
-        const std::shared_ptr<Guch2D::PenetrationVectorSolver> solver = nullptr;
+        const std::shared_ptr<Guch2D::PositionSolver> solver = nullptr;
         world.AddSolver(solver);
         EXPECT_EQ(world.GetSolversCount(), 0U);
     }
@@ -546,7 +1081,7 @@ namespace
     TEST(CollisionWorldTest, RemoveSolver)
     {
         Guch2D::CollisionWorld world;
-        const auto solver = std::make_shared<Guch2D::PenetrationVectorSolver>();
+        const auto solver = std::make_shared<Guch2D::PositionSolver>();
         world.AddSolver(solver);
         world.RemoveSolver(solver);
         EXPECT_EQ(world.GetSolversCount(), 0U);
@@ -555,7 +1090,7 @@ namespace
     TEST(CollisionWorldTest, RemoveDuplicateSolver)
     {
         Guch2D::CollisionWorld world;
-        const auto solver = std::make_shared<Guch2D::PenetrationVectorSolver>();
+        const auto solver = std::make_shared<Guch2D::PositionSolver>();
         world.AddSolver(solver);
         world.RemoveSolver(solver);
         world.RemoveSolver(solver);
@@ -565,23 +1100,23 @@ namespace
     TEST(CollisionWorldTest, RemoveSolverNullptr)
     {
         Guch2D::CollisionWorld world;
-        const std::shared_ptr<Guch2D::PenetrationVectorSolver> solver = nullptr;
+        const std::shared_ptr<Guch2D::PositionSolver> solver = nullptr;
         world.AddSolver(solver);
         world.RemoveSolver(solver);
         EXPECT_EQ(world.GetSolversCount(), 0U);
     }
 
-    TEST(CollisionWorldTest, StepTwoCirclesWithAddedPenetrationSolverResolvesPositions)
+    TEST(CollisionWorldTest, StepTwoCirclesWithAddedPositionSolverResolvesPositions)
     {
         Guch2D::CollisionWorld world;
-        world.AddSolver(std::make_shared<Guch2D::PenetrationVectorSolver>());
+        world.AddSolver(std::make_shared<Guch2D::PositionSolver>());
 
-        const auto bodyA = std::make_shared<Guch2D::CollisionBody>();
+        const auto bodyA = std::make_shared<TestCollisionBody>();
         bodyA->SetPosition({0.0F, 0.0F});
         bodyA->SetCollider(std::make_shared<Guch2D::CircleCollider>());
         std::dynamic_pointer_cast<Guch2D::CircleCollider>(bodyA->GetCollider())->SetRadius(2.0F);
 
-        const auto bodyB = std::make_shared<Guch2D::CollisionBody>();
+        const auto bodyB = std::make_shared<TestCollisionBody>();
         bodyB->SetPosition({4.0F, 0.0F});
         bodyB->SetCollider(std::make_shared<Guch2D::CircleCollider>());
         std::dynamic_pointer_cast<Guch2D::CircleCollider>(bodyB->GetCollider())->SetRadius(2.0F);
@@ -623,20 +1158,13 @@ namespace
         EXPECT_FLOAT_EQ(bodyB->GetPosition().y, 0.0F);
     }
 
-    TEST(CollisionWorldTest, StepTwoCirclesSamePositionWithAddedPenetrationSolverResolvesPositions)
+    TEST(CollisionWorldTest, StepTwoCirclesSamePositionWithAddedPositionSolverResolvesPositions)
     {
         Guch2D::CollisionWorld world;
-        world.AddSolver(std::make_shared<Guch2D::PenetrationVectorSolver>());
+        world.AddSolver(std::make_shared<Guch2D::PositionSolver>());
 
-        const auto bodyA = std::make_shared<Guch2D::CollisionBody>();
-        bodyA->SetPosition({1.0F, 1.0F});
-        bodyA->SetCollider(std::make_shared<Guch2D::CircleCollider>());
-        std::dynamic_pointer_cast<Guch2D::CircleCollider>(bodyA->GetCollider())->SetRadius(2.0F);
-
-        const auto bodyB = std::make_shared<Guch2D::CollisionBody>();
-        bodyB->SetPosition({1.0F, 1.0F});
-        bodyB->SetCollider(std::make_shared<Guch2D::CircleCollider>());
-        std::dynamic_pointer_cast<Guch2D::CircleCollider>(bodyB->GetCollider())->SetRadius(2.0F);
+        const auto bodyA = MakeDynamicCircleRigidBody({1.0F, 1.0F}, 2.0F, 1.0F);
+        const auto bodyB = MakeDynamicCircleRigidBody({1.0F, 1.0F}, 2.0F, 1.0F);
 
         std::uint8_t onBeginOverlapCalledACount = 0;
         std::uint8_t onEndOverlapCalledACount = 0;
@@ -657,8 +1185,8 @@ namespace
         EXPECT_EQ(onBeginOverlapCalledBCount, 1);
         EXPECT_EQ(onEndOverlapCalledBCount, 0);
 
-        EXPECT_TRUE((bodyA->GetPosition().x == -1.0F && bodyB->GetPosition().x == 3.0F)
-                    || (bodyA->GetPosition().x == 3.0F && bodyB->GetPosition().x == -1.0F));
+        EXPECT_FLOAT_EQ(bodyA->GetPosition().x + bodyB->GetPosition().x, 2.0F);
+        EXPECT_NEAR(std::abs(bodyA->GetPosition().x - bodyB->GetPosition().x), 4.0F, 1.0e-5F);
         EXPECT_FLOAT_EQ(bodyA->GetPosition().y, 1.0F);
         EXPECT_FLOAT_EQ(bodyB->GetPosition().y, 1.0F);
 
@@ -669,9 +1197,123 @@ namespace
         EXPECT_EQ(onBeginOverlapCalledBCount, 1);
         EXPECT_EQ(onEndOverlapCalledBCount, 0);
 
-        EXPECT_TRUE((bodyA->GetPosition().x == -1.0F && bodyB->GetPosition().x == 3.0F)
-                    || (bodyA->GetPosition().x == 3.0F && bodyB->GetPosition().x == -1.0F));
+        EXPECT_FLOAT_EQ(bodyA->GetPosition().x + bodyB->GetPosition().x, 2.0F);
+        EXPECT_NEAR(std::abs(bodyA->GetPosition().x - bodyB->GetPosition().x), 4.0F, 1.0e-5F);
         EXPECT_FLOAT_EQ(bodyA->GetPosition().y, 1.0F);
         EXPECT_FLOAT_EQ(bodyB->GetPosition().y, 1.0F);
+    }
+
+    TEST(CollisionWorldTest,
+         StepOverlappingCirclesStaticVsStaticWithAddedPositionSolverResolvesPositions)
+    {
+        Guch2D::CollisionWorld world;
+        world.AddSolver(std::make_shared<Guch2D::PositionSolver>());
+
+        const auto bodyA = MakeStaticCircleRigidBody({0.0F, 0.0F}, 2.0F);
+        const auto bodyB = MakeStaticCircleRigidBody({3.0F, 0.0F}, 2.0F);
+
+        world.AddObject(bodyA);
+        world.AddObject(bodyB);
+        world.Step();
+
+        EXPECT_FLOAT_EQ(bodyA->GetPosition().x, 0.0F);
+        EXPECT_FLOAT_EQ(bodyA->GetPosition().y, 0.0F);
+        EXPECT_FLOAT_EQ(bodyB->GetPosition().x, 3.0F);
+        EXPECT_FLOAT_EQ(bodyB->GetPosition().y, 0.0F);
+    }
+
+    TEST(CollisionWorldTest,
+         StepOverlappingCirclesStaticVsKinematicWithAddedPositionSolverResolvesPositions)
+    {
+        Guch2D::CollisionWorld world;
+        world.AddSolver(std::make_shared<Guch2D::PositionSolver>());
+
+        const auto bodyA = MakeStaticCircleRigidBody({0.0F, 0.0F}, 2.0F);
+        const auto bodyB = MakeKinematicCircleRigidBody({3.0F, 0.0F}, 2.0F);
+
+        world.AddObject(bodyA);
+        world.AddObject(bodyB);
+        world.Step();
+
+        EXPECT_FLOAT_EQ(bodyA->GetPosition().x, 0.0F);
+        EXPECT_FLOAT_EQ(bodyA->GetPosition().y, 0.0F);
+        EXPECT_FLOAT_EQ(bodyB->GetPosition().x, 3.0F);
+        EXPECT_FLOAT_EQ(bodyB->GetPosition().y, 0.0F);
+    }
+
+    TEST(CollisionWorldTest,
+         StepOverlappingCirclesStaticVsDynamicWithAddedPositionSolverResolvesPositions)
+    {
+        Guch2D::CollisionWorld world;
+        world.AddSolver(std::make_shared<Guch2D::PositionSolver>());
+
+        const auto bodyA = MakeStaticCircleRigidBody({0.0F, 0.0F}, 2.0F);
+        const auto bodyB = MakeDynamicCircleRigidBody({3.0F, 0.0F}, 2.0F, 1.0F);
+
+        world.AddObject(bodyA);
+        world.AddObject(bodyB);
+        world.Step();
+
+        EXPECT_FLOAT_EQ(bodyA->GetPosition().x, 0.0F);
+        EXPECT_FLOAT_EQ(bodyA->GetPosition().y, 0.0F);
+        EXPECT_FLOAT_EQ(bodyB->GetPosition().x, 4.0F);
+        EXPECT_FLOAT_EQ(bodyB->GetPosition().y, 0.0F);
+    }
+
+    TEST(CollisionWorldTest,
+         StepOverlappingCirclesKinematicVsDynamicWithAddedPositionSolverResolvesPositions)
+    {
+        Guch2D::CollisionWorld world;
+        world.AddSolver(std::make_shared<Guch2D::PositionSolver>());
+
+        const auto bodyA = MakeKinematicCircleRigidBody({0.0F, 0.0F}, 2.0F);
+        const auto bodyB = MakeDynamicCircleRigidBody({3.0F, 0.0F}, 2.0F, 1.0F);
+
+        world.AddObject(bodyA);
+        world.AddObject(bodyB);
+        world.Step();
+
+        EXPECT_FLOAT_EQ(bodyA->GetPosition().x, 0.0F);
+        EXPECT_FLOAT_EQ(bodyA->GetPosition().y, 0.0F);
+        EXPECT_FLOAT_EQ(bodyB->GetPosition().x, 4.0F);
+        EXPECT_FLOAT_EQ(bodyB->GetPosition().y, 0.0F);
+    }
+
+    TEST(CollisionWorldTest,
+         StepOverlappingCirclesKinematicVsKinematicWithAddedPositionSolverResolvesPositions)
+    {
+        Guch2D::CollisionWorld world;
+        world.AddSolver(std::make_shared<Guch2D::PositionSolver>());
+
+        const auto bodyA = MakeKinematicCircleRigidBody({0.0F, 0.0F}, 2.0F);
+        const auto bodyB = MakeKinematicCircleRigidBody({3.0F, 0.0F}, 2.0F);
+
+        world.AddObject(bodyA);
+        world.AddObject(bodyB);
+        world.Step();
+
+        EXPECT_FLOAT_EQ(bodyA->GetPosition().x, 0.0F);
+        EXPECT_FLOAT_EQ(bodyA->GetPosition().y, 0.0F);
+        EXPECT_FLOAT_EQ(bodyB->GetPosition().x, 3.0F);
+        EXPECT_FLOAT_EQ(bodyB->GetPosition().y, 0.0F);
+    }
+
+    TEST(CollisionWorldTest,
+         StepOverlappingCirclesDynamicVsDynamicWithAddedPositionSolverResolvesPositions)
+    {
+        Guch2D::CollisionWorld world;
+        world.AddSolver(std::make_shared<Guch2D::PositionSolver>());
+
+        const auto bodyA = MakeDynamicCircleRigidBody({0.0F, 0.0F}, 2.0F, 1.0F);
+        const auto bodyB = MakeDynamicCircleRigidBody({3.0F, 0.0F}, 2.0F, 1.0F);
+
+        world.AddObject(bodyA);
+        world.AddObject(bodyB);
+        world.Step();
+
+        EXPECT_FLOAT_EQ(bodyA->GetPosition().x, -0.5F);
+        EXPECT_FLOAT_EQ(bodyA->GetPosition().y, 0.0F);
+        EXPECT_FLOAT_EQ(bodyB->GetPosition().x, 3.5F);
+        EXPECT_FLOAT_EQ(bodyB->GetPosition().y, 0.0F);
     }
 }   // namespace

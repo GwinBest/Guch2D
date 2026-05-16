@@ -10,6 +10,7 @@ namespace Guch2D
     {
         None,
         Circle,
+        AABB,
         Count   // To keep track of the number of collider types (keep always at the end)
     };
 
@@ -25,6 +26,13 @@ namespace Guch2D
         Collider& operator=(const Collider&) = default;
         Collider& operator=(Collider&&) = default;
         virtual ~Collider() = default;
+
+        [[nodiscard]] virtual Vect LeftBorder() const noexcept = 0;
+        [[nodiscard]] virtual Vect RightBorder() const noexcept = 0;
+        [[nodiscard]] virtual Vect TopBorder() const noexcept = 0;
+        [[nodiscard]] virtual Vect BottomBorder() const noexcept = 0;
+
+        [[nodiscard]] virtual float GetArea() const noexcept = 0;
 
         [[nodiscard]] ColliderType GetColliderType() const noexcept { return _type; }
 

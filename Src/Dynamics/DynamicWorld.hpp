@@ -16,7 +16,7 @@ namespace Guch2D
         DynamicWorld& operator=(DynamicWorld&&) = default;
         ~DynamicWorld() override = default;
 
-        void Step() const override;
+        void Step() override;
 
         [[nodiscard]] const Vect& GetGravity() const noexcept { return _gravity; }
 
@@ -34,6 +34,8 @@ namespace Guch2D
     private:
         void ApplyGravity() const noexcept;
 
+        void UpdateSleepStates() const noexcept;
+
         void MoveBodies() const noexcept;
 
         void ApplyLinearDamping(
@@ -43,7 +45,7 @@ namespace Guch2D
         static constexpr Vect DefaultGravity = {0.0F, 9.81F};
 
     private:
-        // Default Earth gravity is set by default
+        // Default Earth gravity is set by default in (m/s²)
         Vect _gravity = DefaultGravity;
     };
 }   // namespace Guch2D

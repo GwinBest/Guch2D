@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cmath>
+
 #include "Dynamics/RigidBody.hpp"
 #include "Math/Vector.hpp"
 
@@ -34,12 +36,17 @@ namespace Guch2D
                 return;
             }
 
+            SetAwake(true);
+
             _force = force;
         }
 
         void AddForce(const Vect& force) noexcept
         {
-            if (!IsFinite(force)) return;
+            if (!IsFinite(force))
+                return;
+
+            SetAwake(true);
 
             _force += force;
         }
@@ -69,12 +76,17 @@ namespace Guch2D
                 return;
             }
 
+            SetAwake(true);
+
             _velocity = velocity;
         }
 
         void AddVelocity(const Vect& velocity) noexcept
         {
-            if (!IsFinite(velocity)) return;
+            if (!IsFinite(velocity))
+                return;
+
+            SetAwake(true);
 
             _velocity += velocity;
         }
@@ -105,6 +117,46 @@ namespace Guch2D
             _linearDamping = damping;
         }
 
+        [[nodiscard]] bool GetSimulatePhysics() const noexcept { return _simulatePhysics; }
+
+        void SetSimulatePhysics(const bool simulatePhysics) noexcept
+        {
+            _simulatePhysics = simulatePhysics;
+        }
+
+        [[nodiscard]] bool IsAwake() const noexcept { return _isAwake; }
+
+        void SetAwake(const bool awake) noexcept
+        {
+            if (awake)
+            {
+                if (!_isAwake)
+                {
+                    _sleepTime = 0.0F;
+                }
+                _isAwake = true;
+                return;
+            }
+
+            _isAwake = false;
+            _sleepTime = 0.0F;
+            _force = {0.0F, 0.0F};
+            _acceleration = {0.0F, 0.0F};
+            _velocity = {0.0F, 0.0F};
+        }
+
+        [[nodiscard]] float GetSleepTime() const noexcept { return _sleepTime; }
+
+        void ResetSleepTime() noexcept { _sleepTime = 0.0F; }
+
+        void AddSleepTime(const float sleepTime) noexcept
+        {
+            if (sleepTime <= 0.0F || !std::isfinite(sleepTime))
+                return;
+
+            _sleepTime += sleepTime;
+        }
+
     public:
         static constexpr Vect DefaultGravityScale = {1.0F, 1.0F};
         static constexpr Vect DefaultLinearDamping = {0.0F, 0.1F};
@@ -126,5 +178,11 @@ namespace Guch2D
         // This is used to simulate air resistance
         // Default values are 0.0F for x and 0.1F for y
         Vect _linearDamping = DefaultLinearDamping;
+
+        bool _simulatePhysics = true;
+
+        bool _isAwake = true;
+
+        float _sleepTime = 0.0F;
     };
 }   // namespace Guch2D
