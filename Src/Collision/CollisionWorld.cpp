@@ -363,24 +363,24 @@ namespace
         };
 
         if (!intersectSlab({
-                origin.x,
-                directionNormalized.x,
-                minX,
-                maxX,
-                {-1.0F, 0.0F},
-                {1.0F,  0.0F}
+                .OriginAxis = origin.x,
+                .DirectionAxis = directionNormalized.x,
+                .MinimumAxis = minX,
+                .MaximumAxis = maxX,
+                .MinimumNormal = {-1.0F, 0.0F},
+                .MaximumNormal = {1.0F, 0.0F}
         }))
         {
             return {};
         }
 
         if (!intersectSlab({
-                origin.y,
-                directionNormalized.y,
-                minY,
-                maxY,
-                {0.0F, -1.0F},
-                {0.0F, 1.0F }
+                .OriginAxis = origin.y,
+                .DirectionAxis = directionNormalized.y,
+                .MinimumAxis = minY,
+                .MaximumAxis = maxY,
+                .MinimumNormal = {0.0F, -1.0F},
+                .MaximumNormal = {0.0F, 1.0F}
         }))
         {
             return {};
