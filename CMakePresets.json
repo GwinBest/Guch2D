@@ -32,6 +32,15 @@
       }
     },
     {
+      "name": "relwithdebinfo",
+      "displayName": "RelWithDebInfo",
+      "description": "Optimized build with debug information and demo enabled.",
+      "binaryDir": "${sourceDir}/Build/RelWithDebInfo",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "BUILD_DEMO": "ON",
+        "SFML_BUILD_AUDIO": "OFF",
+        "SFML_BUILD_NETWORK": "OFF"
       }
     }
   ]
