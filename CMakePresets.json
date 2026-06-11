@@ -30,27 +30,8 @@
         "SFML_BUILD_AUDIO": "OFF",
         "SFML_BUILD_NETWORK": "OFF"
       }
-    }
-  ],
-  "buildPresets": [
-    {
-      "name": "debug",
-      "displayName": "Debug",
-      "configurePreset": "debug"
     },
     {
-      "name": "release",
-      "displayName": "Release",
-      "configurePreset": "release"
-    }
-  ],
-  "testPresets": [
-    {
-      "name": "debug",
-      "displayName": "Debug tests",
-      "configurePreset": "debug",
-      "output": {
-        "outputOnFailure": true
       }
     }
   ]
