@@ -68,12 +68,12 @@ public:
                     const float right = left + scale;
                     const float bottom = top + scale;
 
-                    vertices[vertexIndex++] = {{left, top}, color};
-                    vertices[vertexIndex++] = {{left, bottom}, color};
-                    vertices[vertexIndex++] = {{right, bottom}, color};
-                    vertices[vertexIndex++] = {{left, top}, color};
-                    vertices[vertexIndex++] = {{right, bottom}, color};
-                    vertices[vertexIndex++] = {{right, top}, color};
+                    vertices[vertexIndex++] = sf::Vertex({left, top}, color);
+                    vertices[vertexIndex++] = sf::Vertex({left, bottom}, color);
+                    vertices[vertexIndex++] = sf::Vertex({right, bottom}, color);
+                    vertices[vertexIndex++] = sf::Vertex({left, top}, color);
+                    vertices[vertexIndex++] = sf::Vertex({right, bottom}, color);
+                    vertices[vertexIndex++] = sf::Vertex({right, top}, color);
                 }
             }
 
