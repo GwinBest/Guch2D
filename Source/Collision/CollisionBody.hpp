@@ -3,8 +3,10 @@
 #include <array>
 #include <functional>
 #include <memory>
+#include <numbers>
 
 #include "Collision/Collider.hpp"
+#include "Math/Rotator.hpp"
 #include "Math/Vector.hpp"
 
 namespace Guch2D
@@ -102,6 +104,54 @@ namespace Guch2D
             _position += delta;
         }
 
+        // Returns value in radians
+        [[nodiscard]] Rotator GetRotation() const noexcept { return _rotation; }
+
+        [[nodiscard]] Rotator GetRotationDegrees() const noexcept
+        {
+            constexpr float radToDeg = 180.0F / std::numbers::pi_v<float>;
+
+            return _rotation * radToDeg;
+        }
+
+        // Sets rotations in radians
+        void SetRotation(const Rotator rotation) noexcept
+        {
+            if (!IsFinite(rotation))
+                return;
+
+            _rotation = NormalizeRotator(rotation);
+        }
+
+        void SetRotationDegrees(const Rotator rotation) noexcept
+        {
+            if (!IsFinite(rotation))
+                return;
+
+            constexpr float degToRad = std::numbers::pi_v<float> / 180.0F;
+
+            SetRotation(rotation * degToRad);
+        }
+
+        // Rotate in radians
+        void Rotate(const Rotator delta) noexcept
+        {
+            if (!IsFinite(delta))
+                return;
+
+            _rotation = NormalizeRotator(_rotation + delta);
+        }
+
+        void RotateDegrees(const Rotator delta) noexcept
+        {
+            if (!IsFinite(delta))
+                return;
+
+            constexpr float degToRad = std::numbers::pi_v<float> / 180.0F;
+
+            Rotate(delta * degToRad);
+        }
+
         [[nodiscard]] const std::shared_ptr<Collider>& GetCollider() const noexcept
         {
             return _collider;
@@ -184,6 +234,9 @@ namespace Guch2D
     protected:
         // Position of the object in the 2D space, in meters (m)
         Vect _position = {0.0F, 0.0F};
+
+        // Rotation of the object in the 2D space, in radians (rad)
+        Rotator _rotation = 0.0F;
 
         // Collider associated with this collision body
         std::shared_ptr<Collider> _collider;
