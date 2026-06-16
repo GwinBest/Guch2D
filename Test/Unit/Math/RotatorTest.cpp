@@ -21,19 +21,19 @@ namespace
     TEST(RotatorTest, NormalizeRotatorNormalizesFiniteInputs)
     {
         const NormalizeRotatorCase cases[] = {
-            {"Zero",                     0.0F,                    0.0F         },
-            {"NegativeZero",             -0.0F,                   0.0F         },
-            {"PositiveHalfPi",           Pi * 0.5F,               Pi * 0.5F    },
-            {"PositivePi",               Pi,                      Pi           },
-            {"PositiveBeforeFullTurn",   TwoPi - 0.25F,           -0.25F       },
-            {"PositiveFullTurn",         TwoPi,                   0.0F         },
-            {"PositiveMoreThanFullTurn", TwoPi + (Pi * 0.5F),     Pi * 0.5F    },
-            {"PositiveMultipleTurns",    (TwoPi * 5.0F) + 1.25F,  1.25F        },
-            {"NegativeHalfPi",           Pi * -0.5F,              Pi * -0.5F   },
-            {"NegativePi",               -Pi,                     Pi           },
-            {"NegativeFullTurn",         -TwoPi,                  0.0F         },
-            {"NegativeMoreThanFullTurn", -TwoPi - (Pi * 0.5F),    Pi * -0.5F   },
-            {"NegativeMultipleTurns",    (TwoPi * -5.0F) - 1.25F, -1.25F       }
+            {"Zero",                     0.0F,                    0.0F      },
+            {"NegativeZero",             -0.0F,                   0.0F      },
+            {"PositiveHalfPi",           Pi * 0.5F,               Pi * 0.5F },
+            {"PositivePi",               Pi,                      Pi        },
+            {"PositiveBeforeFullTurn",   TwoPi - 0.25F,           -0.25F    },
+            {"PositiveFullTurn",         TwoPi,                   0.0F      },
+            {"PositiveMoreThanFullTurn", TwoPi + (Pi * 0.5F),     Pi * 0.5F },
+            {"PositiveMultipleTurns",    (TwoPi * 5.0F) + 1.25F,  1.25F     },
+            {"NegativeHalfPi",           Pi * -0.5F,              Pi * -0.5F},
+            {"NegativePi",               -Pi,                     Pi        },
+            {"NegativeFullTurn",         -TwoPi,                  0.0F      },
+            {"NegativeMoreThanFullTurn", -TwoPi - (Pi * 0.5F),    Pi * -0.5F},
+            {"NegativeMultipleTurns",    (TwoPi * -5.0F) - 1.25F, -1.25F    }
         };
 
         for (const NormalizeRotatorCase& testCase : cases)

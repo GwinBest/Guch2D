@@ -167,18 +167,18 @@ namespace
     TEST(CollisionBodyTest, SetRotationRadiansNormalizesFiniteInputs)
     {
         const RotationCase cases[] = {
-            {"Zero",                     0.0F,                    0.0F         },
-            {"PositiveHalfPi",           Pi * 0.5F,               Pi * 0.5F    },
-            {"PositivePi",               Pi,                      Pi           },
-            {"PositiveBeforeFullTurn",   TwoPi - 0.25F,           -0.25F       },
-            {"PositiveFullTurn",         TwoPi,                   0.0F         },
-            {"PositiveMoreThanFullTurn", TwoPi + (Pi * 0.5F),     Pi * 0.5F    },
-            {"PositiveMultipleTurns",    (TwoPi * 3.0F) + 1.25F,  1.25F        },
-            {"NegativeHalfPi",           Pi * -0.5F,              Pi * -0.5F   },
-            {"NegativePi",               -Pi,                     Pi           },
-            {"NegativeFullTurn",         -TwoPi,                  0.0F         },
-            {"NegativeMoreThanFullTurn", -TwoPi - (Pi * 0.5F),    Pi * -0.5F   },
-            {"NegativeMultipleTurns",    (TwoPi * -3.0F) - 1.25F, -1.25F       }
+            {"Zero",                     0.0F,                    0.0F      },
+            {"PositiveHalfPi",           Pi * 0.5F,               Pi * 0.5F },
+            {"PositivePi",               Pi,                      Pi        },
+            {"PositiveBeforeFullTurn",   TwoPi - 0.25F,           -0.25F    },
+            {"PositiveFullTurn",         TwoPi,                   0.0F      },
+            {"PositiveMoreThanFullTurn", TwoPi + (Pi * 0.5F),     Pi * 0.5F },
+            {"PositiveMultipleTurns",    (TwoPi * 3.0F) + 1.25F,  1.25F     },
+            {"NegativeHalfPi",           Pi * -0.5F,              Pi * -0.5F},
+            {"NegativePi",               -Pi,                     Pi        },
+            {"NegativeFullTurn",         -TwoPi,                  0.0F      },
+            {"NegativeMoreThanFullTurn", -TwoPi - (Pi * 0.5F),    Pi * -0.5F},
+            {"NegativeMultipleTurns",    (TwoPi * -3.0F) - 1.25F, -1.25F    }
         };
 
         for (const RotationCase& testCase : cases)
@@ -195,10 +195,10 @@ namespace
     TEST(CollisionBodyTest, GetRotationDegreesConvertsStoredRadiansToDegrees)
     {
         const RotationCase cases[] = {
-            {"Zero",                    0.0F,                 0.0F  },
-            {"NinetyDegrees",           Pi * 0.5F,            90.0F },
-            {"OneHundredEightyDegrees", Pi,                   180.0F},
-            {"NegativeNinetyDegrees",   Pi * 1.5F,            -90.0F},
+            {"Zero",                     0.0F,                 0.0F  },
+            {"NinetyDegrees",            Pi * 0.5F,            90.0F },
+            {"OneHundredEightyDegrees",  Pi,                   180.0F},
+            {"NegativeNinetyDegrees",    Pi * 1.5F,            -90.0F},
             {"NegativeFortyFiveDegrees", TwoPi - (Pi * 0.25F), -45.0F}
         };
 
@@ -278,14 +278,14 @@ namespace
     TEST(CollisionBodyTest, RotateRadiansNormalizesAccumulatedRotation)
     {
         const RotationCase cases[] = {
-            {"ZeroDelta",                     0.0F,                           Pi * 0.25F},
-            {"PositiveDelta",                 Pi * 0.25F,                     Pi * 0.5F },
+            {"ZeroDelta",                     0.0F,                           Pi * 0.25F },
+            {"PositiveDelta",                 Pi * 0.25F,                     Pi * 0.5F  },
             {"PositivePiDelta",               Pi,                             Pi * -0.75F},
-            {"PositiveFullTurnDelta",         TwoPi,                          Pi * 0.25F},
-            {"PositiveMoreThanFullTurnDelta", TwoPi + (Pi * 0.25F),           Pi * 0.5F },
+            {"PositiveFullTurnDelta",         TwoPi,                          Pi * 0.25F },
+            {"PositiveMoreThanFullTurnDelta", TwoPi + (Pi * 0.25F),           Pi * 0.5F  },
             {"NegativeHalfPiDelta",           Pi * -0.5F,                     Pi * -0.25F},
-            {"NegativeFullTurnDelta",         -TwoPi,                         Pi * 0.25F},
-            {"NegativeMultipleTurnsDelta",    (TwoPi * -4.0F) - (Pi * 0.25F), 0.0F      }
+            {"NegativeFullTurnDelta",         -TwoPi,                         Pi * 0.25F },
+            {"NegativeMultipleTurnsDelta",    (TwoPi * -4.0F) - (Pi * 0.25F), 0.0F       }
         };
 
         for (const RotationCase& testCase : cases)
