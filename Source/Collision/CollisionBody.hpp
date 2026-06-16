@@ -107,12 +107,7 @@ namespace Guch2D
         // Returns value in radians
         [[nodiscard]] Rotator GetRotation() const noexcept { return _rotation; }
 
-        [[nodiscard]] Rotator GetRotationDegrees() const noexcept
-        {
-            constexpr float radToDeg = 180.0F / std::numbers::pi_v<float>;
-
-            return _rotation * radToDeg;
-        }
+        [[nodiscard]] Rotator GetRotationDegrees() const noexcept { return _rotation * RadToDeg; }
 
         // Sets rotations in radians
         void SetRotation(const Rotator rotation) noexcept
@@ -128,9 +123,7 @@ namespace Guch2D
             if (!IsFinite(rotation))
                 return;
 
-            constexpr float degToRad = std::numbers::pi_v<float> / 180.0F;
-
-            SetRotation(rotation * degToRad);
+            SetRotation(rotation * DegToRad);
         }
 
         // Rotate in radians
@@ -142,15 +135,7 @@ namespace Guch2D
             _rotation = NormalizeRotator(_rotation + delta);
         }
 
-        void RotateDegrees(const Rotator delta) noexcept
-        {
-            if (!IsFinite(delta))
-                return;
-
-            constexpr float degToRad = std::numbers::pi_v<float> / 180.0F;
-
-            Rotate(delta * degToRad);
-        }
+        void RotateDegrees(const Rotator delta) noexcept { Rotate(delta * DegToRad); }
 
         [[nodiscard]] const std::shared_ptr<Collider>& GetCollider() const noexcept
         {
@@ -167,7 +152,7 @@ namespace Guch2D
         [[nodiscard]] Vect GetColliderCenterWorld() const noexcept
         {
             if (!_collider)
-                return {};
+                return _position;
 
             return _position + _collider->GetCenterLocal();
         }
@@ -202,6 +187,23 @@ namespace Guch2D
                 return {};
 
             return _position + _collider->BottomBorder();
+        }
+
+        [[nodiscard]] Rotator GetColliderRotationWorld() const noexcept
+        {
+            if (!_collider)
+                return _rotation;
+
+            return NormalizeRotator(_rotation + _collider->GetRotationLocal());
+        }
+
+        [[nodiscard]] Rotator GetColliderRotationDegreesWorld() const noexcept
+        {
+            if (!_collider)
+                return GetRotationDegrees();
+
+            return NormalizeRotatorDegrees(GetRotationDegrees()
+                                           + _collider->GetRotationDegreesLocal());
         }
 
         void BindOnBeginOverlap(CollisionCallback callback) noexcept
