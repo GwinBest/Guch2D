@@ -170,15 +170,15 @@ namespace
             {"Zero",                     0.0F,                    0.0F         },
             {"PositiveHalfPi",           Pi * 0.5F,               Pi * 0.5F    },
             {"PositivePi",               Pi,                      Pi           },
-            {"PositiveBeforeFullTurn",   TwoPi - 0.25F,           TwoPi - 0.25F},
+            {"PositiveBeforeFullTurn",   TwoPi - 0.25F,           -0.25F       },
             {"PositiveFullTurn",         TwoPi,                   0.0F         },
             {"PositiveMoreThanFullTurn", TwoPi + (Pi * 0.5F),     Pi * 0.5F    },
             {"PositiveMultipleTurns",    (TwoPi * 3.0F) + 1.25F,  1.25F        },
-            {"NegativeHalfPi",           Pi * -0.5F,              Pi * 1.5F    },
+            {"NegativeHalfPi",           Pi * -0.5F,              Pi * -0.5F   },
             {"NegativePi",               -Pi,                     Pi           },
             {"NegativeFullTurn",         -TwoPi,                  0.0F         },
-            {"NegativeMoreThanFullTurn", -TwoPi - (Pi * 0.5F),    Pi * 1.5F    },
-            {"NegativeMultipleTurns",    (TwoPi * -3.0F) - 1.25F, TwoPi - 1.25F}
+            {"NegativeMoreThanFullTurn", -TwoPi - (Pi * 0.5F),    Pi * -0.5F   },
+            {"NegativeMultipleTurns",    (TwoPi * -3.0F) - 1.25F, -1.25F       }
         };
 
         for (const RotationCase& testCase : cases)
@@ -195,11 +195,11 @@ namespace
     TEST(CollisionBodyTest, GetRotationDegreesConvertsStoredRadiansToDegrees)
     {
         const RotationCase cases[] = {
-            {"Zero",                       0.0F,                 0.0F  },
-            {"NinetyDegrees",              Pi * 0.5F,            90.0F },
-            {"OneHundredEightyDegrees",    Pi,                   180.0F},
-            {"TwoHundredSeventyDegrees",   Pi * 1.5F,            270.0F},
-            {"ThreeHundredFifteenDegrees", TwoPi - (Pi * 0.25F), 315.0F}
+            {"Zero",                    0.0F,                 0.0F  },
+            {"NinetyDegrees",           Pi * 0.5F,            90.0F },
+            {"OneHundredEightyDegrees", Pi,                   180.0F},
+            {"NegativeNinetyDegrees",   Pi * 1.5F,            -90.0F},
+            {"NegativeFortyFiveDegrees", TwoPi - (Pi * 0.25F), -45.0F}
         };
 
         for (const RotationCase& testCase : cases)
@@ -235,15 +235,15 @@ namespace
             {"Zero",                     0.0F,             0.0F  },
             {"PositiveNinety",           90.0F,            90.0F },
             {"PositiveOneHundredEighty", 180.0F,           180.0F},
-            {"PositiveBeforeFullTurn",   359.0F,           359.0F},
+            {"PositiveBeforeFullTurn",   359.0F,           -1.0F },
             {"PositiveFullTurn",         360.0F,           0.0F  },
             {"PositiveMoreThanFullTurn", 450.0F,           90.0F },
             {"PositiveMultipleTurns",    1080.0F + 45.0F,  45.0F },
-            {"NegativeNinety",           -90.0F,           270.0F},
+            {"NegativeNinety",           -90.0F,           -90.0F},
             {"NegativeOneHundredEighty", -180.0F,          180.0F},
             {"NegativeFullTurn",         -360.0F,          0.0F  },
-            {"NegativeMoreThanFullTurn", -450.0F,          270.0F},
-            {"NegativeMultipleTurns",    -1080.0F - 45.0F, 315.0F}
+            {"NegativeMoreThanFullTurn", -450.0F,          -90.0F},
+            {"NegativeMultipleTurns",    -1080.0F - 45.0F, -45.0F}
         };
 
         for (const DegreeRotationCase& testCase : cases)
@@ -280,10 +280,10 @@ namespace
         const RotationCase cases[] = {
             {"ZeroDelta",                     0.0F,                           Pi * 0.25F},
             {"PositiveDelta",                 Pi * 0.25F,                     Pi * 0.5F },
-            {"PositivePiDelta",               Pi,                             Pi * 1.25F},
+            {"PositivePiDelta",               Pi,                             Pi * -0.75F},
             {"PositiveFullTurnDelta",         TwoPi,                          Pi * 0.25F},
             {"PositiveMoreThanFullTurnDelta", TwoPi + (Pi * 0.25F),           Pi * 0.5F },
-            {"NegativeHalfPiDelta",           Pi * -0.5F,                     Pi * 1.75F},
+            {"NegativeHalfPiDelta",           Pi * -0.5F,                     Pi * -0.25F},
             {"NegativeFullTurnDelta",         -TwoPi,                         Pi * 0.25F},
             {"NegativeMultipleTurnsDelta",    (TwoPi * -4.0F) - (Pi * 0.25F), 0.0F      }
         };
@@ -324,10 +324,10 @@ namespace
             {"PositiveFullTurnDelta",         360.0F,           30.0F },
             {"PositiveMoreThanFullTurnDelta", 390.0F,           60.0F },
             {"PositiveMultipleTurnsDelta",    1080.0F + 45.0F,  75.0F },
-            {"NegativeDelta",                 -45.0F,           345.0F},
+            {"NegativeDelta",                 -45.0F,           -15.0F},
             {"NegativeFullTurnDelta",         -360.0F,          30.0F },
             {"NegativeMoreThanFullTurnDelta", -390.0F,          0.0F  },
-            {"NegativeMultipleTurnsDelta",    -1080.0F - 45.0F, 345.0F}
+            {"NegativeMultipleTurnsDelta",    -1080.0F - 45.0F, -15.0F}
         };
 
         for (const DegreeRotationCase& testCase : cases)
