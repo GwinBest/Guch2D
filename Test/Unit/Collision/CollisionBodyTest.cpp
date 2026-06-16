@@ -446,6 +446,70 @@ namespace
         EXPECT_EQ(body.GetColliderBottomBorderWorld(), Guch2D::Vect(-3.0F, 2.0F));
     }
 
+    TEST(CollisionBodyTest, GetColliderRotationWorldNoColliderReturnsBodyRotation)
+    {
+        TestableCollisionBody body;
+        body.SetRotation(Pi * 0.5F);
+
+        ExpectRotationNear(body.GetColliderRotationWorld(), Pi * 0.5F);
+    }
+
+    TEST(CollisionBodyTest, GetColliderRotationWorldWithColliderAddsLocalRotation)
+    {
+        TestableCollisionBody body;
+        body.SetRotation(Pi * 0.25F);
+
+        const auto collider = std::make_shared<Guch2D::CircleCollider>(1.0F);
+        collider->SetRotationLocal(Pi * 0.5F);
+        body.SetCollider(collider);
+
+        ExpectRotationNear(body.GetColliderRotationWorld(), Pi * 0.75F);
+    }
+
+    TEST(CollisionBodyTest, GetColliderRotationWorldNormalizesRotationSum)
+    {
+        TestableCollisionBody body;
+        body.SetRotation(Pi);
+
+        const auto collider = std::make_shared<Guch2D::CircleCollider>(1.0F);
+        collider->SetRotationLocal(Pi * 0.5F);
+        body.SetCollider(collider);
+
+        ExpectRotationNear(body.GetColliderRotationWorld(), Pi * -0.5F);
+    }
+
+    TEST(CollisionBodyTest, GetColliderRotationDegreesWorldNoColliderReturnsBodyRotationDegrees)
+    {
+        TestableCollisionBody body;
+        body.SetRotationDegrees(90.0F);
+
+        ExpectDegreesNear(body.GetColliderRotationDegreesWorld(), 90.0F);
+    }
+
+    TEST(CollisionBodyTest, GetColliderRotationDegreesWorldWithColliderAddsLocalRotationDegrees)
+    {
+        TestableCollisionBody body;
+        body.SetRotationDegrees(45.0F);
+
+        const auto collider = std::make_shared<Guch2D::CircleCollider>(1.0F);
+        collider->SetRotationDegreesLocal(90.0F);
+        body.SetCollider(collider);
+
+        ExpectDegreesNear(body.GetColliderRotationDegreesWorld(), 135.0F);
+    }
+
+    TEST(CollisionBodyTest, GetColliderRotationDegreesWorldNormalizesRotationSum)
+    {
+        TestableCollisionBody body;
+        body.SetRotationDegrees(180.0F);
+
+        const auto collider = std::make_shared<Guch2D::CircleCollider>(1.0F);
+        collider->SetRotationDegreesLocal(90.0F);
+        body.SetCollider(collider);
+
+        ExpectDegreesNear(body.GetColliderRotationDegreesWorld(), -90.0F);
+    }
+
     TEST(CollisionBodyTest, InvokeOnBeginOverlap)
     {
         TestableCollisionBody body;
