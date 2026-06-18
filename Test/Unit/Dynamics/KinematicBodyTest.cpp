@@ -1,7 +1,7 @@
-#include "Dynamics/KinematicRigidBody.hpp"
-
 #include <cmath>
 #include <gtest/gtest.h>
+
+#include "Dynamics/KinematicRigidBody.hpp"
 
 namespace
 {

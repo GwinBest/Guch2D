@@ -107,10 +107,7 @@ namespace Guch2D
             _angularAcceleration = acceleration;
         }
 
-        [[nodiscard]] const Vect& GetAngularVelocity() const noexcept
-        {
-            return _angularVelocity;
-        }
+        [[nodiscard]] const Vect& GetAngularVelocity() const noexcept { return _angularVelocity; }
 
         void SetAngularVelocity(const Vect& velocity) noexcept
         {
