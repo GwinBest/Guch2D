@@ -4,20 +4,20 @@
 
 namespace Guch2D
 {
-    class KinematicBody final : public RigidBody
+    class KinematicRigidBody final : public RigidBody
     {
     public:
-        KinematicBody() noexcept = default;
+        KinematicRigidBody() noexcept = default;
 
-        explicit KinematicBody(const Vect& position) noexcept
+        explicit KinematicRigidBody(const Vect& position) noexcept
             : RigidBody(position)
         {}
 
-        KinematicBody(const KinematicBody&) = default;
-        KinematicBody(KinematicBody&&) = default;
-        KinematicBody& operator=(const KinematicBody&) = default;
-        KinematicBody& operator=(KinematicBody&&) = default;
-        ~KinematicBody() override = default;
+        KinematicRigidBody(const KinematicRigidBody&) = default;
+        KinematicRigidBody(KinematicRigidBody&&) = default;
+        KinematicRigidBody& operator=(const KinematicRigidBody&) = default;
+        KinematicRigidBody& operator=(KinematicRigidBody&&) = default;
+        ~KinematicRigidBody() override = default;
 
         [[nodiscard]] const Vect& GetAcceleration() const noexcept { return _acceleration; }
 

@@ -18,7 +18,7 @@
 #include "Collision/Trigger.hpp"
 #include "Dynamics/DynamicRigidBody.hpp"
 #include "Dynamics/DynamicWorld.hpp"
-#include "Dynamics/KinematicBody.hpp"
+#include "Dynamics/KinematicRigidBody.hpp"
 #include "Dynamics/StaticRigidBody.hpp"
 #include "Font.hpp"
 #include "Math/Vector.hpp"
@@ -891,7 +891,7 @@ private:
             return "STATIC";
         }
 
-        if (std::dynamic_pointer_cast<Guch2D::KinematicBody>(body))
+        if (std::dynamic_pointer_cast<Guch2D::KinematicRigidBody>(body))
         {
             return "KINEMATIC";
         }
