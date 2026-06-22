@@ -91,7 +91,7 @@ namespace Guch2D
                 continue;
             }
 
-            const Guch2D::Vect gravityForce = GetGravityForce(dynamicRigidBody, _gravity);
+            const Vect gravityForce = GetGravityForce(dynamicRigidBody, _gravity);
 
             if (!dynamicRigidBody->IsAwake())
             {

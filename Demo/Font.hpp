@@ -1,10 +1,15 @@
 #pragma once
 
+#include <array>
+#include <cctype>
+#include <cstddef>
+#include <cstdint>
+#include <optional>
 #include <string_view>
 
 #include "SFML/Graphics/Color.hpp"
-#include "SFML/Graphics/RectangleShape.hpp"
 #include "SFML/Graphics/RenderTarget.hpp"
+#include "SFML/Graphics/VertexArray.hpp"
 #include "SFML/System/Vector2.hpp"
 #include "SFML/Window/Keyboard.hpp"
 
@@ -31,9 +36,18 @@ public:
                          const float scale,
                          const sf::Color color)
     {
-        sf::RectangleShape pixel({scale, scale});
-        pixel.setFillColor(color);
+        if (text.empty())
+        {
+            return;
+        }
 
+        static constexpr std::size_t VerticesPerPixel = 6;
+
+        sf::VertexArray vertices(sf::PrimitiveType::Triangles);
+        vertices.resize(text.size() * static_cast<std::size_t>(_charWidth)
+                        * static_cast<std::size_t>(_charHeight) * VerticesPerPixel);
+
+        std::size_t vertexIndex = 0;
         float x = position.x;
         for (const char c : text)
         {
@@ -44,18 +58,32 @@ public:
                 {
                     const std::uint8_t mask = static_cast<std::uint8_t>(1u
                                                                         << (_charWidth - 1 - col));
-                    if ((glyph[static_cast<size_t>(row)] & mask) == 0u)
+                    if ((glyph[static_cast<std::size_t>(row)] & mask) == 0u)
                     {
                         continue;
                     }
 
-                    pixel.setPosition({x + static_cast<float>(col) * scale,
-                                       position.y + static_cast<float>(row) * scale});
-                    target.draw(pixel);
+                    const float left = x + static_cast<float>(col) * scale;
+                    const float top = position.y + static_cast<float>(row) * scale;
+                    const float right = left + scale;
+                    const float bottom = top + scale;
+
+                    vertices[vertexIndex++] = sf::Vertex({left, top}, color);
+                    vertices[vertexIndex++] = sf::Vertex({left, bottom}, color);
+                    vertices[vertexIndex++] = sf::Vertex({right, bottom}, color);
+                    vertices[vertexIndex++] = sf::Vertex({left, top}, color);
+                    vertices[vertexIndex++] = sf::Vertex({right, bottom}, color);
+                    vertices[vertexIndex++] = sf::Vertex({right, top}, color);
                 }
             }
 
             x += static_cast<float>(_charWidth + _charSpacing) * scale;
+        }
+
+        vertices.resize(vertexIndex);
+        if (vertexIndex != 0)
+        {
+            target.draw(vertices);
         }
     }
 

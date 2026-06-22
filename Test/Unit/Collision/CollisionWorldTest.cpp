@@ -6,7 +6,7 @@
 #include "Collision/AABBCollider.hpp"
 #include "Collision/CircleCollider.hpp"
 #include "Dynamics/DynamicRigidBody.hpp"
-#include "Dynamics/KinematicBody.hpp"
+#include "Dynamics/KinematicRigidBody.hpp"
 #include "Dynamics/StaticRigidBody.hpp"
 #include "Solver/PositionSolver.hpp"
 
@@ -66,10 +66,10 @@ namespace
         return body;
     }
 
-    [[nodiscard]] std::shared_ptr<Guch2D::KinematicBody>
+    [[nodiscard]] std::shared_ptr<Guch2D::KinematicRigidBody>
         MakeKinematicCircleRigidBody(const Guch2D::Vect& position, const float radius)
     {
-        const auto body = std::make_shared<Guch2D::KinematicBody>(position);
+        const auto body = std::make_shared<Guch2D::KinematicRigidBody>(position);
         body->SetCollider(std::make_shared<Guch2D::CircleCollider>(radius));
         return body;
     }

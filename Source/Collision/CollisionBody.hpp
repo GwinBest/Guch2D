@@ -3,8 +3,10 @@
 #include <array>
 #include <functional>
 #include <memory>
+#include <numbers>
 
 #include "Collision/Collider.hpp"
+#include "Math/Rotator.hpp"
 #include "Math/Vector.hpp"
 
 namespace Guch2D
@@ -102,6 +104,39 @@ namespace Guch2D
             _position += delta;
         }
 
+        // Returns value in radians
+        [[nodiscard]] Rotator GetRotation() const noexcept { return _rotation; }
+
+        [[nodiscard]] Rotator GetRotationDegrees() const noexcept { return _rotation * RadToDeg; }
+
+        // Sets rotations in radians
+        void SetRotation(const Rotator rotation) noexcept
+        {
+            if (!IsFinite(rotation))
+                return;
+
+            _rotation = NormalizeRotator(rotation);
+        }
+
+        void SetRotationDegrees(const Rotator rotation) noexcept
+        {
+            if (!IsFinite(rotation))
+                return;
+
+            SetRotation(rotation * DegToRad);
+        }
+
+        // Rotate in radians
+        void Rotate(const Rotator delta) noexcept
+        {
+            if (!IsFinite(delta))
+                return;
+
+            _rotation = NormalizeRotator(_rotation + delta);
+        }
+
+        void RotateDegrees(const Rotator delta) noexcept { Rotate(delta * DegToRad); }
+
         [[nodiscard]] const std::shared_ptr<Collider>& GetCollider() const noexcept
         {
             return _collider;
@@ -117,7 +152,7 @@ namespace Guch2D
         [[nodiscard]] Vect GetColliderCenterWorld() const noexcept
         {
             if (!_collider)
-                return {};
+                return _position;
 
             return _position + _collider->GetCenterLocal();
         }
@@ -154,6 +189,23 @@ namespace Guch2D
             return _position + _collider->BottomBorder();
         }
 
+        [[nodiscard]] Rotator GetColliderRotationWorld() const noexcept
+        {
+            if (!_collider)
+                return _rotation;
+
+            return NormalizeRotator(_rotation + _collider->GetRotationLocal());
+        }
+
+        [[nodiscard]] Rotator GetColliderRotationDegreesWorld() const noexcept
+        {
+            if (!_collider)
+                return GetRotationDegrees();
+
+            return NormalizeRotatorDegrees(GetRotationDegrees()
+                                           + _collider->GetRotationDegreesLocal());
+        }
+
         void BindOnBeginOverlap(CollisionCallback callback) noexcept
         {
             _onBeginOverlap = std::move(callback);
@@ -184,6 +236,9 @@ namespace Guch2D
     protected:
         // Position of the object in the 2D space, in meters (m)
         Vect _position = {0.0F, 0.0F};
+
+        // Rotation of the object in the 2D space, in radians (rad)
+        Rotator _rotation = 0.0F;
 
         // Collider associated with this collision body
         std::shared_ptr<Collider> _collider;

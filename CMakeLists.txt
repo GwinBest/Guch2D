@@ -19,14 +19,14 @@ option(ENABLE_LINT_STRICT "Fail configuration when enabled lint tools are missin
 set(CLANG_TIDY_CONFIG_FILE "${CMAKE_SOURCE_DIR}/.clang-tidy" CACHE FILEPATH
         "Path to clang-tidy configuration file."
 )
-set(CLANG_TIDY_HEADER_FILTER "^${CMAKE_SOURCE_DIR}/Src/" CACHE STRING
+set(CLANG_TIDY_HEADER_FILTER "^${CMAKE_SOURCE_DIR}/Source/" CACHE STRING
         "Regex for headers analyzed by clang-tidy."
 )
 set(CLANG_FORMAT_STYLE_FILE "${CMAKE_SOURCE_DIR}/.clang-format" CACHE FILEPATH
         "Path to clang-format style configuration file."
 )
 
-set(PROJECT_FORMAT_DIRS Src Demo Test)
+set(PROJECT_FORMAT_DIRS Source Demo Test)
 set(PROJECT_FORMAT_EXTENSIONS h hh hpp hxx c cc cpp cxx)
 set(PROJECT_FORMAT_PATTERNS)
 
@@ -118,7 +118,7 @@ if (ENABLE_CLANG_TIDY)
             "-header-filter=${CLANG_TIDY_HEADER_FILTER}"
     )
 
-    message(STATUS "clang-tidy enabled for Src target: ${CLANG_TIDY_EXE}")
+    message(STATUS "clang-tidy enabled for Source target: ${CLANG_TIDY_EXE}")
 else ()
     unset(PROJECT_CXX_CLANG_TIDY)
 endif ()
@@ -253,7 +253,7 @@ function(enable_project_warnings target_name)
     )
 endfunction()
 
-add_subdirectory(Src)
+add_subdirectory(Source)
 
 if (BUILD_DEMO)
     add_subdirectory(Demo)

@@ -2,6 +2,7 @@
 
 #include <cstdint>
 
+#include "Math/Rotator.hpp"
 #include "Math/Vector.hpp"
 
 namespace Guch2D
@@ -51,11 +52,59 @@ namespace Guch2D
             _center = center;
         }
 
+        // Rotation in radians
+        [[nodiscard]] Rotator GetRotationLocal() const noexcept { return _rotation; }
+
+        [[nodiscard]] Rotator GetRotationDegreesLocal() const noexcept
+        {
+            return _rotation * RadToDeg;
+        }
+
+        // Rotation in radians
+        void SetRotationLocal(const Rotator rotation) noexcept
+        {
+            // No rotation for AABB
+            if (_type == ColliderType::AABB)
+                return;
+
+            if (!IsFinite(rotation))
+            {
+                _rotation = 0.0F;
+                return;
+            }
+
+            _rotation = rotation;
+        }
+
+        void SetRotationDegreesLocal(const Rotator rotation) noexcept
+        {
+            SetRotationLocal(rotation * DegToRad);
+        }
+
+        // Delta in radians
+        void Rotate(const Rotator delta) noexcept
+        {
+            // No rotation for AABB
+            if (_type == ColliderType::AABB)
+                return;
+
+            if (!IsFinite(delta))
+                return;
+
+            _rotation = NormalizeRotator(_rotation + delta);
+        }
+
+        void RotateDegrees(const Rotator delta) noexcept { Rotate(delta * DegToRad); }
+
     private:
         ColliderType _type = ColliderType::None;
 
         // Center of the collider, in meters (m)
         // In local space
         Vect _center = {0.0F, 0.0F};
+
+        // Rotation of the collider in radians (rad)
+        // In local space
+        Rotator _rotation = 0.0F;
     };
 }   // namespace Guch2D

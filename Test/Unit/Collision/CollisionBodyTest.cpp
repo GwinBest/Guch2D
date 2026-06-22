@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <gtest/gtest.h>
+#include <numbers>
 
 #include "Collision/AABBCollider.hpp"
 #include "Collision/CircleCollider.hpp"
@@ -17,10 +18,42 @@ namespace
         using Guch2D::CollisionBody::InvokeOnEndOverlap;
     };
 
+    constexpr float Pi = std::numbers::pi_v<float>;
+    constexpr float TwoPi = Pi * 2.0F;
+    constexpr float DegToRad = Pi / 180.0F;
+    constexpr float RotationTolerance = 1.0e-4F;
+    constexpr float DegreeTolerance = 1.0e-3F;
+
+    struct RotationCase
+    {
+        const char* Name;
+        Guch2D::Rotator Input;
+        Guch2D::Rotator Expected;
+    };
+
+    struct DegreeRotationCase
+    {
+        const char* Name;
+        Guch2D::Rotator InputDegrees;
+        Guch2D::Rotator ExpectedDegrees;
+    };
+
+    void ExpectRotationNear(const Guch2D::Rotator actual, const Guch2D::Rotator expected)
+    {
+        EXPECT_NEAR(actual, expected, RotationTolerance);
+    }
+
+    void ExpectDegreesNear(const Guch2D::Rotator actual, const Guch2D::Rotator expected)
+    {
+        EXPECT_NEAR(actual, expected, DegreeTolerance);
+    }
+
     TEST(CollisionBodyTest, DefaultConstructor)
     {
         const TestableCollisionBody body;
         EXPECT_EQ(body.GetPosition(), Guch2D::Vect(0.0F, 0.0F));
+        EXPECT_FLOAT_EQ(body.GetRotation(), 0.0F);
+        EXPECT_FLOAT_EQ(body.GetRotationDegrees(), 0.0F);
         EXPECT_EQ(body.GetCollider(), nullptr);
     }
 
@@ -131,6 +164,202 @@ namespace
         EXPECT_EQ(body.GetPosition(), Guch2D::Vect(0.0F, 0.0F));
     }
 
+    TEST(CollisionBodyTest, SetRotationRadiansNormalizesFiniteInputs)
+    {
+        const RotationCase cases[] = {
+            {"Zero",                     0.0F,                    0.0F      },
+            {"PositiveHalfPi",           Pi * 0.5F,               Pi * 0.5F },
+            {"PositivePi",               Pi,                      Pi        },
+            {"PositiveBeforeFullTurn",   TwoPi - 0.25F,           -0.25F    },
+            {"PositiveFullTurn",         TwoPi,                   0.0F      },
+            {"PositiveMoreThanFullTurn", TwoPi + (Pi * 0.5F),     Pi * 0.5F },
+            {"PositiveMultipleTurns",    (TwoPi * 3.0F) + 1.25F,  1.25F     },
+            {"NegativeHalfPi",           Pi * -0.5F,              Pi * -0.5F},
+            {"NegativePi",               -Pi,                     Pi        },
+            {"NegativeFullTurn",         -TwoPi,                  0.0F      },
+            {"NegativeMoreThanFullTurn", -TwoPi - (Pi * 0.5F),    Pi * -0.5F},
+            {"NegativeMultipleTurns",    (TwoPi * -3.0F) - 1.25F, -1.25F    }
+        };
+
+        for (const RotationCase& testCase : cases)
+        {
+            SCOPED_TRACE(testCase.Name);
+            TestableCollisionBody body;
+
+            body.SetRotation(testCase.Input);
+
+            ExpectRotationNear(body.GetRotation(), testCase.Expected);
+        }
+    }
+
+    TEST(CollisionBodyTest, GetRotationDegreesConvertsStoredRadiansToDegrees)
+    {
+        const RotationCase cases[] = {
+            {"Zero",                     0.0F,                 0.0F  },
+            {"NinetyDegrees",            Pi * 0.5F,            90.0F },
+            {"OneHundredEightyDegrees",  Pi,                   180.0F},
+            {"NegativeNinetyDegrees",    Pi * 1.5F,            -90.0F},
+            {"NegativeFortyFiveDegrees", TwoPi - (Pi * 0.25F), -45.0F}
+        };
+
+        for (const RotationCase& testCase : cases)
+        {
+            SCOPED_TRACE(testCase.Name);
+            TestableCollisionBody body;
+
+            body.SetRotation(testCase.Input);
+
+            ExpectDegreesNear(body.GetRotationDegrees(), testCase.Expected);
+        }
+    }
+
+    TEST(CollisionBodyTest, SetRotationRadiansIgnoresInvalidInputs)
+    {
+        const Guch2D::Rotator invalidInputs[] = {NAN, INFINITY, -INFINITY};
+
+        for (const Guch2D::Rotator invalidInput : invalidInputs)
+        {
+            SCOPED_TRACE(invalidInput);
+            TestableCollisionBody body;
+            body.SetRotation(Pi / 3.0F);
+
+            body.SetRotation(invalidInput);
+
+            ExpectRotationNear(body.GetRotation(), Pi / 3.0F);
+        }
+    }
+
+    TEST(CollisionBodyTest, SetRotationDegreesNormalizesFiniteInputs)
+    {
+        const DegreeRotationCase cases[] = {
+            {"Zero",                     0.0F,             0.0F  },
+            {"PositiveNinety",           90.0F,            90.0F },
+            {"PositiveOneHundredEighty", 180.0F,           180.0F},
+            {"PositiveBeforeFullTurn",   359.0F,           -1.0F },
+            {"PositiveFullTurn",         360.0F,           0.0F  },
+            {"PositiveMoreThanFullTurn", 450.0F,           90.0F },
+            {"PositiveMultipleTurns",    1080.0F + 45.0F,  45.0F },
+            {"NegativeNinety",           -90.0F,           -90.0F},
+            {"NegativeOneHundredEighty", -180.0F,          180.0F},
+            {"NegativeFullTurn",         -360.0F,          0.0F  },
+            {"NegativeMoreThanFullTurn", -450.0F,          -90.0F},
+            {"NegativeMultipleTurns",    -1080.0F - 45.0F, -45.0F}
+        };
+
+        for (const DegreeRotationCase& testCase : cases)
+        {
+            SCOPED_TRACE(testCase.Name);
+            TestableCollisionBody body;
+
+            body.SetRotationDegrees(testCase.InputDegrees);
+
+            ExpectDegreesNear(body.GetRotationDegrees(), testCase.ExpectedDegrees);
+            ExpectRotationNear(body.GetRotation(), testCase.ExpectedDegrees * DegToRad);
+        }
+    }
+
+    TEST(CollisionBodyTest, SetRotationDegreesIgnoresInvalidInputs)
+    {
+        const Guch2D::Rotator invalidInputs[] = {NAN, INFINITY, -INFINITY};
+
+        for (const Guch2D::Rotator invalidInput : invalidInputs)
+        {
+            SCOPED_TRACE(invalidInput);
+            TestableCollisionBody body;
+            body.SetRotationDegrees(45.0F);
+
+            body.SetRotationDegrees(invalidInput);
+
+            ExpectDegreesNear(body.GetRotationDegrees(), 45.0F);
+            ExpectRotationNear(body.GetRotation(), 45.0F * DegToRad);
+        }
+    }
+
+    TEST(CollisionBodyTest, RotateRadiansNormalizesAccumulatedRotation)
+    {
+        const RotationCase cases[] = {
+            {"ZeroDelta",                     0.0F,                           Pi * 0.25F },
+            {"PositiveDelta",                 Pi * 0.25F,                     Pi * 0.5F  },
+            {"PositivePiDelta",               Pi,                             Pi * -0.75F},
+            {"PositiveFullTurnDelta",         TwoPi,                          Pi * 0.25F },
+            {"PositiveMoreThanFullTurnDelta", TwoPi + (Pi * 0.25F),           Pi * 0.5F  },
+            {"NegativeHalfPiDelta",           Pi * -0.5F,                     Pi * -0.25F},
+            {"NegativeFullTurnDelta",         -TwoPi,                         Pi * 0.25F },
+            {"NegativeMultipleTurnsDelta",    (TwoPi * -4.0F) - (Pi * 0.25F), 0.0F       }
+        };
+
+        for (const RotationCase& testCase : cases)
+        {
+            SCOPED_TRACE(testCase.Name);
+            TestableCollisionBody body;
+            body.SetRotation(Pi * 0.25F);
+
+            body.Rotate(testCase.Input);
+
+            ExpectRotationNear(body.GetRotation(), testCase.Expected);
+        }
+    }
+
+    TEST(CollisionBodyTest, RotateRadiansIgnoresInvalidDeltas)
+    {
+        const Guch2D::Rotator invalidInputs[] = {NAN, INFINITY, -INFINITY};
+
+        for (const Guch2D::Rotator invalidInput : invalidInputs)
+        {
+            SCOPED_TRACE(invalidInput);
+            TestableCollisionBody body;
+            body.SetRotation(Pi / 3.0F);
+
+            body.Rotate(invalidInput);
+
+            ExpectRotationNear(body.GetRotation(), Pi / 3.0F);
+        }
+    }
+
+    TEST(CollisionBodyTest, RotateDegreesNormalizesAccumulatedRotation)
+    {
+        const DegreeRotationCase cases[] = {
+            {"ZeroDelta",                     0.0F,             30.0F },
+            {"PositiveDelta",                 90.0F,            120.0F},
+            {"PositiveFullTurnDelta",         360.0F,           30.0F },
+            {"PositiveMoreThanFullTurnDelta", 390.0F,           60.0F },
+            {"PositiveMultipleTurnsDelta",    1080.0F + 45.0F,  75.0F },
+            {"NegativeDelta",                 -45.0F,           -15.0F},
+            {"NegativeFullTurnDelta",         -360.0F,          30.0F },
+            {"NegativeMoreThanFullTurnDelta", -390.0F,          0.0F  },
+            {"NegativeMultipleTurnsDelta",    -1080.0F - 45.0F, -15.0F}
+        };
+
+        for (const DegreeRotationCase& testCase : cases)
+        {
+            SCOPED_TRACE(testCase.Name);
+            TestableCollisionBody body;
+            body.SetRotationDegrees(30.0F);
+
+            body.RotateDegrees(testCase.InputDegrees);
+
+            ExpectDegreesNear(body.GetRotationDegrees(), testCase.ExpectedDegrees);
+            ExpectRotationNear(body.GetRotation(), testCase.ExpectedDegrees * DegToRad);
+        }
+    }
+
+    TEST(CollisionBodyTest, RotateDegreesIgnoresInvalidDeltas)
+    {
+        const Guch2D::Rotator invalidInputs[] = {NAN, INFINITY, -INFINITY};
+
+        for (const Guch2D::Rotator invalidInput : invalidInputs)
+        {
+            SCOPED_TRACE(invalidInput);
+            TestableCollisionBody body;
+            body.SetRotationDegrees(45.0F);
+
+            body.RotateDegrees(invalidInput);
+
+            ExpectDegreesNear(body.GetRotationDegrees(), 45.0F);
+            ExpectRotationNear(body.GetRotation(), 45.0F * DegToRad);
+        }
+    }
+
     TEST(CollisionBodyTest, SetCollider)
     {
         TestableCollisionBody body;
@@ -215,6 +444,70 @@ namespace
         EXPECT_EQ(body.GetColliderRightBorderWorld(), Guch2D::Vect(0.0F, 5.0F));
         EXPECT_EQ(body.GetColliderTopBorderWorld(), Guch2D::Vect(-3.0F, 8.0F));
         EXPECT_EQ(body.GetColliderBottomBorderWorld(), Guch2D::Vect(-3.0F, 2.0F));
+    }
+
+    TEST(CollisionBodyTest, GetColliderRotationWorldNoColliderReturnsBodyRotation)
+    {
+        TestableCollisionBody body;
+        body.SetRotation(Pi * 0.5F);
+
+        ExpectRotationNear(body.GetColliderRotationWorld(), Pi * 0.5F);
+    }
+
+    TEST(CollisionBodyTest, GetColliderRotationWorldWithColliderAddsLocalRotation)
+    {
+        TestableCollisionBody body;
+        body.SetRotation(Pi * 0.25F);
+
+        const auto collider = std::make_shared<Guch2D::CircleCollider>(1.0F);
+        collider->SetRotationLocal(Pi * 0.5F);
+        body.SetCollider(collider);
+
+        ExpectRotationNear(body.GetColliderRotationWorld(), Pi * 0.75F);
+    }
+
+    TEST(CollisionBodyTest, GetColliderRotationWorldNormalizesRotationSum)
+    {
+        TestableCollisionBody body;
+        body.SetRotation(Pi);
+
+        const auto collider = std::make_shared<Guch2D::CircleCollider>(1.0F);
+        collider->SetRotationLocal(Pi * 0.5F);
+        body.SetCollider(collider);
+
+        ExpectRotationNear(body.GetColliderRotationWorld(), Pi * -0.5F);
+    }
+
+    TEST(CollisionBodyTest, GetColliderRotationDegreesWorldNoColliderReturnsBodyRotationDegrees)
+    {
+        TestableCollisionBody body;
+        body.SetRotationDegrees(90.0F);
+
+        ExpectDegreesNear(body.GetColliderRotationDegreesWorld(), 90.0F);
+    }
+
+    TEST(CollisionBodyTest, GetColliderRotationDegreesWorldWithColliderAddsLocalRotationDegrees)
+    {
+        TestableCollisionBody body;
+        body.SetRotationDegrees(45.0F);
+
+        const auto collider = std::make_shared<Guch2D::CircleCollider>(1.0F);
+        collider->SetRotationDegreesLocal(90.0F);
+        body.SetCollider(collider);
+
+        ExpectDegreesNear(body.GetColliderRotationDegreesWorld(), 135.0F);
+    }
+
+    TEST(CollisionBodyTest, GetColliderRotationDegreesWorldNormalizesRotationSum)
+    {
+        TestableCollisionBody body;
+        body.SetRotationDegrees(180.0F);
+
+        const auto collider = std::make_shared<Guch2D::CircleCollider>(1.0F);
+        collider->SetRotationDegreesLocal(90.0F);
+        body.SetCollider(collider);
+
+        ExpectDegreesNear(body.GetColliderRotationDegreesWorld(), -90.0F);
     }
 
     TEST(CollisionBodyTest, InvokeOnBeginOverlap)

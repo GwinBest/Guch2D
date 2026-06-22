@@ -1,8 +1,7 @@
 #pragma once
 
-#include "glm/detail/func_geometric.inl"
-
 #include <cmath>
+#include <glm/geometric.hpp>
 #include <glm/vec2.hpp>
 
 namespace Guch2D

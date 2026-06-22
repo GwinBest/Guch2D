@@ -18,7 +18,7 @@
 #include "Collision/Trigger.hpp"
 #include "Dynamics/DynamicRigidBody.hpp"
 #include "Dynamics/DynamicWorld.hpp"
-#include "Dynamics/KinematicBody.hpp"
+#include "Dynamics/KinematicRigidBody.hpp"
 #include "Dynamics/StaticRigidBody.hpp"
 #include "Font.hpp"
 #include "Math/Vector.hpp"
@@ -34,10 +34,46 @@ namespace
     constexpr float LaunchStrength = 6.0f;
     constexpr float HudScale = 2.0f;
     constexpr float HudPadding = 6.0f;
+    constexpr float FpsRefreshInterval = 0.5f;
     constexpr float CollisionNormalLengthMeters = 0.35f;
     constexpr float CollisionNormalHeadLengthMeters = 0.12f;
     constexpr float CollisionNormalHeadWidthMeters = 0.08f;
     constexpr float CollisionPointRadiusPixels = 4.0f;
+
+    class FpsCounter final
+    {
+    public:
+        void Update(const float dt) noexcept
+        {
+            if (dt <= 0.0f)
+            {
+                return;
+            }
+
+            _elapsed += dt;
+            ++_frames;
+
+            if (_elapsed < FpsRefreshInterval)
+            {
+                if (_fps == 0)
+                {
+                    _fps = static_cast<std::uint32_t>((1.0f / dt) + 0.5f);
+                }
+                return;
+            }
+
+            _fps = static_cast<std::uint32_t>((static_cast<float>(_frames) / _elapsed) + 0.5f);
+            _elapsed = 0.0f;
+            _frames = 0;
+        }
+
+        [[nodiscard]] std::uint32_t Value() const noexcept { return _fps; }
+
+    private:
+        float _elapsed = 0.0f;
+        std::uint32_t _frames = 0;
+        std::uint32_t _fps = 0;
+    };
 
     class CollisionWorldInspector final : public Guch2D::CollisionWorld
     {
@@ -855,7 +891,7 @@ private:
             return "STATIC";
         }
 
-        if (std::dynamic_pointer_cast<Guch2D::KinematicBody>(body))
+        if (std::dynamic_pointer_cast<Guch2D::KinematicRigidBody>(body))
         {
             return "KINEMATIC";
         }
@@ -1464,11 +1500,13 @@ void RenderOverlay(sf::RenderWindow& window,
                    const PixelFont& font,
                    const DemoBase& demo,
                    const std::size_t demoIndex,
-                   const std::size_t demoCount)
+                   const std::size_t demoCount,
+                   const std::uint32_t fps)
 {
     std::vector<std::string> lines;
     lines.push_back("DEMO " + std::to_string(demoIndex + 1) + "/" + std::to_string(demoCount) + ": "
                     + demo.Name());
+    lines.push_back("FPS: " + std::to_string(fps));
     lines.push_back("1-9: SWITCH DEMO");
     lines.push_back("ESC: QUIT");
     lines.push_back("");
@@ -1523,10 +1561,12 @@ int main()
 
     PixelFont font;
     sf::Clock clock;
+    FpsCounter fpsCounter;
 
     while (window.isOpen())
     {
         const float dt = clock.restart().asSeconds();
+        fpsCounter.Update(dt);
 
         while (const std::optional event = window.pollEvent())
         {
@@ -1558,7 +1598,12 @@ int main()
 
         window.clear(sf::Color::Black);
         demos.Active().Render(window);
-        RenderOverlay(window, font, demos.Active(), demos.ActiveIndex(), demos.Count());
+        RenderOverlay(window,
+                      font,
+                      demos.Active(),
+                      demos.ActiveIndex(),
+                      demos.Count(),
+                      fpsCounter.Value());
         window.display();
     }
 

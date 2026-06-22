@@ -1,0 +1,48 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 19,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "debug",
+      "displayName": "Debug",
+      "description": "Debug build with demo and tests enabled.",
+      "binaryDir": "${sourceDir}/Build/Debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "BUILD_DEMO": "ON",
+        "BUILD_TEST": "ON",
+        "SFML_BUILD_AUDIO": "OFF",
+        "SFML_BUILD_NETWORK": "OFF",
+        "CMAKE_CXX_FLAGS": "-fcoverage-mapping -fprofile-instr-generate"
+      }
+    },
+    {
+      "name": "release",
+      "displayName": "Release",
+      "description": "Release build with demo enabled.",
+      "binaryDir": "${sourceDir}/Build/Release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "BUILD_DEMO": "ON",
+        "SFML_BUILD_AUDIO": "OFF",
+        "SFML_BUILD_NETWORK": "OFF"
+      }
+    },
+    {
+      "name": "relwithdebinfo",
+      "displayName": "RelWithDebInfo",
+      "description": "Optimized build with debug information and demo enabled.",
+      "binaryDir": "${sourceDir}/Build/RelWithDebInfo",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "BUILD_DEMO": "ON",
+        "SFML_BUILD_AUDIO": "OFF",
+        "SFML_BUILD_NETWORK": "OFF"
+      }
+    }
+  ]
+}

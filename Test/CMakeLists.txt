@@ -26,7 +26,7 @@ target_include_directories(${PROJECT_NAME}-Test
         PRIVATE
         ${gtest_SOURCE_DIR}/include
         ${CMAKE_CURRENT_SOURCE_DIR}
-        ${CMAKE_SOURCE_DIR}/Src
+        ${CMAKE_SOURCE_DIR}/Source
 )
 
 include(GoogleTest)

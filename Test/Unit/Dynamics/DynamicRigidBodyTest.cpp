@@ -1,5 +1,6 @@
 #include "Dynamics/DynamicRigidBody.hpp"
 
+#include <cmath>
 #include <gtest/gtest.h>
 
 namespace
@@ -13,8 +14,11 @@ namespace
         EXPECT_EQ(body.GetForce(), Guch2D::Vect(0.0F, 0.0F));
         EXPECT_EQ(body.GetAcceleration(), Guch2D::Vect(0.0F, 0.0F));
         EXPECT_EQ(body.GetVelocity(), Guch2D::Vect(0.0F, 0.0F));
+        EXPECT_EQ(body.GetAngularAcceleration(), Guch2D::Vect(0.0F, 0.0F));
+        EXPECT_EQ(body.GetAngularVelocity(), Guch2D::Vect(0.0F, 0.0F));
         EXPECT_EQ(body.GetGravityScale(), Guch2D::DynamicRigidBody::DefaultGravityScale);
         EXPECT_EQ(body.GetLinearDamping(), Guch2D::DynamicRigidBody::DefaultLinearDamping);
+        EXPECT_EQ(body.GetAngularDamping(), Guch2D::DynamicRigidBody::DefaultAngularDamping);
         EXPECT_TRUE(body.IsAwake());
         EXPECT_FLOAT_EQ(body.GetSleepTime(), 0.0F);
     }
@@ -29,8 +33,11 @@ namespace
         EXPECT_EQ(body.GetForce(), Guch2D::Vect(0.0F, 0.0F));
         EXPECT_EQ(body.GetAcceleration(), Guch2D::Vect(0.0F, 0.0F));
         EXPECT_EQ(body.GetVelocity(), Guch2D::Vect(0.0F, 0.0F));
+        EXPECT_EQ(body.GetAngularAcceleration(), Guch2D::Vect(0.0F, 0.0F));
+        EXPECT_EQ(body.GetAngularVelocity(), Guch2D::Vect(0.0F, 0.0F));
         EXPECT_EQ(body.GetGravityScale(), Guch2D::DynamicRigidBody::DefaultGravityScale);
         EXPECT_EQ(body.GetLinearDamping(), Guch2D::DynamicRigidBody::DefaultLinearDamping);
+        EXPECT_EQ(body.GetAngularDamping(), Guch2D::DynamicRigidBody::DefaultAngularDamping);
         EXPECT_TRUE(body.IsAwake());
         EXPECT_FLOAT_EQ(body.GetSleepTime(), 0.0F);
     }
@@ -46,8 +53,11 @@ namespace
         EXPECT_EQ(body.GetForce(), Guch2D::Vect(0.0F, 0.0F));
         EXPECT_EQ(body.GetAcceleration(), Guch2D::Vect(0.0F, 0.0F));
         EXPECT_EQ(body.GetVelocity(), Guch2D::Vect(0.0F, 0.0F));
+        EXPECT_EQ(body.GetAngularAcceleration(), Guch2D::Vect(0.0F, 0.0F));
+        EXPECT_EQ(body.GetAngularVelocity(), Guch2D::Vect(0.0F, 0.0F));
         EXPECT_EQ(body.GetGravityScale(), Guch2D::DynamicRigidBody::DefaultGravityScale);
         EXPECT_EQ(body.GetLinearDamping(), Guch2D::DynamicRigidBody::DefaultLinearDamping);
+        EXPECT_EQ(body.GetAngularDamping(), Guch2D::DynamicRigidBody::DefaultAngularDamping);
         EXPECT_TRUE(body.IsAwake());
         EXPECT_FLOAT_EQ(body.GetSleepTime(), 0.0F);
     }
@@ -262,6 +272,78 @@ namespace
         EXPECT_EQ(body.GetVelocity(), initialVelocity);
     }
 
+    TEST(DynamicRigidBodyTest, SetAngularAcceleration)
+    {
+        Guch2D::DynamicRigidBody body;
+        constexpr Guch2D::Vect acceleration(3.0F, -4.0F);
+        body.SetAngularAcceleration(acceleration);
+        EXPECT_EQ(body.GetAngularAcceleration(), acceleration);
+    }
+
+    TEST(DynamicRigidBodyTest, SetAngularAccelerationNaN)
+    {
+        Guch2D::DynamicRigidBody body;
+        body.SetAngularAcceleration({NAN, 2.0F});
+        EXPECT_EQ(body.GetAngularAcceleration(), Guch2D::Vect(0.0F, 0.0F));
+    }
+
+    TEST(DynamicRigidBodyTest, SetAngularAccelerationInfinity)
+    {
+        Guch2D::DynamicRigidBody body;
+        body.SetAngularAcceleration({INFINITY, 2.0F});
+        EXPECT_EQ(body.GetAngularAcceleration(), Guch2D::Vect(0.0F, 0.0F));
+    }
+
+    TEST(DynamicRigidBodyTest, SetAngularVelocity)
+    {
+        Guch2D::DynamicRigidBody body;
+        constexpr Guch2D::Vect velocity(1.5F, -2.5F);
+        body.SetAngularVelocity(velocity);
+        EXPECT_EQ(body.GetAngularVelocity(), velocity);
+    }
+
+    TEST(DynamicRigidBodyTest, SetAngularVelocityNaN)
+    {
+        Guch2D::DynamicRigidBody body;
+        body.SetAngularVelocity({NAN, 2.0F});
+        EXPECT_EQ(body.GetAngularVelocity(), Guch2D::Vect(0.0F, 0.0F));
+    }
+
+    TEST(DynamicRigidBodyTest, SetAngularVelocityInfinity)
+    {
+        Guch2D::DynamicRigidBody body;
+        body.SetAngularVelocity({INFINITY, 2.0F});
+        EXPECT_EQ(body.GetAngularVelocity(), Guch2D::Vect(0.0F, 0.0F));
+    }
+
+    TEST(DynamicRigidBodyTest, AddAngularVelocity)
+    {
+        Guch2D::DynamicRigidBody body;
+        constexpr Guch2D::Vect initialVelocity(1.0F, -2.0F);
+        constexpr Guch2D::Vect additionalVelocity(3.0F, 4.0F);
+        body.SetAngularVelocity(initialVelocity);
+        body.AddAngularVelocity(additionalVelocity);
+        EXPECT_EQ(body.GetAngularVelocity(), initialVelocity + additionalVelocity);
+    }
+
+    TEST(DynamicRigidBodyTest, AddAngularVelocityNaN)
+    {
+        Guch2D::DynamicRigidBody body;
+        constexpr Guch2D::Vect initialVelocity(1.0F, -2.0F);
+        body.SetAngularVelocity(initialVelocity);
+        body.AddAngularVelocity({NAN, 1.0F});
+        EXPECT_EQ(body.GetAngularVelocity(), initialVelocity);
+    }
+
+    TEST(DynamicRigidBodyTest, AddAngularVelocityInfinity)
+    {
+        Guch2D::DynamicRigidBody body;
+        constexpr Guch2D::Vect initialVelocity(1.0F, -2.0F);
+        body.SetAngularVelocity(initialVelocity);
+        body.AddAngularVelocity({INFINITY, 1.0F});
+        EXPECT_EQ(body.GetAngularVelocity(), initialVelocity);
+    }
+
     TEST(DynamicRigidBodyTest, SetGravityScalePositive)
     {
         Guch2D::DynamicRigidBody body;
@@ -338,6 +420,28 @@ namespace
         EXPECT_EQ(body.GetLinearDamping(), Guch2D::DynamicRigidBody::DefaultLinearDamping);
     }
 
+    TEST(DynamicRigidBodyTest, SetAngularDamping)
+    {
+        Guch2D::DynamicRigidBody body;
+        constexpr Guch2D::Vect damping(0.3F, 0.4F);
+        body.SetAngularDamping(damping);
+        EXPECT_EQ(body.GetAngularDamping(), damping);
+    }
+
+    TEST(DynamicRigidBodyTest, SetAngularDampingNaN)
+    {
+        Guch2D::DynamicRigidBody body;
+        body.SetAngularDamping({NAN, 0.1F});
+        EXPECT_EQ(body.GetAngularDamping(), Guch2D::DynamicRigidBody::DefaultAngularDamping);
+    }
+
+    TEST(DynamicRigidBodyTest, SetAngularDampingInfinity)
+    {
+        Guch2D::DynamicRigidBody body;
+        body.SetAngularDamping({INFINITY, 0.1F});
+        EXPECT_EQ(body.GetAngularDamping(), Guch2D::DynamicRigidBody::DefaultAngularDamping);
+    }
+
     TEST(DynamicRigidBodyTest, DefaultSimulatePhysicsTrue)
     {
         Guch2D::DynamicRigidBody body;
@@ -364,6 +468,8 @@ namespace
         body.SetForce({1.0F, 2.0F});
         body.SetAcceleration({3.0F, 4.0F});
         body.SetVelocity({5.0F, 6.0F});
+        body.SetAngularAcceleration({7.0F, 8.0F});
+        body.SetAngularVelocity({9.0F, 10.0F});
         body.AddSleepTime(0.25F);
 
         body.SetAwake(false);
@@ -372,6 +478,8 @@ namespace
         EXPECT_EQ(body.GetForce(), Guch2D::Vect(0.0F, 0.0F));
         EXPECT_EQ(body.GetAcceleration(), Guch2D::Vect(0.0F, 0.0F));
         EXPECT_EQ(body.GetVelocity(), Guch2D::Vect(0.0F, 0.0F));
+        EXPECT_EQ(body.GetAngularAcceleration(), Guch2D::Vect(0.0F, 0.0F));
+        EXPECT_EQ(body.GetAngularVelocity(), Guch2D::Vect(0.0F, 0.0F));
         EXPECT_FLOAT_EQ(body.GetSleepTime(), 0.0F);
     }
 
@@ -431,5 +539,27 @@ namespace
 
         EXPECT_TRUE(body.IsAwake());
         EXPECT_EQ(body.GetVelocity(), Guch2D::Vect(1.0F, 2.0F));
+    }
+
+    TEST(DynamicRigidBodyTest, SetAngularVelocityWakesBody)
+    {
+        Guch2D::DynamicRigidBody body;
+        body.SetAwake(false);
+
+        body.SetAngularVelocity({1.0F, 2.0F});
+
+        EXPECT_TRUE(body.IsAwake());
+        EXPECT_EQ(body.GetAngularVelocity(), Guch2D::Vect(1.0F, 2.0F));
+    }
+
+    TEST(DynamicRigidBodyTest, AddAngularVelocityWakesBody)
+    {
+        Guch2D::DynamicRigidBody body;
+        body.SetAwake(false);
+
+        body.AddAngularVelocity({1.0F, 2.0F});
+
+        EXPECT_TRUE(body.IsAwake());
+        EXPECT_EQ(body.GetAngularVelocity(), Guch2D::Vect(1.0F, 2.0F));
     }
 }   // namespace
