@@ -11,7 +11,6 @@ SFML demo application and a GoogleTest test suite.
 | `Source/` | Engine library sources: collision, dynamics, solvers, math, utilities |
 | `Demo/` | SFML-based demo executable |
 | `Test/` | GoogleTest unit tests |
-| `CMakePresets.json` | Recommended local build configurations |
 
 Main CMake targets:
 
