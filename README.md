@@ -10,8 +10,8 @@ Guch2D is a compact and high-performance 2D physics engine written in C++23. It 
 - [About](#about)
 - [Key features](#key-features)
 - [Requirements](#requirements)
-- [Quick usage example](#quick-usage-example)
 - [Common Builds](#common-builds)
+- [Quick usage example](#quick-usage-example)
 
 ## About
 Guch2D implements core 2D physics components: bodies, collision detection (AABB/polygons/circles), motion integration, and collision resolution. The codebase is intentionally compact and readable to make it easy to extend and learn from.
