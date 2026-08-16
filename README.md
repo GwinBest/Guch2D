@@ -11,6 +11,7 @@ Guch2D is a compact and high-performance 2D physics engine written in C++23. It 
 - [Key features](#key-features)
 - [Requirements](#requirements)
 - [Quick usage example](#quick-usage-example)
+- [Common Builds](#common-builds)
 
 ## About
 Guch2D implements core 2D physics components: bodies, collision detection (AABB/polygons/circles), motion integration, and collision resolution. The codebase is intentionally compact and readable to make it easy to extend and learn from.
@@ -36,6 +37,38 @@ Fetched dependencies:
 | `glm` | Math support |
 | `SFML 3.0.2` | Demo application |
 | `GoogleTest 1.17.0` | Unit tests |
+
+## Common Builds
+
+Debug build with demo and tests:
+
+```bash
+cmake --preset debug
+cmake --build Build/Debug
+ctest --test-dir Build/Debug --output-on-failure
+```
+
+Release build:
+
+```bash
+cmake --preset release
+cmake --build Build/Release
+```
+
+Optimized build with debug symbols:
+
+```bash
+cmake --preset relwithdebinfo
+cmake --build Build/RelWithDebInfo
+```
+
+Build a specific target:
+
+```bash
+cmake --build Build/Debug --target Guch2D
+cmake --build Build/Debug --target Guch2D-Demo
+cmake --build Build/Debug --target Guch2D-Test
+```
 
 ## Quick usage example
 A simplified example showing how to create a world, add a body, and step the simulation:
