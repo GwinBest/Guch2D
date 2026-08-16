@@ -12,6 +12,7 @@ option(BUILD_DEMO "Build demo executable" OFF)
 option(BUILD_TEST "Build tests" OFF)
 option(ENABLE_ASAN "Enable AddressSanitizer" ON)
 option(ENABLE_UBSAN "Enable UndefinedBehaviorSanitizer" ON)
+option(ENABLE_COVERAGE "Enable code coverage flags for Clang/GCC" OFF)
 option(ENABLE_CLANG_TIDY "Enable clang-tidy checks for project targets" OFF)
 option(ENABLE_CLANG_FORMAT "Enable clang-format helper targets" ON)
 option(ENABLE_LINT_STRICT "Fail configuration when enabled lint tools are missing" OFF)
@@ -81,6 +82,10 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
     endif ()
     if (ENABLE_UBSAN)
         append_sanitizer_if_supported("UBSan" "-fsanitize=undefined")
+    endif ()
+    if (ENABLE_COVERAGE)
+        add_compile_options(-fcoverage-mapping -fprofile-instr-generate)
+        add_link_options(-fcoverage-mapping -fprofile-instr-generate)
     endif ()
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     if (ENABLE_UBSAN)
@@ -248,7 +253,7 @@ endfunction()
 
 function(enable_project_warnings target_name)
     target_compile_options(${target_name} PRIVATE
-            $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX>
+            $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX /EHsc>
             $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -Wconversion -Wshadow -Werror>
     )
 endfunction()
