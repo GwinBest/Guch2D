@@ -10,7 +10,6 @@ Contents
 - About
 - Key features
 - Requirements
-- Presets
 - Quick usage example
 
 ## About
@@ -37,22 +36,6 @@ Fetched dependencies:
 | `glm` | Math support |
 | `SFML 3.0.2` | Demo application |
 | `GoogleTest 1.17.0` | Unit tests |
-
-## Presets
-The recommended workflow is to configure through CMake presets and then build
-the generated build directory.
-
-| Preset | Build Directory | Type | Demo | Tests |
-| --- | --- | --- | --- | --- |
-| `debug` | `Build/Debug` | `Debug` | on | on |
-| `release` | `Build/Release` | `Release` | on | off |
-| `relwithdebinfo` | `Build/RelWithDebInfo` | `RelWithDebInfo` | on | off |
-
-List available presets:
-
-```bash
-cmake --list-presets
-```
 
 ## Quick usage example
 A simplified example showing how to create a world, add a body, and step the simulation:
