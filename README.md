@@ -1,8 +1,8 @@
 # Guch2D
 
-[![C++23](https://img.shields.io/badge/C%2B%2B-23-blue)]()
-[![CMake](https://img.shields.io/badge/CMake-enabled-brightgreen)]()
-[![License](https://img.shields.io/badge/License-MIT-lightgrey)]()
+[![C++23](https://img.shields.io/badge/C%2B%2B-23-blue)](https://github.com/GwinBest/Guch2D)
+[![CMake](https://img.shields.io/badge/CMake-enabled-brightgreen)](https://github.com/GwinBest/Guch2D/blob/main/CMakeLists.txt)
+[![License](https://img.shields.io/badge/License-MIT-lightgrey)](https://github.com/GwinBest/Guch2D/blob/main/LICENSE)
 
 Guch2D is a compact and high-performance 2D physics engine written in C++23. It focuses on easy integration, a clear API, and a balance between performance and physical accuracy.
 
