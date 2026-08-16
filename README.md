@@ -46,6 +46,7 @@ Debug build with demo and tests:
 cmake --preset debug
 cmake --build Build/Debug
 ctest --test-dir Build/Debug --output-on-failure
+./Build/Debug/Demo/Guch2D-Demo
 ```
 
 Release build:
@@ -53,6 +54,7 @@ Release build:
 ```bash
 cmake --preset release
 cmake --build Build/Release
+./Build/Release/Demo/Guch2D-Demo
 ```
 
 Optimized build with debug symbols:
@@ -60,6 +62,7 @@ Optimized build with debug symbols:
 ```bash
 cmake --preset relwithdebinfo
 cmake --build Build/RelWithDebInfo
+./Build/RelWithDebInfo/Demo/Guch2D-Demo
 ```
 
 Build a specific target:
