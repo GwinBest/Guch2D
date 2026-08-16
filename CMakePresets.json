@@ -16,8 +16,7 @@
         "BUILD_DEMO": "ON",
         "BUILD_TEST": "ON",
         "SFML_BUILD_AUDIO": "OFF",
-        "SFML_BUILD_NETWORK": "OFF",
-        "CMAKE_CXX_FLAGS": "-fcoverage-mapping -fprofile-instr-generate"
+        "SFML_BUILD_NETWORK": "OFF"
       }
     },
     {
