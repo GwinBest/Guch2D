@@ -83,6 +83,7 @@ jobs:
           -DCMAKE_C_COMPILER=clang
           -DCMAKE_CXX_COMPILER=clang++
           -DBUILD_TEST=ON
+          -DBUILD_DEMO=OFF
           -DENABLE_ASAN=OFF
           -DENABLE_UBSAN=OFF
           -DENABLE_CLANG_TIDY=ON
