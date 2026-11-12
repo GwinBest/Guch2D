@@ -43,53 +43,53 @@ jobs:
             c_compiler: gcc-14
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Configure CMake via Presets
-      run: |
-        cmake --preset ${{ matrix.build_type }} 
-        -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }} 
-        -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
-        -DBUILD_DEMO=OFF
-        -DBUILD_TEST=ON
-        
-    - name: Build
-      run: cmake --build--preset ${{ matrix.build_type }} --config ${{ matrix.build_type }}
+      - name: Configure CMake via Presets
+        run: |
+          cmake --preset ${{ matrix.build_type }} 
+          -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }} 
+          -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
+          -DBUILD_DEMO=OFF
+          -DBUILD_TEST=ON
 
-    - name: Test
-      run: ctest --preset ${{ matrix.build_type }}
+      - name: Build
+        run: cmake --build --preset ${{ matrix.build_type }} --config ${{ matrix.build_type }}
+
+      - name: Test
+        run: ctest --preset ${{ matrix.build_type }}
 
   lint:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Install LLVM 22 tools
-      run: |
-        wget https://apt.llvm.org/llvm.sh
-        chmod +x llvm.sh
-        sudo ./llvm.sh 22
-        echo "/usr/lib/llvm-22/bin" >> "$GITHUB_PATH"
-        sudo apt-get update
-        sudo apt-get install -y clang-format-22 clang-tidy-22
+      - name: Install LLVM 22 tools
+        run: |
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 22
+          echo "/usr/lib/llvm-22/bin" >> "$GITHUB_PATH"
+          sudo apt-get update
+          sudo apt-get install -y clang-format-22 clang-tidy-22
 
-    - name: Configure CMake (strict lint mode via Presets)
-      run: >
-        cmake --preset debug
-        -DCMAKE_C_COMPILER=clang
-        -DCMAKE_CXX_COMPILER=clang++
-        -DBUILD_TEST=ON
-        -DENABLE_ASAN=OFF
-        -DENABLE_UBSAN=OFF
-        -DENABLE_CLANG_TIDY=ON
-        -DENABLE_CLANG_FORMAT=ON
-        -DENABLE_LINT_STRICT=ON
-        -DCLANG_TIDY_EXE=/usr/lib/llvm-22/bin/clang-tidy
-        -DCLANG_FORMAT_EXE=/usr/lib/llvm-22/bin/clang-format
+      - name: Configure CMake (strict lint mode via Presets)
+        run: >
+          cmake --preset debug
+          -DCMAKE_C_COMPILER=clang
+          -DCMAKE_CXX_COMPILER=clang++
+          -DBUILD_TEST=ON
+          -DENABLE_ASAN=OFF
+          -DENABLE_UBSAN=OFF
+          -DENABLE_CLANG_TIDY=ON
+          -DENABLE_CLANG_FORMAT=ON
+          -DENABLE_LINT_STRICT=ON
+          -DCLANG_TIDY_EXE=/usr/lib/llvm-22/bin/clang-tidy
+          -DCLANG_FORMAT_EXE=/usr/lib/llvm-22/bin/clang-format
 
-    - name: Check formatting
-      run: cmake --build --preset debug --target format-check
+      - name: Check formatting
+        run: cmake --build --preset debug --target format-check
 
-    - name: Build with clang-tidy
-      run: cmake --build --preset debug --config Debug
+      - name: Build with clang-tidy
+        run: cmake --build --preset debug --config Debug
