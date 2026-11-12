@@ -93,6 +93,13 @@
       }
     },
     {
+      "name": "release",
+      "configurePreset": "release",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
       "name": "relwithdebinfo",
       "configurePreset": "relwithdebinfo",
       "output": {
