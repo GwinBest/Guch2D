@@ -44,30 +44,30 @@ Debug build with demo and tests:
 
 ```bash
 cmake --preset debug
-cmake --build Build/Debug
-ctest --test-dir Build/Debug --output-on-failure
+cmake --build --preset debug
+ctest --preset debug
 ```
 
 Release build:
 
 ```bash
 cmake --preset release
-cmake --build Build/Release
+cmake --build --preset release
 ```
 
 Optimized build with debug symbols:
 
 ```bash
 cmake --preset relwithdebinfo
-cmake --build Build/RelWithDebInfo
+cmake --build --preset relwithdebinfo
 ```
 
 Build a specific target:
 
 ```bash
-cmake --build Build/Debug --target Guch2D
-cmake --build Build/Debug --target Guch2D-Demo
-cmake --build Build/Debug --target Guch2D-Test
+cmake --build --preset debug --target Guch2D
+cmake --build --preset debug --target Guch2D-Demo
+cmake --build --preset debug --target Guch2D-Test
 ```
 
 ## Quick usage example
