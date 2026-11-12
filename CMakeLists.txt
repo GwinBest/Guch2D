@@ -13,7 +13,7 @@ option(BUILD_TEST "Build tests" OFF)
 option(ENABLE_ASAN "Enable AddressSanitizer" ON)
 option(ENABLE_UBSAN "Enable UndefinedBehaviorSanitizer" ON)
 option(ENABLE_COVERAGE "Enable code coverage flags for Clang/GCC" OFF)
-option(ENABLE_CLANG_TIDY "Enable clang-tidy checks for project targets" OFF)
+option(ENABLE_CLANG_TIDY "Enable clang-tidy checks for project targets" ON)
 option(ENABLE_CLANG_FORMAT "Enable clang-format helper targets" ON)
 option(ENABLE_LINT_STRICT "Fail configuration when enabled lint tools are missing" OFF)
 
