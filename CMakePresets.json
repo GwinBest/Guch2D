@@ -20,6 +20,20 @@
       }
     },
     {
+      "name": "debug-coverage",
+      "displayName": "Debug-Coverage",
+      "description": "Debug coverage build with demo and tests enabled.",
+      "binaryDir": "${sourceDir}/Build/DebugCoverage",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "BUILD_DEMO": "ON",
+        "BUILD_TEST": "ON",
+        "ENABLE_COVERAGE": "ON",
+        "SFML_BUILD_AUDIO": "OFF",
+        "SFML_BUILD_NETWORK": "OFF"
+      }
+    },
+    {
       "name": "release",
       "displayName": "Release",
       "description": "Release build with demo enabled.",
@@ -51,6 +65,10 @@
       "configurePreset": "debug"
     },
     {
+      "name": "debug-coverage",
+      "configurePreset": "debug-coverage"
+    },
+    {
       "name": "release",
       "configurePreset": "release"
     },
@@ -63,6 +81,13 @@
     {
       "name": "debug",
       "configurePreset": "debug",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "debug-coverage",
+      "configurePreset": "debug-coverage",
       "output": {
         "outputOnFailure": true
       }

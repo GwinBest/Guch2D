@@ -83,10 +83,6 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
     if (ENABLE_UBSAN)
         append_sanitizer_if_supported("UBSan" "-fsanitize=undefined")
     endif ()
-    if (ENABLE_COVERAGE)
-        add_compile_options(-fcoverage-mapping -fprofile-instr-generate)
-        add_link_options(-fcoverage-mapping -fprofile-instr-generate)
-    endif ()
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     if (ENABLE_UBSAN)
         message(WARNING "UBSan is not supported by the MSVC toolchain and will be ignored.")
@@ -249,6 +245,34 @@ endfunction()
 
 function(enable_asan target_name)
     enable_sanitizers(${target_name})
+endfunction()
+
+function(enable_coverage target_name)
+    if (NOT ENABLE_COVERAGE)
+        return()
+    endif ()
+
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        target_compile_options(${target_name} PRIVATE --coverage -O0 -g)
+        target_link_options(${target_name} PUBLIC --coverage)
+    elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        target_compile_options(${target_name} PRIVATE
+                -fprofile-instr-generate
+                -fcoverage-mapping
+                -O0
+                -g
+        )
+        target_link_options(${target_name} PUBLIC
+                -fprofile-instr-generate
+                -fcoverage-mapping
+        )
+    elseif (MSVC)
+        message(WARNING "Code coverage is not supported for MSVC compiler in this setup.")
+    else ()
+        message(FATAL_ERROR
+                "Coverage is unsupported for ${CMAKE_CXX_COMPILER_ID}."
+        )
+    endif ()
 endfunction()
 
 function(enable_project_warnings target_name)
