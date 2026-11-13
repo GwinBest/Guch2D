@@ -25,7 +25,7 @@ Guch2D implements core 2D physics components: bodies, collision detection (AABB/
 - Small footprint and focus on run-time performance.
   
 ## Requirements
-- CMake 3.19 or newer
+- CMake 3.29 or newer
 - A C++23-capable compiler
 - Git, used by CMake `FetchContent`
 - Internet access on the first configure, so CMake can fetch dependencies
